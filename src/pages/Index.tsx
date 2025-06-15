@@ -1,13 +1,10 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { ArrowRight, CheckCircle, Users, TrendingUp, Globe, Handshake, Shield, DollarSign } from "lucide-react";
-
 const Index = () => {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+  return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Navigation */}
       <nav className="bg-white/90 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -278,7 +275,7 @@ const Index = () => {
             "If you don't grow, you don't pay. If they don't show, they don't get paid. 
             We put data between you and disappointment."
           </blockquote>
-          <cite className="text-blue-100 text-lg">Mark Cuban-Style Promise</cite>
+          <cite className="text-blue-100 text-lg"></cite>
         </div>
       </section>
 
@@ -326,8 +323,6 @@ const Index = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
