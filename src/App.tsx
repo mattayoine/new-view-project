@@ -8,6 +8,9 @@ import Index from "./pages/Index";
 import ApplySME from "./pages/ApplySME";
 import ApplyCoPilot from "./pages/ApplyCoPilot";
 import Onboarding from "./pages/Onboarding";
+import Login from "./pages/Login";
+import FounderDashboard from "./pages/FounderDashboard";
+import AdvisorDashboard from "./pages/AdvisorDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +26,9 @@ const App = () => (
           <Route path="/apply-sme" element={<ApplySME />} />
           <Route path="/apply-copilot" element={<ApplyCoPilot />} />
           <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/founder-dashboard" element={<FounderDashboard />} />
+          <Route path="/advisor-dashboard" element={<AdvisorDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
