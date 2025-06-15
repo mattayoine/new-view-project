@@ -11,6 +11,7 @@ import Onboarding from "./pages/Onboarding";
 import Login from "./pages/Login";
 import FounderDashboard from "./pages/FounderDashboard";
 import AdvisorDashboard from "./pages/AdvisorDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/founder-dashboard" element={<FounderDashboard />} />
           <Route path="/advisor-dashboard" element={<AdvisorDashboard />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
