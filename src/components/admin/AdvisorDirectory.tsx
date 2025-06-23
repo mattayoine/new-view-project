@@ -6,88 +6,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, Users, Building2, Award, Star } from "lucide-react";
+import { useAdvisorsDirectory } from "@/hooks/useAdminData";
 
 const AdvisorDirectory = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const { data: advisors, isLoading } = useAdvisorsDirectory();
 
-  const advisors = [
-    {
-      name: "Sarah Johnson",
-      location: "London, UK",
-      linkedin: "linkedin.com/in/sarahjohnson",
-      expertise: ["Product Management", "Go-to-Market"],
-      matchingStatus: "Already matched",
-      foundersAssigned: ["Amara Okafor"],
-      timezone: "GMT",
-      notes: "Excellent at international expansion strategies, has scaled 3 startups in Africa",
-      organization: "TechStars London",
-      orgType: "accelerator",
-      badgeLevel: "gold",
-      totalSessions: 32,
-      avgRating: 4.6,
-      foundersCount: 8
-    },
-    {
-      name: "Michael Chen",
-      location: "San Francisco, USA",
-      linkedin: "linkedin.com/in/michaelchen",
-      expertise: ["FinTech", "Fundraising"],
-      matchingStatus: "Ready to be matched",
-      foundersAssigned: ["Amara Okafor"],
-      timezone: "PST",
-      notes: "Former VP at Stripe, deep FinTech expertise, African market experience",
-      organization: "Y Combinator",
-      orgType: "accelerator",
-      badgeLevel: "platinum",
-      totalSessions: 67,
-      avgRating: 4.8,
-      foundersCount: 15
-    },
-    {
-      name: "Jennifer Liu",
-      location: "Toronto, Canada",
-      linkedin: "linkedin.com/in/jenniferliu",
-      expertise: ["Supply Chain", "Operations"],
-      matchingStatus: "Already matched",
-      foundersAssigned: ["Kwame Asante"],
-      timezone: "EST",
-      notes: "Supply chain optimization expert, worked with 10+ AgriTech companies",
-      organization: "MaRS Discovery District",
-      orgType: "incubator",
-      badgeLevel: "silver",
-      totalSessions: 18,
-      avgRating: 4.3,
-      foundersCount: 4
-    },
-    {
-      name: "David Rodriguez",
-      location: "Barcelona, Spain",
-      linkedin: "linkedin.com/in/davidrodriguez",
-      expertise: ["HealthTech", "Regulatory"],
-      matchingStatus: "Already matched",
-      foundersAssigned: ["Fatima Hassan"],
-      timezone: "CET",
-      notes: "Former McKinsey partner, specialized in healthcare innovation",
-      organization: "Barcelona Health Hub",
-      orgType: "corporate",
-      badgeLevel: "diamond",
-      totalSessions: 124,
-      avgRating: 4.9,
-      foundersCount: 25
-    }
-  ];
-
-  const filteredAdvisors = advisors.filter(advisor =>
-    advisor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    advisor.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    advisor.organization.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    advisor.expertise.some(exp => exp.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredAdvisors = advisors?.filter(advisor =>
+    advisor.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    advisor.advisor_profiles?.[0]?.profile_data?.expertise?.some((exp: string) => 
+      exp.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  ) || [];
 
   const getStatusColor = (status: string) => {
-    return status === "Ready to be matched" 
-      ? "bg-green-100 text-green-800" 
-      : "bg-blue-100 text-blue-800";
+    return status === "active" 
+      ? "bg-blue-100 text-blue-800" 
+      : "bg-green-100 text-green-800";
   };
 
   const getBadgeColor = (level: string) => {
@@ -101,22 +36,33 @@ const AdvisorDirectory = () => {
     return colors[level as keyof typeof colors] || colors.bronze;
   };
 
-  const getOrgTypeColor = (type: string) => {
-    const colors = {
-      accelerator: "bg-green-50 text-green-700",
-      incubator: "bg-blue-50 text-blue-700",
-      corporate: "bg-purple-50 text-purple-700",
-      university: "bg-orange-50 text-orange-700",
-      venture_studio: "bg-pink-50 text-pink-700"
-    };
-    return colors[type as keyof typeof colors] || colors.accelerator;
-  };
-
   const getBadgeIcon = (level: string) => {
     if (level === "diamond") return <Award className="w-3 h-3" />;
     if (level === "platinum" || level === "gold") return <Star className="w-3 h-3" />;
     return null;
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="animate-pulse">
+              <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const totalSessions = advisors?.reduce((sum, a) => sum + (a.assignments?.reduce((total, assignment) => total + (assignment.total_sessions || 0), 0) || 0), 0) || 0;
+  const totalFounders = advisors?.reduce((sum, a) => sum + (a.assignments?.length || 0), 0) || 0;
+  const avgRating = advisors?.reduce((sum, a) => {
+    const advisorAvg = a.assignments?.reduce((total, assignment) => total + (assignment.avg_rating || 0), 0) || 0;
+    return sum + (advisorAvg / (a.assignments?.length || 1));
+  }, 0) / (advisors?.length || 1) || 0;
 
   return (
     <div className="space-y-6">
@@ -135,10 +81,7 @@ const AdvisorDirectory = () => {
             </div>
             <div className="flex items-center gap-3">
               <Badge variant="outline" className="bg-purple-50">
-                {advisors.length} Active Advisors
-              </Badge>
-              <Badge variant="outline" className="bg-blue-50">
-                {new Set(advisors.map(a => a.organization)).size} Organizations
+                {advisors?.length || 0} Active Advisors
               </Badge>
             </div>
           </div>
@@ -148,7 +91,7 @@ const AdvisorDirectory = () => {
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search advisors, organizations..."
+                placeholder="Search advisors..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -171,107 +114,95 @@ const AdvisorDirectory = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Advisor & Badge</TableHead>
-                <TableHead>Organization</TableHead>
-                <TableHead>Location & Timezone</TableHead>
+                <TableHead>Advisor</TableHead>
                 <TableHead>Expertise Areas</TableHead>
                 <TableHead>Performance</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Assigned Founders</TableHead>
-                <TableHead>Notes</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAdvisors.map((advisor, index) => (
-                <TableRow key={index}>
-                  <TableCell>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{advisor.name}</span>
-                        <Badge className={`${getBadgeColor(advisor.badgeLevel)} text-xs flex items-center gap-1`}>
-                          {getBadgeIcon(advisor.badgeLevel)}
-                          {advisor.badgeLevel}
-                        </Badge>
+              {filteredAdvisors.map((advisor, index) => {
+                const profile = advisor.advisor_profiles?.[0]?.profile_data;
+                const totalAdvisorSessions = advisor.assignments?.reduce((sum, assignment) => sum + (assignment.total_sessions || 0), 0) || 0;
+                const advisorAvgRating = advisor.assignments?.reduce((sum, assignment) => sum + (assignment.avg_rating || 0), 0) / (advisor.assignments?.length || 1) || 0;
+                const badgeLevel = totalAdvisorSessions > 50 ? "diamond" : totalAdvisorSessions > 25 ? "platinum" : totalAdvisorSessions > 10 ? "gold" : "silver";
+                
+                return (
+                  <TableRow key={advisor.id}>
+                    <TableCell>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{advisor.email?.split('@')[0] || 'Advisor'}</span>
+                          <Badge className={`${getBadgeColor(badgeLevel)} text-xs flex items-center gap-1`}>
+                            {getBadgeIcon(badgeLevel)}
+                            {badgeLevel}
+                          </Badge>
+                        </div>
+                        <div className="text-sm text-blue-600 hover:underline cursor-pointer mt-1">
+                          {advisor.email}
+                        </div>
                       </div>
-                      <div className="text-sm text-blue-600 hover:underline cursor-pointer mt-1">
-                        {advisor.linkedin}
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        {profile?.expertise?.slice(0, 3).map((skill: string, idx: number) => (
+                          <Badge key={idx} variant="secondary" className="text-xs mr-1">
+                            {skill}
+                          </Badge>
+                        )) || (
+                          <Badge variant="secondary" className="text-xs">
+                            General Business
+                          </Badge>
+                        )}
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium flex items-center gap-2">
-                        <Building2 className="w-4 h-4 text-gray-400" />
-                        {advisor.organization}
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1 text-sm">
+                          <Star className="w-3 h-3 text-yellow-500" />
+                          <span className="font-medium">{advisorAvgRating ? advisorAvgRating.toFixed(1) : '4.5'}</span>
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          {totalAdvisorSessions} sessions
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          {advisor.assignments?.length || 0} founders mentored
+                        </div>
                       </div>
-                      <Badge variant="outline" className={`${getOrgTypeColor(advisor.orgType)} text-xs mt-1`}>
-                        {advisor.orgType.replace('_', ' ')}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(advisor.status || 'active')}>
+                        {advisor.status === 'active' ? 'Active' : 'Ready to be matched'}
                       </Badge>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{advisor.location}</div>
-                      <Badge variant="outline" className="mt-1 text-xs">
-                        {advisor.timezone}
-                      </Badge>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      {advisor.expertise.map((skill, idx) => (
-                        <Badge key={idx} variant="secondary" className="text-xs mr-1">
-                          {skill}
-                        </Badge>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1 text-sm">
-                        <Star className="w-3 h-3 text-yellow-500" />
-                        <span className="font-medium">{advisor.avgRating}</span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        {advisor.assignments?.slice(0, 2).map((assignment, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {assignment.founder?.email?.split('@')[0] || 'Founder'}
+                          </Badge>
+                        )) || (
+                          <Badge variant="outline" className="text-xs text-gray-400">
+                            No assignments
+                          </Badge>
+                        )}
                       </div>
-                      <div className="text-xs text-gray-600">
-                        {advisor.totalSessions} sessions
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <Button variant="outline" size="sm">
+                          Edit Profile
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-xs">
+                          View Analytics
+                        </Button>
                       </div>
-                      <div className="text-xs text-gray-600">
-                        {advisor.foundersCount} founders mentored
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(advisor.matchingStatus)}>
-                      {advisor.matchingStatus}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      {advisor.foundersAssigned.map((founder, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          {founder}
-                        </Badge>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="max-w-48">
-                      <p className="text-sm text-gray-600">{advisor.notes}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1">
-                      <Button variant="outline" size="sm">
-                        Edit Profile
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-xs">
-                        View Analytics
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>
@@ -281,34 +212,31 @@ const AdvisorDirectory = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">
-              {advisors.reduce((sum, a) => sum + a.totalSessions, 0)}
-            </div>
+            <div className="text-2xl font-bold">{totalSessions}</div>
             <p className="text-sm text-gray-600">Total Sessions Completed</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">
-              {(advisors.reduce((sum, a) => sum + a.avgRating, 0) / advisors.length).toFixed(1)}
-            </div>
+            <div className="text-2xl font-bold">{avgRating.toFixed(1)}</div>
             <p className="text-sm text-gray-600">Average Rating</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <div className="text-2xl font-bold">
-              {advisors.reduce((sum, a) => sum + a.foundersCount, 0)}
-            </div>
-            <p className="text-sm text-gray-600">Unique Founders Mentored</p>
+            <div className="text-2xl font-bold">{totalFounders}</div>
+            <p className="text-sm text-gray-600">Total Founders Mentored</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold">
-              {advisors.filter(a => a.badgeLevel === 'diamond' || a.badgeLevel === 'platinum').length}
+              {advisors?.filter(a => {
+                const sessions = a.assignments?.reduce((sum, assignment) => sum + (assignment.total_sessions || 0), 0) || 0;
+                return sessions > 25;
+              }).length || 0}
             </div>
-            <p className="text-sm text-gray-600">Elite Advisors (Platinum+)</p>
+            <p className="text-sm text-gray-600">Elite Advisors (25+ Sessions)</p>
           </CardContent>
         </Card>
       </div>

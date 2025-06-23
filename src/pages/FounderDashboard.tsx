@@ -7,9 +7,30 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Calendar, Users, BookOpen, Target, FileText, CheckCircle } from "lucide-react";
+import { useFounderData, useFounderSessions } from "@/hooks/useFounderData";
 
 const FounderDashboard = () => {
   const [currentMonth] = useState(2); // Simulating Month 2
+  const founderId = "temp-founder-id"; // TODO: Get from auth context
+  
+  const { data: founderData, isLoading: founderLoading } = useFounderData(founderId);
+  const { data: sessions, isLoading: sessionsLoading } = useFounderSessions(founderId);
+
+  if (founderLoading || sessionsLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const completedSessions = sessions?.filter(s => s.status === 'completed').length || 0;
+  const upcomingSessions = sessions?.filter(s => s.status === 'scheduled').slice(0, 2) || [];
+  const recentSessions = sessions?.filter(s => s.status === 'completed').slice(0, 2) || [];
+  const activeGoals = founderData?.goals?.filter(g => g.status === 'active').length || 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -71,14 +92,19 @@ const FounderDashboard = () => {
                     You're making great progress in your CoPilot journey. Here's what's coming up this month:
                   </p>
                   <div className="space-y-3">
-                    <div className="flex items-start">
-                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
-                      <span className="text-sm">Complete your second advisory session with Sarah Chen</span>
-                    </div>
-                    <div className="flex items-start">
-                      <Calendar className="h-5 w-5 text-blue-500 mr-3 mt-0.5" />
-                      <span className="text-sm">Submit your monthly reflection form</span>
-                    </div>
+                    {upcomingSessions.length > 0 ? (
+                      upcomingSessions.map((session, index) => (
+                        <div key={session.id} className="flex items-start">
+                          <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
+                          <span className="text-sm">{session.title || 'Advisory Session'} - {new Date(session.scheduled_at).toLocaleDateString()}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex items-start">
+                        <Calendar className="h-5 w-5 text-blue-500 mr-3 mt-0.5" />
+                        <span className="text-sm">Schedule your next advisory session</span>
+                      </div>
+                    )}
                     <div className="flex items-start">
                       <BookOpen className="h-5 w-5 text-purple-500 mr-3 mt-0.5" />
                       <span className="text-sm">Prepare for Masterclass #1 next month</span>
@@ -93,15 +119,15 @@ const FounderDashboard = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">3</div>
+                    <div className="text-2xl font-bold text-blue-600">{completedSessions}</div>
                     <div className="text-sm text-gray-600">Sessions Completed</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">2</div>
+                    <div className="text-2xl font-bold text-green-600">{founderData?.assignments?.length || 0}</div>
                     <div className="text-sm text-gray-600">Active Advisors</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-600">85%</div>
+                    <div className="text-2xl font-bold text-purple-600">{activeGoals > 0 ? Math.min(85, activeGoals * 25) : 0}%</div>
                     <div className="text-sm text-gray-600">Goal Progress</div>
                   </div>
                 </CardContent>
@@ -124,45 +150,33 @@ const FounderDashboard = () => {
 
           <TabsContent value="advisors" className="space-y-6">
             <div className="grid md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Users className="h-5 w-5 mr-2" />
-                    Sarah Chen
-                  </CardTitle>
-                  <Badge className="w-fit bg-blue-100 text-blue-800">Marketing Expert</Badge>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-gray-600">
-                    Former Head of Growth at TechStars. 8+ years scaling African startups. Expert in customer acquisition and pricing strategies.
-                  </p>
-                  <div className="space-y-2">
-                    <div className="text-xs text-gray-500">Next Session:</div>
-                    <div className="text-sm font-medium">March 15, 2025 • 3:00 PM EAT</div>
-                  </div>
-                  <Button size="sm" className="w-full">Schedule Next Session</Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Users className="h-5 w-5 mr-2" />
-                    Michael Adebayo
-                  </CardTitle>
-                  <Badge className="w-fit bg-green-100 text-green-800">Operations Expert</Badge>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-gray-600">
-                    COO at three successful startups. Specialist in operational efficiency and team scaling. Based in London, Nigerian roots.
-                  </p>
-                  <div className="space-y-2">
-                    <div className="text-xs text-gray-500">Last Session:</div>
-                    <div className="text-sm font-medium">February 28, 2025</div>
-                  </div>
-                  <Button size="sm" variant="outline" className="w-full">View Session Notes</Button>
-                </CardContent>
-              </Card>
+              {founderData?.assignments?.map((assignment, index) => (
+                <Card key={assignment.id}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Users className="h-5 w-5 mr-2" />
+                      {assignment.advisor?.email?.split('@')[0] || 'Advisor'}
+                    </CardTitle>
+                    <Badge className="w-fit bg-blue-100 text-blue-800">Expert Advisor</Badge>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-gray-600">
+                      Experienced advisor helping you navigate challenges and accelerate growth.
+                    </p>
+                    <div className="space-y-2">
+                      <div className="text-xs text-gray-500">Total Sessions:</div>
+                      <div className="text-sm font-medium">{assignment.total_sessions || 0} completed</div>
+                    </div>
+                    <Button size="sm" className="w-full">Schedule Next Session</Button>
+                  </CardContent>
+                </Card>
+              )) || (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <p className="text-gray-600">No advisors assigned yet</p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </TabsContent>
 
@@ -173,20 +187,19 @@ const FounderDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
-                    <div>
-                      <div className="font-medium">Growth Strategy Session with Sarah</div>
-                      <div className="text-sm text-gray-600">March 15, 2025 • 3:00 PM EAT</div>
+                  {upcomingSessions.length > 0 ? upcomingSessions.map((session) => (
+                    <div key={session.id} className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+                      <div>
+                        <div className="font-medium">{session.title || 'Advisory Session'}</div>
+                        <div className="text-sm text-gray-600">{new Date(session.scheduled_at).toLocaleString()}</div>
+                      </div>
+                      <Button size="sm">Join Call</Button>
                     </div>
-                    <Button size="sm">Join Call</Button>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div>
-                      <div className="font-medium">Operations Review with Michael</div>
-                      <div className="text-sm text-gray-600">March 22, 2025 • 2:00 PM EAT</div>
+                  )) : (
+                    <div className="text-center py-8 text-gray-600">
+                      No upcoming sessions scheduled
                     </div>
-                    <Button size="sm" variant="outline">Reschedule</Button>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -197,20 +210,19 @@ const FounderDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <div className="font-medium text-sm">Pricing Strategy Deep Dive</div>
-                      <div className="text-xs text-gray-600">Feb 28 with Sarah • 60 min</div>
+                  {recentSessions.length > 0 ? recentSessions.map((session) => (
+                    <div key={session.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <div className="font-medium text-sm">{session.title || 'Advisory Session'}</div>
+                        <div className="text-xs text-gray-600">{new Date(session.scheduled_at).toLocaleDateString()} • {session.duration_minutes || 60} min</div>
+                      </div>
+                      <Button size="sm" variant="ghost">View Notes</Button>
                     </div>
-                    <Button size="sm" variant="ghost">View Notes</Button>
-                  </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <div className="font-medium text-sm">Initial Assessment</div>
-                      <div className="text-xs text-gray-600">Feb 15 with Michael • 45 min</div>
+                  )) : (
+                    <div className="text-center py-8 text-gray-600">
+                      No completed sessions yet
                     </div>
-                    <Button size="sm" variant="ghost">View Notes</Button>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -228,7 +240,7 @@ const FounderDashboard = () => {
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
                     <div className="font-medium text-sm mb-2">Pricing Strategy Framework</div>
-                    <div className="text-xs text-gray-600">By Sarah Chen • Used by 50+ founders</div>
+                    <div className="text-xs text-gray-600">Essential framework for pricing decisions</div>
                   </div>
                   <div className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
                     <div className="font-medium text-sm mb-2">Export Readiness Checklist</div>

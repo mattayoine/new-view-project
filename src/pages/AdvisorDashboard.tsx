@@ -4,12 +4,37 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Progress } from "@/components/ui/progress";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Calendar, Users, Award, MessageSquare, FileText, Star } from "lucide-react";
+import { useAdvisorData, useAdvisorSessions, useAdvisorTestimonials } from "@/hooks/useAdvisorData";
 
 const AdvisorDashboard = () => {
   const [currentMonth] = useState(3); // Simulating Month 3
+  const advisorId = "temp-advisor-id"; // TODO: Get from auth context
+  
+  const { data: advisorData, isLoading: advisorLoading } = useAdvisorData(advisorId);
+  const { data: sessions, isLoading: sessionsLoading } = useAdvisorSessions(advisorId);
+  const { data: testimonials, isLoading: testimonialsLoading } = useAdvisorTestimonials(advisorId);
+
+  if (advisorLoading || sessionsLoading || testimonialsLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600"></div>
+          <p className="mt-4 text-gray-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const completedSessions = sessions?.filter(s => s.status === 'completed').length || 0;
+  const foundersCount = advisorData?.assignments?.length || 0;
+  const avgRating = advisorData?.assignments?.reduce((acc, assignment) => {
+    return acc + (assignment.avg_rating || 0);
+  }, 0) / (foundersCount || 1);
+  
+  const upcomingSessions = sessions?.filter(s => s.status === 'scheduled').slice(0, 2) || [];
+  const recentSessions = sessions?.filter(s => s.status === 'completed').slice(0, 2) || [];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
@@ -47,15 +72,15 @@ const AdvisorDashboard = () => {
           <CardContent>
             <div className="grid grid-cols-3 gap-6 text-center">
               <div>
-                <div className="text-2xl font-bold text-green-600">8</div>
+                <div className="text-2xl font-bold text-green-600">{completedSessions}</div>
                 <div className="text-sm text-gray-600">Sessions Completed</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-blue-600">3</div>
+                <div className="text-2xl font-bold text-blue-600">{foundersCount}</div>
                 <div className="text-sm text-gray-600">Founders Mentored</div>
               </div>
               <div>
-                <div className="text-2xl font-bold text-purple-600">95%</div>
+                <div className="text-2xl font-bold text-purple-600">{avgRating ? Math.round(avgRating * 20) : 95}%</div>
                 <div className="text-sm text-gray-600">Satisfaction Score</div>
               </div>
             </div>
@@ -82,10 +107,19 @@ const AdvisorDashboard = () => {
                     Your expertise is making a real difference. Here's what's on your agenda:
                   </p>
                   <div className="space-y-3">
-                    <div className="flex items-start">
-                      <Calendar className="h-5 w-5 text-blue-500 mr-3 mt-0.5" />
-                      <span className="text-sm">Next session with Amara (AgriTech) - Tomorrow 2:00 PM</span>
-                    </div>
+                    {upcomingSessions.length > 0 ? (
+                      upcomingSessions.map((session) => (
+                        <div key={session.id} className="flex items-start">
+                          <Calendar className="h-5 w-5 text-blue-500 mr-3 mt-0.5" />
+                          <span className="text-sm">Next session: {session.title || 'Advisory Session'} - {new Date(session.scheduled_at).toLocaleDateString()}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex items-start">
+                        <Calendar className="h-5 w-5 text-blue-500 mr-3 mt-0.5" />
+                        <span className="text-sm">No upcoming sessions scheduled</span>
+                      </div>
+                    )}
                     <div className="flex items-start">
                       <MessageSquare className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
                       <span className="text-sm">Masterclass prep: "Scaling in Emerging Markets"</span>
@@ -136,55 +170,38 @@ const AdvisorDashboard = () => {
 
           <TabsContent value="founders" className="space-y-6">
             <div className="grid gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>Amara Okafor - GreenTech Solutions</span>
-                    <Badge className="bg-green-100 text-green-800">Active</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-sm font-medium mb-2">Startup Focus:</div>
-                      <p className="text-sm text-gray-600">Solar panel distribution across West Africa. $250k ARR, seeking international expansion.</p>
+              {advisorData?.assignments?.map((assignment) => (
+                <Card key={assignment.id}>
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <span>{assignment.founder?.email?.split('@')[0] || 'Founder'}</span>
+                      <Badge className="bg-green-100 text-green-800">Active</Badge>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div>
+                        <div className="text-sm font-medium mb-2">Assignment Focus:</div>
+                        <p className="text-sm text-gray-600">Strategic guidance and mentorship for scaling operations.</p>
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium mb-2">Progress:</div>
+                        <p className="text-sm text-gray-600">{assignment.total_sessions || 0} sessions completed</p>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-sm font-medium mb-2">Key Challenge:</div>
-                      <p className="text-sm text-gray-600">Scaling operations while maintaining quality control across multiple countries.</p>
+                    <div className="flex space-x-2">
+                      <Button size="sm">View Full Brief</Button>
+                      <Button size="sm" variant="outline">Schedule Session</Button>
                     </div>
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button size="sm">View Full Brief</Button>
-                    <Button size="sm" variant="outline">Schedule Session</Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>David Kwame - EduPlatform</span>
-                    <Badge className="bg-blue-100 text-blue-800">Session Pending</Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-sm font-medium mb-2">Startup Focus:</div>
-                      <p className="text-sm text-gray-600">Online learning platform for African universities. 10k+ active students.</p>
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium mb-2">Key Challenge:</div>
-                      <p className="text-sm text-gray-600">Monetization strategy and premium tier pricing for emerging markets.</p>
-                    </div>
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button size="sm">View Full Brief</Button>
-                    <Button size="sm" variant="outline">Schedule Session</Button>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              )) || (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <p className="text-gray-600">No founders assigned yet</p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </TabsContent>
 
@@ -195,20 +212,19 @@ const AdvisorDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
-                    <div>
-                      <div className="font-medium">Operations Strategy with Amara</div>
-                      <div className="text-sm text-gray-600">March 16, 2025 • 2:00 PM GMT</div>
+                  {upcomingSessions.length > 0 ? upcomingSessions.map((session) => (
+                    <div key={session.id} className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+                      <div>
+                        <div className="font-medium">{session.title || 'Advisory Session'}</div>
+                        <div className="text-sm text-gray-600">{new Date(session.scheduled_at).toLocaleString()}</div>
+                      </div>
+                      <Button size="sm">Join Call</Button>
                     </div>
-                    <Button size="sm">Join Call</Button>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
-                    <div>
-                      <div className="font-medium">Pricing Workshop with David</div>
-                      <div className="text-sm text-gray-600">March 20, 2025 • 3:00 PM GMT</div>
+                  )) : (
+                    <div className="text-center py-8 text-gray-600">
+                      No upcoming sessions scheduled
                     </div>
-                    <Button size="sm" variant="outline">Reschedule</Button>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -219,20 +235,19 @@ const AdvisorDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <div className="font-medium text-sm">Market Entry Strategy - Amara</div>
-                      <div className="text-xs text-gray-600">Mar 2 • 60 min • Excellent feedback</div>
+                  {recentSessions.length > 0 ? recentSessions.map((session) => (
+                    <div key={session.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <div className="font-medium text-sm">{session.title || 'Advisory Session'}</div>
+                        <div className="text-xs text-gray-600">{new Date(session.scheduled_at).toLocaleDateString()} • {session.duration_minutes || 60} min • {session.founder_rating ? 'Excellent feedback' : 'Pending feedback'}</div>
+                      </div>
+                      <Button size="sm" variant="ghost">View Summary</Button>
                     </div>
-                    <Button size="sm" variant="ghost">View Summary</Button>
-                  </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <div className="font-medium text-sm">Product Roadmap Review - David</div>
-                      <div className="text-xs text-gray-600">Feb 28 • 45 min • Very helpful</div>
+                  )) : (
+                    <div className="text-center py-8 text-gray-600">
+                      No completed sessions yet
                     </div>
-                    <Button size="sm" variant="ghost">View Summary</Button>
-                  </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -248,14 +263,16 @@ const AdvisorDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
-                    <p className="text-sm italic">"The pricing framework completely changed how we think about our market. We increased our premium tier conversion by 40%!"</p>
-                    <p className="text-xs text-gray-500 mt-2">- Founder, EdTech Platform</p>
-                  </div>
-                  <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-400">
-                    <p className="text-sm italic">"Having someone who's actually scaled in emerging markets was invaluable. The operational insights saved us months of trial and error."</p>
-                    <p className="text-xs text-gray-500 mt-2">- Founder, AgriTech Startup</p>
-                  </div>
+                  {testimonials && testimonials.length > 0 ? testimonials.slice(0, 2).map((testimonial) => (
+                    <div key={testimonial.id} className="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
+                      <p className="text-sm italic">"{testimonial.content}"</p>
+                      <p className="text-xs text-gray-500 mt-2">- {testimonial.from_user?.email?.split('@')[0] || 'Founder'}</p>
+                    </div>
+                  )) : (
+                    <div className="text-center py-8 text-gray-600">
+                      No testimonials available yet
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -267,7 +284,7 @@ const AdvisorDashboard = () => {
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">4.9/5</div>
+                    <div className="text-2xl font-bold text-blue-600">{avgRating ? avgRating.toFixed(1) : '4.9'}/5</div>
                     <div className="text-sm text-gray-600">Average Rating</div>
                   </div>
                   <div className="text-center p-4 bg-green-50 rounded-lg">

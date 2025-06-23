@@ -6,66 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Search, Users, Check, X } from "lucide-react";
+import { useFoundersDirectory } from "@/hooks/useAdminData";
 
 const FounderDirectory = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const { data: founders, isLoading } = useFoundersDirectory();
 
-  const founders = [
-    {
-      name: "Amara Okafor",
-      country: "Nigeria",
-      sector: "FinTech",
-      stage: "Series A",
-      website: "payfast.ng",
-      bottleneck: "International expansion strategy",
-      advisors: ["Sarah Johnson", "Michael Chen"],
-      bottleneckSolved: true,
-      storyReady: true,
-      testimonialsCollected: true
-    },
-    {
-      name: "Kwame Asante",
-      country: "Ghana",
-      sector: "AgriTech",
-      stage: "Seed",
-      website: "farmconnect.gh",
-      bottleneck: "Supply chain optimization",
-      advisors: ["Jennifer Liu"],
-      bottleneckSolved: false,
-      storyReady: false,
-      testimonialsCollected: true
-    },
-    {
-      name: "Fatima Hassan",
-      country: "Kenya",
-      sector: "HealthTech",
-      stage: "Pre-Seed",
-      website: "meditrack.ke",
-      bottleneck: "Product-market fit",
-      advisors: ["David Rodriguez", "Angela Wright"],
-      bottleneckSolved: true,
-      storyReady: true,
-      testimonialsCollected: false
-    },
-    {
-      name: "Thabo Molefe",
-      country: "South Africa",
-      sector: "EdTech",
-      stage: "Seed",
-      website: "learnza.co.za",
-      bottleneck: "User acquisition",
-      advisors: ["Maria Santos"],
-      bottleneckSolved: false,
-      storyReady: false,
-      testimonialsCollected: false
-    }
-  ];
-
-  const filteredFounders = founders.filter(founder =>
-    founder.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    founder.country.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    founder.sector.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredFounders = founders?.filter(founder =>
+    founder.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    founder.founder_profiles?.[0]?.profile_data?.startup_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    founder.founder_profiles?.[0]?.profile_data?.sector?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
 
   const getStageColor = (stage: string) => {
     switch (stage) {
@@ -75,6 +26,21 @@ const FounderDirectory = () => {
       default: return "bg-gray-100 text-gray-800";
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="animate-pulse">
+              <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -92,7 +58,7 @@ const FounderDirectory = () => {
               </p>
             </div>
             <Badge variant="outline" className="bg-blue-50">
-              {founders.length} Active Founders
+              {founders?.length || 0} Active Founders
             </Badge>
           </div>
         </CardHeader>
@@ -121,81 +87,91 @@ const FounderDirectory = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Founder</TableHead>
-                <TableHead>Location & Sector</TableHead>
+                <TableHead>Startup & Sector</TableHead>
                 <TableHead>Stage</TableHead>
-                <TableHead>Top Bottleneck</TableHead>
+                <TableHead>Challenge</TableHead>
                 <TableHead>Assigned Advisors</TableHead>
                 <TableHead>Progress</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredFounders.map((founder, index) => (
-                <TableRow key={index}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{founder.name}</div>
-                      <div className="text-sm text-gray-500">{founder.website}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{founder.country}</div>
-                      <div className="text-sm text-gray-500">{founder.sector}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getStageColor(founder.stage)}>
-                      {founder.stage}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="max-w-48">
-                      <p className="text-sm">{founder.bottleneck}</p>
-                      <Badge 
-                        variant={founder.bottleneckSolved ? "default" : "secondary"}
-                        className="mt-1 text-xs"
-                      >
-                        {founder.bottleneckSolved ? "Solved" : "In Progress"}
+              {filteredFounders.map((founder, index) => {
+                const profile = founder.founder_profiles?.[0]?.profile_data;
+                const activeGoals = founder.goals?.filter(g => g.status === 'active').length || 0;
+                const completedGoals = founder.goals?.filter(g => g.status === 'completed').length || 0;
+                
+                return (
+                  <TableRow key={founder.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{founder.email?.split('@')[0] || 'Founder'}</div>
+                        <div className="text-sm text-gray-500">{profile?.website || profile?.startup_name}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{profile?.startup_name || 'Startup'}</div>
+                        <div className="text-sm text-gray-500">{profile?.sector || 'General'}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStageColor(profile?.stage || 'Seed')}>
+                        {profile?.stage || 'Seed'}
                       </Badge>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="space-y-1">
-                      {founder.advisors.map((advisor, idx) => (
-                        <Badge key={idx} variant="outline" className="text-xs">
-                          {advisor}
+                    </TableCell>
+                    <TableCell>
+                      <div className="max-w-48">
+                        <p className="text-sm">{profile?.challenge || 'Growth strategy and scaling operations'}</p>
+                        <Badge 
+                          variant={activeGoals > 0 ? "default" : "secondary"}
+                          className="mt-1 text-xs"
+                        >
+                          {activeGoals > 0 ? "In Progress" : "Planning"}
                         </Badge>
-                      ))}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1">
-                        {founder.storyReady ? (
-                          <Check className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <X className="w-4 h-4 text-gray-400" />
-                        )}
-                        <span className="text-xs">Story</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        {founder.testimonialsCollected ? (
-                          <Check className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <X className="w-4 h-4 text-gray-400" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        {founder.assignments?.filter(a => a.status === 'active').map((assignment, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {assignment.advisor?.email?.split('@')[0] || 'Advisor'}
+                          </Badge>
+                        )) || (
+                          <Badge variant="outline" className="text-xs text-gray-400">
+                            No advisors assigned
+                          </Badge>
                         )}
-                        <span className="text-xs">Testimonial</span>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="outline" size="sm">
-                      View Details
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          {completedGoals > 0 ? (
+                            <Check className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <X className="w-4 h-4 text-gray-400" />
+                          )}
+                          <span className="text-xs">Goals</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {founder.assignments?.some(a => a.total_sessions > 0) ? (
+                            <Check className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <X className="w-4 h-4 text-gray-400" />
+                          )}
+                          <span className="text-xs">Sessions</span>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="outline" size="sm">
+                        View Details
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </CardContent>

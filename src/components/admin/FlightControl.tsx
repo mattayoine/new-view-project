@@ -4,8 +4,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, Users, Settings, Home, FileText, ArrowUp, ArrowDown } from "lucide-react";
+import { useAdminStats } from "@/hooks/useAdminData";
 
 const FlightControl = () => {
+  const { data: stats, isLoading } = useAdminStats();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <div className="animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                  <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   const currentWeekTodos = [
     { task: "Review 3 new founder applications", priority: "high", due: "Today" },
     { task: "Schedule Q2 advisor onboarding", priority: "medium", due: "Wednesday" },
@@ -14,15 +36,35 @@ const FlightControl = () => {
   ];
 
   const kpiSnapshot = [
-    { metric: "Active Founders", value: "28", change: "+3", trend: "up" },
-    { metric: "Active Advisors", value: "19", change: "+1", trend: "up" },
-    { metric: "Sessions This Month", value: "45", change: "+12", trend: "up" },
-    { metric: "Case Studies Ready", value: "8", change: "+2", trend: "up" }
+    { 
+      metric: "Active Founders", 
+      value: stats?.activeFounders?.toString() || "0", 
+      change: "+3", 
+      trend: "up" 
+    },
+    { 
+      metric: "Active Advisors", 
+      value: stats?.activeAdvisors?.toString() || "0", 
+      change: "+1", 
+      trend: "up" 
+    },
+    { 
+      metric: "Sessions This Month", 
+      value: stats?.sessionsThisMonth?.toString() || "0", 
+      change: "+12", 
+      trend: "up" 
+    },
+    { 
+      metric: "Case Studies Ready", 
+      value: stats?.caseStudiesReady?.toString() || "0", 
+      change: "+2", 
+      trend: "up" 
+    }
   ];
 
   const timeline = [
     { month: "Month 1", phase: "Onboarding & Matching", status: "completed", founders: 15, advisors: 10 },
-    { month: "Month 2", phase: "First Advisory Sessions", status: "active", founders: 28, advisors: 19 },
+    { month: "Month 2", phase: "First Advisory Sessions", status: "active", founders: stats?.activeFounders || 28, advisors: stats?.activeAdvisors || 19 },
     { month: "Month 3", phase: "Masterclasses Begin", status: "upcoming", founders: 25, advisors: 18 },
     { month: "Month 4", phase: "Progress Reviews", status: "planned", founders: 20, advisors: 15 },
     { month: "Month 5", phase: "Case Study Collection", status: "planned", founders: 18, advisors: 12 },
