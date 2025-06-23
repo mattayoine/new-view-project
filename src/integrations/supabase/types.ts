@@ -901,6 +901,68 @@ export type Database = {
           },
         ]
       }
+      message_threads: {
+        Row: {
+          assignment_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_archived: boolean | null
+          last_message_at: string | null
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          assignment_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_archived?: boolean | null
+          last_message_at?: string | null
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          assignment_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_archived?: boolean | null
+          last_message_at?: string | null
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_threads_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "active_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_threads_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "advisor_founder_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_threads_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "active_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_threads_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           assignment_id: string | null
@@ -914,6 +976,7 @@ export type Database = {
           read_at: string | null
           reply_to: string | null
           subject: string | null
+          thread_id: string | null
           to_user_id: string | null
         }
         Insert: {
@@ -928,6 +991,7 @@ export type Database = {
           read_at?: string | null
           reply_to?: string | null
           subject?: string | null
+          thread_id?: string | null
           to_user_id?: string | null
         }
         Update: {
@@ -942,6 +1006,7 @@ export type Database = {
           read_at?: string | null
           reply_to?: string | null
           subject?: string | null
+          thread_id?: string | null
           to_user_id?: string | null
         }
         Relationships: [
@@ -978,6 +1043,13 @@ export type Database = {
             columns: ["reply_to"]
             isOneToOne: false
             referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "message_threads"
             referencedColumns: ["id"]
           },
           {
@@ -1052,6 +1124,66 @@ export type Database = {
             columns: ["notification_id"]
             isOneToOne: false
             referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          assignment_updates: boolean | null
+          created_at: string
+          email_enabled: boolean | null
+          goal_updates: boolean | null
+          id: string
+          in_app_enabled: boolean | null
+          message_notifications: boolean | null
+          reminder_hours: number | null
+          session_proposals: boolean | null
+          session_reminders: boolean | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          assignment_updates?: boolean | null
+          created_at?: string
+          email_enabled?: boolean | null
+          goal_updates?: boolean | null
+          id?: string
+          in_app_enabled?: boolean | null
+          message_notifications?: boolean | null
+          reminder_hours?: number | null
+          session_proposals?: boolean | null
+          session_reminders?: boolean | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          assignment_updates?: boolean | null
+          created_at?: string
+          email_enabled?: boolean | null
+          goal_updates?: boolean | null
+          id?: string
+          in_app_enabled?: boolean | null
+          message_notifications?: boolean | null
+          reminder_hours?: number | null
+          session_proposals?: boolean | null
+          session_reminders?: boolean | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "active_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -1426,6 +1558,86 @@ export type Database = {
           },
         ]
       }
+      session_feedback: {
+        Row: {
+          action_items: string[] | null
+          additional_comments: string | null
+          communication_rating: number | null
+          created_at: string
+          feedback_by: string | null
+          id: string
+          is_anonymous: boolean | null
+          overall_rating: number | null
+          preparation_rating: number | null
+          session_id: string | null
+          value_rating: number | null
+          what_could_improve: string | null
+          what_went_well: string | null
+          would_recommend: boolean | null
+        }
+        Insert: {
+          action_items?: string[] | null
+          additional_comments?: string | null
+          communication_rating?: number | null
+          created_at?: string
+          feedback_by?: string | null
+          id?: string
+          is_anonymous?: boolean | null
+          overall_rating?: number | null
+          preparation_rating?: number | null
+          session_id?: string | null
+          value_rating?: number | null
+          what_could_improve?: string | null
+          what_went_well?: string | null
+          would_recommend?: boolean | null
+        }
+        Update: {
+          action_items?: string[] | null
+          additional_comments?: string | null
+          communication_rating?: number | null
+          created_at?: string
+          feedback_by?: string | null
+          id?: string
+          is_anonymous?: boolean | null
+          overall_rating?: number | null
+          preparation_rating?: number | null
+          session_id?: string | null
+          value_rating?: number | null
+          what_could_improve?: string | null
+          what_went_well?: string | null
+          would_recommend?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_feedback_feedback_by_fkey"
+            columns: ["feedback_by"]
+            isOneToOne: false
+            referencedRelation: "active_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_feedback_feedback_by_fkey"
+            columns: ["feedback_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_feedback_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "active_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_feedback_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       session_proposals: {
         Row: {
           approved_at: string | null
@@ -1552,14 +1764,19 @@ export type Database = {
           founder_rating: number | null
           id: string
           is_recurring: boolean | null
+          location_details: string | null
+          location_type: string | null
           meeting_link: string | null
           notes: string | null
+          outcome_summary: string | null
           parent_series_id: string | null
+          preparation_notes: string | null
           recording_consent: Json | null
           recording_url: string | null
           recurrence_pattern: Json | null
           rescheduled_from: string | null
           scheduled_at: string
+          session_type: string | null
           status: string
           title: string
           transcript_url: string | null
@@ -1584,14 +1801,19 @@ export type Database = {
           founder_rating?: number | null
           id?: string
           is_recurring?: boolean | null
+          location_details?: string | null
+          location_type?: string | null
           meeting_link?: string | null
           notes?: string | null
+          outcome_summary?: string | null
           parent_series_id?: string | null
+          preparation_notes?: string | null
           recording_consent?: Json | null
           recording_url?: string | null
           recurrence_pattern?: Json | null
           rescheduled_from?: string | null
           scheduled_at: string
+          session_type?: string | null
           status?: string
           title: string
           transcript_url?: string | null
@@ -1616,14 +1838,19 @@ export type Database = {
           founder_rating?: number | null
           id?: string
           is_recurring?: boolean | null
+          location_details?: string | null
+          location_type?: string | null
           meeting_link?: string | null
           notes?: string | null
+          outcome_summary?: string | null
           parent_series_id?: string | null
+          preparation_notes?: string | null
           recording_consent?: Json | null
           recording_url?: string | null
           recurrence_pattern?: Json | null
           rescheduled_from?: string | null
           scheduled_at?: string
+          session_type?: string | null
           status?: string
           title?: string
           transcript_url?: string | null
@@ -1987,6 +2214,60 @@ export type Database = {
           },
           {
             foreignKeyName: "user_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_settings: {
+        Row: {
+          calendar_integration_enabled: boolean | null
+          calendar_provider: string | null
+          calendar_settings: Json | null
+          created_at: string
+          id: string
+          language: string | null
+          theme: string | null
+          timezone: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          calendar_integration_enabled?: boolean | null
+          calendar_provider?: string | null
+          calendar_settings?: Json | null
+          created_at?: string
+          id?: string
+          language?: string | null
+          theme?: string | null
+          timezone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          calendar_integration_enabled?: boolean | null
+          calendar_provider?: string | null
+          calendar_settings?: Json | null
+          created_at?: string
+          id?: string
+          language?: string | null
+          theme?: string | null
+          timezone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "active_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_settings_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "users"
