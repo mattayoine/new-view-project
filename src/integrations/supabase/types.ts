@@ -63,6 +63,63 @@ export type Database = {
           },
         ]
       }
+      admin_activity_log: {
+        Row: {
+          action_description: string
+          action_type: string
+          admin_id: string | null
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          new_values: Json | null
+          old_values: Json | null
+          target_id: string
+          target_type: string
+          user_agent: string | null
+        }
+        Insert: {
+          action_description: string
+          action_type: string
+          admin_id?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          target_id: string
+          target_type: string
+          user_agent?: string | null
+        }
+        Update: {
+          action_description?: string
+          action_type?: string
+          admin_id?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          new_values?: Json | null
+          old_values?: Json | null
+          target_id?: string
+          target_type?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_activity_log_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "active_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_activity_log_admin_id_fkey"
+            columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       advisor_application_details: {
         Row: {
           application_id: string | null
@@ -113,6 +170,57 @@ export type Database = {
             columns: ["application_id"]
             isOneToOne: true
             referencedRelation: "base_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      advisor_availability: {
+        Row: {
+          advisor_id: string | null
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          is_active: boolean | null
+          start_time: string
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          advisor_id?: string | null
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_active?: boolean | null
+          start_time: string
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          advisor_id?: string | null
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_active?: boolean | null
+          start_time?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advisor_availability_advisor_id_fkey"
+            columns: ["advisor_id"]
+            isOneToOne: false
+            referencedRelation: "active_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "advisor_availability_advisor_id_fkey"
+            columns: ["advisor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -553,6 +661,77 @@ export type Database = {
           },
         ]
       }
+      goal_milestones: {
+        Row: {
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          description: string | null
+          due_date: string | null
+          goal_id: string | null
+          id: string
+          sort_order: number | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          goal_id?: string | null
+          id?: string
+          sort_order?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          goal_id?: string | null
+          id?: string
+          sort_order?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_milestones_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "active_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_milestones_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_milestones_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "active_goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_milestones_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       goals: {
         Row: {
           assignment_id: string | null
@@ -650,6 +829,161 @@ export type Database = {
           {
             foreignKeyName: "goals_founder_id_fkey"
             columns: ["founder_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matching_criteria_scores: {
+        Row: {
+          algorithm_version: string | null
+          assignment_id: string | null
+          availability_match_score: number | null
+          calculated_at: string
+          challenge_match_score: number | null
+          experience_match_score: number | null
+          id: string
+          manual_adjustment: number | null
+          manual_adjustment_reason: string | null
+          overall_score: number | null
+          sector_match_score: number | null
+          timezone_match_score: number | null
+        }
+        Insert: {
+          algorithm_version?: string | null
+          assignment_id?: string | null
+          availability_match_score?: number | null
+          calculated_at?: string
+          challenge_match_score?: number | null
+          experience_match_score?: number | null
+          id?: string
+          manual_adjustment?: number | null
+          manual_adjustment_reason?: string | null
+          overall_score?: number | null
+          sector_match_score?: number | null
+          timezone_match_score?: number | null
+        }
+        Update: {
+          algorithm_version?: string | null
+          assignment_id?: string | null
+          availability_match_score?: number | null
+          calculated_at?: string
+          challenge_match_score?: number | null
+          experience_match_score?: number | null
+          id?: string
+          manual_adjustment?: number | null
+          manual_adjustment_reason?: string | null
+          overall_score?: number | null
+          sector_match_score?: number | null
+          timezone_match_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matching_criteria_scores_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "active_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matching_criteria_scores_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "advisor_founder_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          assignment_id: string | null
+          attachment_url: string | null
+          content: string
+          created_at: string
+          from_user_id: string | null
+          id: string
+          is_read: boolean | null
+          message_type: string | null
+          read_at: string | null
+          reply_to: string | null
+          subject: string | null
+          to_user_id: string | null
+        }
+        Insert: {
+          assignment_id?: string | null
+          attachment_url?: string | null
+          content: string
+          created_at?: string
+          from_user_id?: string | null
+          id?: string
+          is_read?: boolean | null
+          message_type?: string | null
+          read_at?: string | null
+          reply_to?: string | null
+          subject?: string | null
+          to_user_id?: string | null
+        }
+        Update: {
+          assignment_id?: string | null
+          attachment_url?: string | null
+          content?: string
+          created_at?: string
+          from_user_id?: string | null
+          id?: string
+          is_read?: boolean | null
+          message_type?: string | null
+          read_at?: string | null
+          reply_to?: string | null
+          subject?: string | null
+          to_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "active_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "advisor_founder_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_from_user_id_fkey"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "active_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_from_user_id_fkey"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_reply_to_fkey"
+            columns: ["reply_to"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_to_user_id_fkey"
+            columns: ["to_user_id"]
+            isOneToOne: false
+            referencedRelation: "active_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_to_user_id_fkey"
+            columns: ["to_user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -1086,6 +1420,114 @@ export type Database = {
           },
         ]
       }
+      session_proposals: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          assignment_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          proposed_by: string | null
+          proposed_times: Json
+          rejection_reason: string | null
+          selected_time: string | null
+          session_id: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          assignment_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          proposed_by?: string | null
+          proposed_times: Json
+          rejection_reason?: string | null
+          selected_time?: string | null
+          session_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          assignment_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          proposed_by?: string | null
+          proposed_times?: Json
+          rejection_reason?: string | null
+          selected_time?: string | null
+          session_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_proposals_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "active_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_proposals_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_proposals_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "active_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_proposals_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "advisor_founder_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_proposals_proposed_by_fkey"
+            columns: ["proposed_by"]
+            isOneToOne: false
+            referencedRelation: "active_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_proposals_proposed_by_fkey"
+            columns: ["proposed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_proposals_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "active_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_proposals_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sessions: {
         Row: {
           advisor_feedback_text: string | null
@@ -1228,6 +1670,114 @@ export type Database = {
           },
         ]
       }
+      testimonials: {
+        Row: {
+          admin_approved: boolean | null
+          approved_at: string | null
+          approved_by: string | null
+          content: string
+          created_at: string
+          from_user_id: string | null
+          id: string
+          is_featured: boolean | null
+          is_public: boolean | null
+          rating: number
+          session_id: string | null
+          title: string | null
+          to_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          admin_approved?: boolean | null
+          approved_at?: string | null
+          approved_by?: string | null
+          content: string
+          created_at?: string
+          from_user_id?: string | null
+          id?: string
+          is_featured?: boolean | null
+          is_public?: boolean | null
+          rating: number
+          session_id?: string | null
+          title?: string | null
+          to_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          admin_approved?: boolean | null
+          approved_at?: string | null
+          approved_by?: string | null
+          content?: string
+          created_at?: string
+          from_user_id?: string | null
+          id?: string
+          is_featured?: boolean | null
+          is_public?: boolean | null
+          rating?: number
+          session_id?: string | null
+          title?: string | null
+          to_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "testimonials_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "active_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "testimonials_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "testimonials_from_user_id_fkey"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "active_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "testimonials_from_user_id_fkey"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "testimonials_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "active_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "testimonials_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "testimonials_to_user_id_fkey"
+            columns: ["to_user_id"]
+            isOneToOne: false
+            referencedRelation: "active_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "testimonials_to_user_id_fkey"
+            columns: ["to_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_availability: {
         Row: {
           created_at: string
@@ -1284,6 +1834,63 @@ export type Database = {
           },
           {
             foreignKeyName: "user_availability_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_consents: {
+        Row: {
+          consent_type: string
+          created_at: string
+          granted_at: string | null
+          id: string
+          ip_address: unknown | null
+          is_granted: boolean
+          notes: string | null
+          revoked_at: string | null
+          updated_at: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          consent_type: string
+          created_at?: string
+          granted_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          is_granted: boolean
+          notes?: string | null
+          revoked_at?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          consent_type?: string
+          created_at?: string
+          granted_at?: string | null
+          id?: string
+          ip_address?: unknown | null
+          is_granted?: boolean
+          notes?: string | null
+          revoked_at?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_consents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "active_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_consents_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
@@ -2029,8 +2636,24 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_match_score: {
+        Args: { p_advisor_id: string; p_founder_id: string }
+        Returns: number
+      }
       calculate_user_badge_level: {
         Args: { p_user_id: string }
+        Returns: string
+      }
+      log_admin_activity: {
+        Args: {
+          p_admin_id: string
+          p_action_type: string
+          p_target_type: string
+          p_target_id: string
+          p_description: string
+          p_old_values?: Json
+          p_new_values?: Json
+        }
         Returns: string
       }
     }
