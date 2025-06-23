@@ -26,7 +26,7 @@ export const useUserProfile = (userId?: string) => {
       // Cast the profile_data from Json to our typed ProfileData
       return {
         ...profile,
-        profile_data: profile.profile_data as ProfileData
+        profile_data: profile.profile_data as unknown as ProfileData
       } as UserProfile;
     },
     enabled: !!actualUserId
@@ -56,11 +56,11 @@ export const useUserWithProfile = (userId?: string) => {
       if (!userData) return null;
 
       // Cast the profile_data if profile exists
-      if (userData.profile && userData.profile.length > 0) {
-        userData.profile = userData.profile.map((p: any) => ({
-          ...p,
-          profile_data: p.profile_data as ProfileData
-        }));
+      if (userData.profile) {
+        userData.profile = {
+          ...userData.profile,
+          profile_data: userData.profile.profile_data as unknown as ProfileData
+        };
       }
       
       return userData;
