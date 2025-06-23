@@ -481,6 +481,8 @@ export type Database = {
       }
       base_applications: {
         Row: {
+          application_data: Json | null
+          application_type: string | null
           created_at: string
           deleted_at: string | null
           email: string
@@ -495,6 +497,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          application_data?: Json | null
+          application_type?: string | null
           created_at?: string
           deleted_at?: string | null
           email: string
@@ -509,6 +513,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          application_data?: Json | null
+          application_type?: string | null
           created_at?: string
           deleted_at?: string | null
           email?: string

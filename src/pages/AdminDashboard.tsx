@@ -1,87 +1,71 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Calendar, Users, Settings, Home, FileText } from "lucide-react";
-import FlightControl from "@/components/admin/FlightControl";
-import FounderDirectory from "@/components/admin/FounderDirectory";
-import AdvisorDirectory from "@/components/admin/AdvisorDirectory";
-import SessionTracker from "@/components/admin/SessionTracker";
-import CaseStudyLibrary from "@/components/admin/CaseStudyLibrary";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import FlightControl from '@/components/admin/FlightControl';
+import SessionTracker from '@/components/admin/SessionTracker';
+import AdvisorDirectory from '@/components/admin/AdvisorDirectory';
+import FounderDirectory from '@/components/admin/FounderDirectory';
+import CaseStudyLibrary from '@/components/admin/CaseStudyLibrary';
+import ApplicationReview from '@/components/admin/ApplicationReview';
+import { usePendingApplicationsCount } from '@/hooks/useAdminApplications';
+import { Badge } from '@/components/ui/badge';
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState("flight-control");
+  const { data: pendingCount = 0 } = usePendingApplicationsCount();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">CoPilot Admin Command Center</h1>
-            <p className="text-gray-600">Real-time platform oversight and management</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-              System Online
-            </Badge>
-            <Button variant="outline" size="sm">
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
-            </Button>
-          </div>
-        </div>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+        {pendingCount > 0 && (
+          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+            {pendingCount} Applications Pending Review
+          </Badge>
+        )}
       </div>
 
-      {/* Main Dashboard */}
-      <div className="p-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6">
-            <TabsTrigger value="flight-control" className="flex items-center gap-2">
-              <Home className="w-4 h-4" />
-              Flight Control
-            </TabsTrigger>
-            <TabsTrigger value="founders" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Founders
-            </TabsTrigger>
-            <TabsTrigger value="advisors" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Advisors
-            </TabsTrigger>
-            <TabsTrigger value="sessions" className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Sessions
-            </TabsTrigger>
-            <TabsTrigger value="case-studies" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Case Studies
-            </TabsTrigger>
-          </TabsList>
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="applications" className="relative">
+            Applications
+            {pendingCount > 0 && (
+              <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs bg-red-500">
+                {pendingCount}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="sessions">Sessions</TabsTrigger>
+          <TabsTrigger value="advisors">Advisors</TabsTrigger>
+          <TabsTrigger value="founders">Founders</TabsTrigger>
+          <TabsTrigger value="resources">Resources</TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="flight-control">
-            <FlightControl />
-          </TabsContent>
+        <TabsContent value="overview">
+          <FlightControl />
+        </TabsContent>
 
-          <TabsContent value="founders">
-            <FounderDirectory />
-          </TabsContent>
+        <TabsContent value="applications">
+          <ApplicationReview />
+        </TabsContent>
 
-          <TabsContent value="advisors">
-            <AdvisorDirectory />
-          </TabsContent>
+        <TabsContent value="sessions">
+          <SessionTracker />
+        </TabsContent>
 
-          <TabsContent value="sessions">
-            <SessionTracker />
-          </TabsContent>
+        <TabsContent value="advisors">
+          <AdvisorDirectory />
+        </TabsContent>
 
-          <TabsContent value="case-studies">
-            <CaseStudyLibrary />
-          </TabsContent>
-        </Tabs>
-      </div>
+        <TabsContent value="founders">
+          <FounderDirectory />
+        </TabsContent>
+
+        <TabsContent value="resources">
+          <CaseStudyLibrary />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

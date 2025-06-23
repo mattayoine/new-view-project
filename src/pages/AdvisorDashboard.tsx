@@ -1,302 +1,203 @@
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Link } from "react-router-dom";
-import { ArrowLeft, Calendar, Users, Award, MessageSquare, FileText, Star } from "lucide-react";
-import { useAdvisorData, useAdvisorSessions, useAdvisorTestimonials } from "@/hooks/useAdvisorData";
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Calendar, Users, Star, MessageSquare, User, Clock } from 'lucide-react';
+import { useAdvisorData } from '@/hooks/useAdvisorData';
+import ProfileSection from '@/components/dashboard/ProfileSection';
 
 const AdvisorDashboard = () => {
-  const [currentMonth] = useState(3); // Simulating Month 3
-  const advisorId = "temp-advisor-id"; // TODO: Get from auth context
-  
-  const { data: advisorData, isLoading: advisorLoading } = useAdvisorData(advisorId);
-  const { data: sessions, isLoading: sessionsLoading } = useAdvisorSessions(advisorId);
-  const { data: testimonials, isLoading: testimonialsLoading } = useAdvisorTestimonials(advisorId);
+  const { data, isLoading, error } = useAdvisorData();
 
-  if (advisorLoading || sessionsLoading || testimonialsLoading) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600"></div>
-          <p className="mt-4 text-gray-600">Loading your dashboard...</p>
+      <div className="container mx-auto p-6">
+        <div className="animate-pulse space-y-6">
+          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-32 bg-gray-200 rounded"></div>
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
-  const completedSessions = sessions?.filter(s => s.status === 'completed').length || 0;
-  const foundersCount = advisorData?.assignments?.length || 0;
-  const avgRating = advisorData?.assignments?.reduce((acc, assignment) => {
-    return acc + (assignment.avg_rating || 0);
-  }, 0) / (foundersCount || 1);
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center">
+          <p className="text-red-600">Error loading dashboard data</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { advisor, assignments } = data || {};
+  const allSessions = assignments?.flatMap(a => a.sessions || []) || [];
+  const upcomingSessions = allSessions.filter(
+    session => session.status === 'scheduled' && new Date(session.scheduled_at) > new Date()
+  );
+  const completedSessions = allSessions.filter(session => session.status === 'completed');
   
-  const upcomingSessions = sessions?.filter(s => s.status === 'scheduled').slice(0, 2) || [];
-  const recentSessions = sessions?.filter(s => s.status === 'completed').slice(0, 2) || [];
+  const avgRating = completedSessions.length > 0 
+    ? completedSessions.reduce((sum, session) => sum + (session.founder_rating || 0), 0) / completedSessions.length 
+    : 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center">
-            <Link to="/" className="mr-4">
-              <ArrowLeft className="h-5 w-5 text-gray-500 hover:text-green-600" />
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Advisor Dashboard</h1>
-              <p className="text-sm text-gray-600">Month {currentMonth} of 6 • Making Impact</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Badge className="bg-green-100 text-green-800">
-              <Star className="h-3 w-3 mr-1" />
-              Top Advisor
-            </Badge>
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-gray-900">Advisor Dashboard</h1>
+        <Badge variant="outline" className="text-lg px-3 py-1">
+          {avgRating > 0 && `${avgRating.toFixed(1)}⭐ Rating`}
+        </Badge>
+      </div>
+
+      {/* Profile Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1">
+          <ProfileSection />
+        </div>
+        
+        <div className="lg:col-span-2 space-y-6">
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Founders</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{assignments?.length || 0}</div>
+                <p className="text-xs text-muted-foreground">
+                  Currently mentoring
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Sessions Complete</CardTitle>
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{completedSessions.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  Total mentoring sessions
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Upcoming Sessions</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{upcomingSessions.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  Sessions scheduled
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Impact Overview */}
-        <Card className="mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Current Assignments */}
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Award className="h-5 w-5 mr-2 text-green-600" />
-              Your Impact This Quarter
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              Your Founders
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-6 text-center">
-              <div>
-                <div className="text-2xl font-bold text-green-600">{completedSessions}</div>
-                <div className="text-sm text-gray-600">Sessions Completed</div>
+            {assignments && assignments.length > 0 ? (
+              <div className="space-y-4">
+                {assignments.map((assignment: any) => (
+                  <div key={assignment.id} className="space-y-2 border-b pb-4">
+                    <div className="flex justify-between items-start">
+                      <h4 className="font-medium">{assignment.founder?.email}</h4>
+                      <Badge variant="outline">
+                        {assignment.match_score}% match
+                      </Badge>
+                    </div>
+                    
+                    {assignment.sessions && assignment.sessions.length > 0 && (
+                      <div className="text-sm text-gray-600">
+                        <p>Sessions: {assignment.sessions.length}</p>
+                        <p>Last session: {
+                          new Date(assignment.sessions[0]?.scheduled_at).toLocaleDateString()
+                        }</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-              <div>
-                <div className="text-2xl font-bold text-blue-600">{foundersCount}</div>
-                <div className="text-sm text-gray-600">Founders Mentored</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-purple-600">{avgRating ? Math.round(avgRating * 20) : 95}%</div>
-                <div className="text-sm text-gray-600">Satisfaction Score</div>
-              </div>
-            </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">
+                No active assignments yet. New founders will be matched to you soon!
+              </p>
+            )}
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="founders">My Founders</TabsTrigger>
-            <TabsTrigger value="sessions">Sessions</TabsTrigger>
-            <TabsTrigger value="feedback">Feedback</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            {/* Welcome & Quick Actions */}
-            <div className="grid lg:grid-cols-3 gap-6">
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle>Welcome Back! 🚀</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-gray-600">
-                    Your expertise is making a real difference. Here's what's on your agenda:
-                  </p>
-                  <div className="space-y-3">
-                    {upcomingSessions.length > 0 ? (
-                      upcomingSessions.map((session) => (
-                        <div key={session.id} className="flex items-start">
-                          <Calendar className="h-5 w-5 text-blue-500 mr-3 mt-0.5" />
-                          <span className="text-sm">Next session: {session.title || 'Advisory Session'} - {new Date(session.scheduled_at).toLocaleDateString()}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="flex items-start">
-                        <Calendar className="h-5 w-5 text-blue-500 mr-3 mt-0.5" />
-                        <span className="text-sm">No upcoming sessions scheduled</span>
-                      </div>
-                    )}
-                    <div className="flex items-start">
-                      <MessageSquare className="h-5 w-5 text-green-500 mr-3 mt-0.5" />
-                      <span className="text-sm">Masterclass prep: "Scaling in Emerging Markets"</span>
-                    </div>
-                    <div className="flex items-start">
-                      <FileText className="h-5 w-5 text-purple-500 mr-3 mt-0.5" />
-                      <span className="text-sm">Submit monthly impact summary</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Recognition</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-2">
-                      <Award className="h-8 w-8 text-white" />
-                    </div>
-                    <div className="text-sm font-medium">Advisor of Impact</div>
-                    <div className="text-xs text-gray-600">March 2025</div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Upcoming Masterclass */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Upcoming Masterclass 🎯</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="bg-gradient-to-r from-blue-50 to-green-50 p-6 rounded-lg">
-                  <div className="flex items-center justify-between">
+        {/* Recent Sessions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="w-5 h-5" />
+              Recent Sessions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {allSessions.length > 0 ? (
+              <div className="space-y-4">
+                {allSessions.slice(0, 5).map((session: any) => (
+                  <div key={session.id} className="flex justify-between items-center py-2 border-b">
                     <div>
-                      <h3 className="font-semibold text-lg mb-2">Scaling in Emerging Markets</h3>
-                      <p className="text-gray-600 mb-4">Share your expertise with 15+ African founders</p>
-                      <div className="text-sm text-gray-500">March 25, 2025 • 4:00 PM GMT</div>
+                      <p className="font-medium text-sm">{session.title}</p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(session.scheduled_at).toLocaleDateString()}
+                      </p>
                     </div>
-                    <Button>Prepare Session</Button>
+                    <div className="flex items-center gap-2">
+                      {session.founder_rating && (
+                        <span className="text-sm">
+                          {session.founder_rating}⭐
+                        </span>
+                      )}
+                      <Badge variant={session.status === 'completed' ? 'default' : 'outline'}>
+                        {session.status}
+                      </Badge>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="founders" className="space-y-6">
-            <div className="grid gap-6">
-              {advisorData?.assignments?.map((assignment) => (
-                <Card key={assignment.id}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span>{assignment.founder?.email?.split('@')[0] || 'Founder'}</span>
-                      <Badge className="bg-green-100 text-green-800">Active</Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <div className="text-sm font-medium mb-2">Assignment Focus:</div>
-                        <p className="text-sm text-gray-600">Strategic guidance and mentorship for scaling operations.</p>
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium mb-2">Progress:</div>
-                        <p className="text-sm text-gray-600">{assignment.total_sessions || 0} sessions completed</p>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button size="sm">View Full Brief</Button>
-                      <Button size="sm" variant="outline">Schedule Session</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )) || (
-                <Card>
-                  <CardContent className="text-center py-8">
-                    <p className="text-gray-600">No founders assigned yet</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="sessions" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Upcoming Sessions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {upcomingSessions.length > 0 ? upcomingSessions.map((session) => (
-                    <div key={session.id} className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
-                      <div>
-                        <div className="font-medium">{session.title || 'Advisory Session'}</div>
-                        <div className="text-sm text-gray-600">{new Date(session.scheduled_at).toLocaleString()}</div>
-                      </div>
-                      <Button size="sm">Join Call</Button>
-                    </div>
-                  )) : (
-                    <div className="text-center py-8 text-gray-600">
-                      No upcoming sessions scheduled
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Sessions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {recentSessions.length > 0 ? recentSessions.map((session) => (
-                    <div key={session.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <div className="font-medium text-sm">{session.title || 'Advisory Session'}</div>
-                        <div className="text-xs text-gray-600">{new Date(session.scheduled_at).toLocaleDateString()} • {session.duration_minutes || 60} min • {session.founder_rating ? 'Excellent feedback' : 'Pending feedback'}</div>
-                      </div>
-                      <Button size="sm" variant="ghost">View Summary</Button>
-                    </div>
-                  )) : (
-                    <div className="text-center py-8 text-gray-600">
-                      No completed sessions yet
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="feedback" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <MessageSquare className="h-5 w-5 mr-2" />
-                  Quote Wall
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {testimonials && testimonials.length > 0 ? testimonials.slice(0, 2).map((testimonial) => (
-                    <div key={testimonial.id} className="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
-                      <p className="text-sm italic">"{testimonial.content}"</p>
-                      <p className="text-xs text-gray-500 mt-2">- {testimonial.from_user?.email?.split('@')[0] || 'Founder'}</p>
-                    </div>
-                  )) : (
-                    <div className="text-center py-8 text-gray-600">
-                      No testimonials available yet
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Impact Metrics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-4 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">{avgRating ? avgRating.toFixed(1) : '4.9'}/5</div>
-                    <div className="text-sm text-gray-600">Average Rating</div>
-                  </div>
-                  <div className="text-center p-4 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">100%</div>
-                    <div className="text-sm text-gray-600">Would Recommend</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">
+                No sessions yet. Start scheduling with your assigned founders!
+              </p>
+            )}
+          </CardContent>
+        </Card>
       </div>
+
+      {assignments?.length === 0 && (
+        <Card>
+          <CardContent className="text-center py-8">
+            <MessageSquare className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium mb-2">No Active Assignments</h3>
+            <p className="text-gray-600">
+              You haven't been assigned any founders yet. Our team will match you with founders soon!
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
