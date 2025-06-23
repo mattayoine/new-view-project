@@ -2921,6 +2921,14 @@ export type Database = {
           },
         ]
       }
+      dashboard_metrics: {
+        Row: {
+          count: number | null
+          metric_type: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       calculate_match_score: {
@@ -2930,6 +2938,41 @@ export type Database = {
       calculate_user_badge_level: {
         Args: { p_user_id: string }
         Returns: string
+      }
+      get_paginated_notifications: {
+        Args: {
+          p_user_id: string
+          p_limit?: number
+          p_offset?: number
+          p_unread_only?: boolean
+        }
+        Returns: {
+          id: string
+          title: string
+          message: string
+          type: string
+          priority: string
+          is_read: boolean
+          created_at: string
+          total_count: number
+        }[]
+      }
+      get_paginated_sessions: {
+        Args: {
+          p_assignment_id?: string
+          p_limit?: number
+          p_offset?: number
+          p_status?: string
+        }
+        Returns: {
+          id: string
+          title: string
+          description: string
+          scheduled_at: string
+          status: string
+          assignment_id: string
+          total_count: number
+        }[]
       }
       log_admin_activity: {
         Args: {
@@ -2942,6 +2985,10 @@ export type Database = {
           p_new_values?: Json
         }
         Returns: string
+      }
+      refresh_dashboard_metrics: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
     }
     Enums: {
