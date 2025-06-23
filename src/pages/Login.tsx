@@ -11,7 +11,6 @@ import { useToast } from "@/hooks/use-toast";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [userType, setUserType] = useState<'founder' | 'advisor'>('founder');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -22,6 +21,12 @@ const Login = () => {
 
     try {
       // Clean up any existing auth state
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
       await supabase.auth.signOut({ scope: 'global' });
       
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -36,15 +41,14 @@ const Login = () => {
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('role')
-          .eq('id', data.user.id)
+          .eq('auth_id', data.user.id)
           .single();
 
         if (userError) {
           console.error('User role fetch error:', userError);
-          // Default to the selected user type if we can't fetch from DB
         }
 
-        const userRole = userData?.role || userType;
+        const userRole = userData?.role;
 
         toast({
           title: "Success!",
@@ -106,37 +110,6 @@ const Login = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
-              {/* User Type Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  I am a:
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setUserType('founder')}
-                    className={`p-3 text-sm rounded-lg border ${
-                      userType === 'founder'
-                        ? 'bg-blue-50 border-blue-300 text-blue-700'
-                        : 'bg-white border-gray-300 text-gray-700'
-                    }`}
-                  >
-                    Founder
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setUserType('advisor')}
-                    className={`p-3 text-sm rounded-lg border ${
-                      userType === 'advisor'
-                        ? 'bg-green-50 border-green-300 text-green-700'
-                        : 'bg-white border-gray-300 text-gray-700'
-                    }`}
-                  >
-                    Advisor
-                  </button>
-                </div>
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Email
@@ -167,14 +140,10 @@ const Login = () => {
 
               <Button 
                 type="submit" 
-                className={`w-full ${
-                  userType === 'founder' 
-                    ? 'bg-blue-600 hover:bg-blue-700' 
-                    : 'bg-green-600 hover:bg-green-700'
-                }`}
+                className="w-full bg-blue-600 hover:bg-blue-700"
                 disabled={loading}
               >
-                {loading ? "Signing In..." : `Sign In as ${userType === 'founder' ? 'Founder' : 'Advisor'}`}
+                {loading ? "Signing In..." : "Sign In"}
               </Button>
             </form>
 
@@ -183,6 +152,16 @@ const Login = () => {
                 Don't have an account?{' '}
                 <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-medium">
                   Sign up here
+                </Link>
+              </p>
+              <p className="text-sm text-gray-600 mt-2">
+                Want to apply?{' '}
+                <Link to="/apply-copilot" className="text-blue-600 hover:text-blue-700 font-medium">
+                  Apply as Founder
+                </Link>
+                {' or '}
+                <Link to="/apply-sme" className="text-blue-600 hover:text-blue-700 font-medium">
+                  Apply as Advisor
                 </Link>
               </p>
             </div>

@@ -42,6 +42,12 @@ const Signup = () => {
     
     try {
       // Clean up any existing auth state
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
       await supabase.auth.signOut({ scope: 'global' });
       
       const { data, error } = await supabase.auth.signUp({
@@ -58,21 +64,6 @@ const Signup = () => {
       if (error) throw error;
 
       if (data.user) {
-        // Create user profile entry
-        const { error: profileError } = await supabase
-          .from('users')
-          .insert({
-            id: data.user.id,
-            email: data.user.email!,
-            role: userType,
-            status: 'active'
-          });
-
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-          // Don't throw here as user is already created
-        }
-
         toast({
           title: "Success!",
           description: "Account created successfully. Please check your email to verify your account.",
@@ -218,6 +209,16 @@ const Signup = () => {
                 Already have an account?{' '}
                 <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">
                   Sign in here
+                </Link>
+              </p>
+              <p className="text-sm text-gray-600 mt-2">
+                Want to apply first?{' '}
+                <Link to="/apply-copilot" className="text-blue-600 hover:text-blue-700 font-medium">
+                  Apply as Founder
+                </Link>
+                {' or '}
+                <Link to="/apply-sme" className="text-blue-600 hover:text-blue-700 font-medium">
+                  Apply as Advisor
                 </Link>
               </p>
             </div>
