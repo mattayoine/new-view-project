@@ -59,7 +59,7 @@ export const usePaginatedQuery = <T,>(
 
 export const usePaginatedSessions = (assignmentId?: string, status?: string) => {
   return usePaginatedQuery(
-    ['paginated-sessions', assignmentId, status],
+    ['paginated-sessions', assignmentId || '', status || ''],
     async (limit: number, offset: number) => {
       const { data, error } = await supabase.rpc('get_paginated_sessions', {
         p_assignment_id: assignmentId || null,
@@ -76,7 +76,7 @@ export const usePaginatedSessions = (assignmentId?: string, status?: string) => 
 
 export const usePaginatedNotifications = (userId: string, unreadOnly = false) => {
   return usePaginatedQuery(
-    ['paginated-notifications', userId, unreadOnly],
+    ['paginated-notifications', userId, unreadOnly ? 'unread' : 'all'],
     async (limit: number, offset: number) => {
       const { data, error } = await supabase.rpc('get_paginated_notifications', {
         p_user_id: userId,

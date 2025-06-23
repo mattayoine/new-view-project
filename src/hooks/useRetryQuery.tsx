@@ -29,10 +29,12 @@ export const useRetryQuery = <T,>({
       return true;
     },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    onError: (error) => {
-      console.error('Query failed:', error);
-      if (showErrorToast) {
-        toast.error('Failed to load data. Retrying...');
+    meta: {
+      onError: (error: Error) => {
+        console.error('Query failed:', error);
+        if (showErrorToast) {
+          toast.error('Failed to load data. Retrying...');
+        }
       }
     }
   });

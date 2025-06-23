@@ -24,7 +24,7 @@ export const RealTimeNotifications: React.FC = () => {
   // Subscribe to real-time notification updates
   useRealTimeSubscription({
     table: 'notifications',
-    queryKey: ['paginated-notifications', user?.id || '', false],
+    queryKey: ['paginated-notifications', user?.id || '', 'all'],
     filter: `user_id=eq.${user?.id}`,
     event: '*'
   });
