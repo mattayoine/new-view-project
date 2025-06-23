@@ -2,7 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { UserProfile, FounderProfileData, AdvisorProfileData } from '@/types/profile';
+import { UserProfile, FounderProfileData, AdvisorProfileData, ProfileData } from '@/types/profile';
 
 export const useUserProfile = (userId?: string) => {
   const { user } = useAuth();
@@ -21,7 +21,13 @@ export const useUserProfile = (userId?: string) => {
 
       if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found"
       
-      return profile as UserProfile | null;
+      if (!profile) return null;
+
+      // Cast the profile_data from Json to our typed ProfileData
+      return {
+        ...profile,
+        profile_data: profile.profile_data as ProfileData
+      } as UserProfile;
     },
     enabled: !!actualUserId
   });
@@ -46,6 +52,16 @@ export const useUserWithProfile = (userId?: string) => {
         .single();
 
       if (userError) throw userError;
+      
+      if (!userData) return null;
+
+      // Cast the profile_data if profile exists
+      if (userData.profile && userData.profile.length > 0) {
+        userData.profile = userData.profile.map((p: any) => ({
+          ...p,
+          profile_data: p.profile_data as ProfileData
+        }));
+      }
       
       return userData;
     },
