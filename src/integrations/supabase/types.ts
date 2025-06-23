@@ -2939,6 +2939,14 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: string
       }
+      get_current_user_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      get_current_user_role: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_paginated_notifications: {
         Args: {
           p_user_id: string
@@ -2973,6 +2981,18 @@ export type Database = {
           assignment_id: string
           total_count: number
         }[]
+      }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_advisor: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_founder: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       log_admin_activity: {
         Args: {

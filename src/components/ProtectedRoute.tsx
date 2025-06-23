@@ -2,6 +2,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useSecurity } from '@/hooks/useSecurityContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -14,9 +15,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredRole,
   redirectTo = '/login' 
 }) => {
-  const { user, session, loading } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
+  const { userRole, loading: securityLoading } = useSecurity();
 
-  if (loading) {
+  if (authLoading || securityLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
@@ -28,8 +30,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to={redirectTo} replace />;
   }
 
-  // If a specific role is required, we could check it here
-  // For now, we'll just ensure the user is authenticated
+  // Check role-based access
+  if (requiredRole && userRole !== requiredRole && userRole !== 'admin') {
+    return <Navigate to="/" replace />;
+  }
 
   return <>{children}</>;
 };
