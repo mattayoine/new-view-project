@@ -29,7 +29,7 @@ export const useRealTimeSubscription = ({
           event,
           schema: 'public',
           table,
-          filter
+          ...(filter && { filter })
         },
         () => {
           // Invalidate and refetch the query when data changes
