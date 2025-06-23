@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { UserProfile, FounderProfileData, AdvisorProfileData } from '@/types/profile';
 
 export const useUserProfile = (userId?: string) => {
   const { user } = useAuth();
@@ -20,7 +21,7 @@ export const useUserProfile = (userId?: string) => {
 
       if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found"
       
-      return profile;
+      return profile as UserProfile | null;
     },
     enabled: !!actualUserId
   });

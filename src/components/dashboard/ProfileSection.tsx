@@ -4,6 +4,7 @@ import { useUserWithProfile } from '@/hooks/useUserProfile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { User, MapPin, Building, Globe, Briefcase } from 'lucide-react';
+import { FounderProfileData, AdvisorProfileData } from '@/types/profile';
 
 interface ProfileSectionProps {
   userId?: string;
@@ -39,6 +40,15 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ userId }) => {
   const profile = userWithProfile.profile;
   const profileData = profile.profile_data;
 
+  // Type guards to ensure proper typing
+  const isFounderProfile = (data: any): data is FounderProfileData => {
+    return profile.profile_type === 'founder';
+  };
+
+  const isAdvisorProfile = (data: any): data is AdvisorProfileData => {
+    return profile.profile_type === 'advisor';
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -49,7 +59,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ userId }) => {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">{profileData.name}</h3>
+          <h3 className="text-lg font-semibold">{(profileData as any).name}</h3>
           <Badge variant="outline" className="capitalize">
             {userWithProfile.role}
           </Badge>
@@ -57,57 +67,57 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ userId }) => {
         
         <div className="flex items-center text-gray-600">
           <MapPin className="w-4 h-4 mr-2" />
-          {profileData.location}
+          {(profileData as any).location}
         </div>
 
-        {profile.profile_type === 'founder' && (
+        {isFounderProfile(profileData) && (
           <div className="space-y-3">
             <div className="flex items-center">
               <Building className="w-4 h-4 mr-2" />
-              <span className="font-medium">{profileData.startup_name}</span>
+              <span className="font-medium">{(profileData as FounderProfileData).startup_name}</span>
             </div>
             
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="font-medium">Sector:</span> {profileData.sector}
+                <span className="font-medium">Sector:</span> {(profileData as FounderProfileData).sector}
               </div>
               <div>
-                <span className="font-medium">Stage:</span> {profileData.stage}
+                <span className="font-medium">Stage:</span> {(profileData as FounderProfileData).stage}
               </div>
             </div>
 
-            {profileData.website && (
+            {(profileData as FounderProfileData).website && (
               <div className="flex items-center">
                 <Globe className="w-4 h-4 mr-2" />
                 <a 
-                  href={profileData.website} 
+                  href={(profileData as FounderProfileData).website} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:underline"
                 >
-                  {profileData.website}
+                  {(profileData as FounderProfileData).website}
                 </a>
               </div>
             )}
 
             <div className="bg-gray-50 p-3 rounded">
               <p className="text-sm font-medium mb-1">Current Challenge:</p>
-              <p className="text-sm text-gray-700">{profileData.challenge}</p>
+              <p className="text-sm text-gray-700">{(profileData as FounderProfileData).challenge}</p>
             </div>
           </div>
         )}
 
-        {profile.profile_type === 'advisor' && (
+        {isAdvisorProfile(profileData) && (
           <div className="space-y-3">
             <div className="flex items-center">
               <Briefcase className="w-4 h-4 mr-2" />
-              <span className="text-sm">{profileData.experience_level}</span>
+              <span className="text-sm">{(profileData as AdvisorProfileData).experience_level}</span>
             </div>
 
             <div>
               <span className="font-medium text-sm">Expertise:</span>
               <div className="flex flex-wrap gap-1 mt-1">
-                {profileData.expertise?.map((skill: string, index: number) => (
+                {(profileData as AdvisorProfileData).expertise?.map((skill: string, index: number) => (
                   <Badge key={index} variant="secondary" className="text-xs">
                     {skill}
                   </Badge>
@@ -116,13 +126,13 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ userId }) => {
             </div>
 
             <div className="text-sm">
-              <span className="font-medium">Timezone:</span> {profileData.timezone}
+              <span className="font-medium">Timezone:</span> {(profileData as AdvisorProfileData).timezone}
             </div>
 
-            {profileData.linkedin && (
+            {(profileData as AdvisorProfileData).linkedin && (
               <div>
                 <a 
-                  href={profileData.linkedin} 
+                  href={(profileData as AdvisorProfileData).linkedin} 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-blue-600 hover:underline text-sm"
