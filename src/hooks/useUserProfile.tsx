@@ -55,12 +55,15 @@ export const useUserWithProfile = (userId?: string) => {
       
       if (!userData) return null;
 
-      // Cast the profile_data if profile exists
+      // Cast the profile_data if profile exists - handle single profile object
       if (userData.profile) {
-        userData.profile = {
-          ...userData.profile,
-          profile_data: userData.profile.profile_data as unknown as ProfileData
-        };
+        const profileData = Array.isArray(userData.profile) ? userData.profile[0] : userData.profile;
+        if (profileData) {
+          userData.profile = {
+            ...profileData,
+            profile_data: profileData.profile_data as unknown as ProfileData
+          };
+        }
       }
       
       return userData;
