@@ -15,7 +15,7 @@ interface PaginatedResult<T> {
   hasPreviousPage: boolean;
 }
 
-export const usePaginatedQuery = <T>(
+export const usePaginatedQuery = <T,>(
   queryKey: string[],
   fetchFunction: (limit: number, offset: number) => Promise<any>,
   options: PaginationOptions = {}

@@ -9,7 +9,7 @@ interface RetryQueryOptions<T> extends Omit<UseQueryOptions<T>, 'queryFn'> {
   showErrorToast?: boolean;
 }
 
-export const useRetryQuery = <T>({
+export const useRetryQuery = <T,>({
   queryFn,
   maxRetries = 3,
   retryDelay = 1000,
