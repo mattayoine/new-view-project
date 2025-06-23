@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, CheckCircle } from "lucide-react";
+import { useAdvisorApplicationSubmission } from "@/hooks/useApplicationSubmission";
 
 interface AdvisorFormProps {
   onBack: () => void;
@@ -16,7 +17,7 @@ const AdvisorForm = ({ onBack }: AdvisorFormProps) => {
     location: "",
     linkedin: "",
     email: "",
-    expertise: [],
+    expertise: [] as string[],
     experience: "",
     timezone: "",
     challengeType: "",
@@ -25,6 +26,7 @@ const AdvisorForm = ({ onBack }: AdvisorFormProps) => {
   });
 
   const [submitted, setSubmitted] = useState(false);
+  const submitApplication = useAdvisorApplicationSubmission();
 
   const expertiseOptions = [
     "Marketing", "Product", "Pricing", "Growth", "Operations", 
@@ -40,10 +42,26 @@ const AdvisorForm = ({ onBack }: AdvisorFormProps) => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Advisor application submitted:", formData);
-    setSubmitted(true);
+    
+    try {
+      await submitApplication.mutateAsync({
+        name: formData.name,
+        email: formData.email,
+        location: formData.location,
+        linkedin: formData.linkedin,
+        expertise: formData.expertise,
+        experience_level: formData.experience,
+        timezone: formData.timezone,
+        challenge_preference: formData.challengeType,
+        public_profile_consent: formData.publicProfile === 'yes'
+      });
+      
+      setSubmitted(true);
+    } catch (error) {
+      // Error handling is done in the hook
+    }
   };
 
   if (submitted) {
@@ -235,8 +253,12 @@ const AdvisorForm = ({ onBack }: AdvisorFormProps) => {
                 </select>
               </div>
 
-              <Button type="submit" className="w-full bg-green-600 hover:bg-green-700">
-                Submit Advisor Application
+              <Button 
+                type="submit" 
+                className="w-full bg-green-600 hover:bg-green-700"
+                disabled={submitApplication.isPending}
+              >
+                {submitApplication.isPending ? 'Submitting...' : 'Submit Advisor Application'}
               </Button>
             </form>
           </CardContent>

@@ -38,16 +38,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ userId }) => {
   }
 
   const profile = userWithProfile.profile;
-  const profileData = profile.profile_data;
-
-  // Type guards to ensure proper typing
-  const isFounderProfile = (data: any): data is FounderProfileData => {
-    return profile.profile_type === 'founder';
-  };
-
-  const isAdvisorProfile = (data: any): data is AdvisorProfileData => {
-    return profile.profile_type === 'advisor';
-  };
+  const profileData = profile.profile_data as FounderProfileData | AdvisorProfileData;
 
   return (
     <Card>
@@ -59,7 +50,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ userId }) => {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">{(profileData as any).name}</h3>
+          <h3 className="text-lg font-semibold">{profileData.name}</h3>
           <Badge variant="outline" className="capitalize">
             {userWithProfile.role}
           </Badge>
@@ -67,10 +58,10 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ userId }) => {
         
         <div className="flex items-center text-gray-600">
           <MapPin className="w-4 h-4 mr-2" />
-          {(profileData as any).location}
+          {profileData.location}
         </div>
 
-        {isFounderProfile(profileData) && (
+        {profile.profile_type === 'founder' && (
           <div className="space-y-3">
             <div className="flex items-center">
               <Building className="w-4 h-4 mr-2" />
@@ -107,7 +98,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ userId }) => {
           </div>
         )}
 
-        {isAdvisorProfile(profileData) && (
+        {profile.profile_type === 'advisor' && (
           <div className="space-y-3">
             <div className="flex items-center">
               <Briefcase className="w-4 h-4 mr-2" />

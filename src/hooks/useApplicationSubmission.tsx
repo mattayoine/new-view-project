@@ -1,6 +1,7 @@
 
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface FounderApplicationData {
   name: string;
@@ -8,13 +9,12 @@ interface FounderApplicationData {
   location: string;
   startup_name: string;
   website?: string;
-  stage: string;
   sector: string;
+  stage: string;
   challenge: string;
   win_definition: string;
   video_link?: string;
   case_study_consent: boolean;
-  availability_schedule?: any;
 }
 
 interface AdvisorApplicationData {
@@ -26,88 +26,97 @@ interface AdvisorApplicationData {
   experience_level: string;
   timezone: string;
   challenge_preference: string;
-  availability_schedule?: any;
   public_profile_consent: boolean;
 }
 
-const useFounderApplication = () => {
+export const useFounderApplicationSubmission = () => {
   return useMutation({
     mutationFn: async (data: FounderApplicationData) => {
-      // First create base application
-      const { data: application, error: appError } = await supabase
+      // Create base application record
+      const { data: baseApp, error: baseError } = await supabase
         .from('base_applications')
         .insert({
-          type: 'founder',
-          email: data.email,
           name: data.name,
+          email: data.email,
           location: data.location,
+          type: 'founder',
           status: 'pending'
         })
         .select()
         .single();
 
-      if (appError) throw appError;
+      if (baseError) throw baseError;
 
-      // Then create founder-specific details
-      const { error: detailsError } = await supabase
+      // Create founder-specific details
+      const { error: detailError } = await supabase
         .from('founder_application_details')
         .insert({
-          application_id: application.id,
+          application_id: baseApp.id,
           startup_name: data.startup_name,
           website: data.website,
-          stage: data.stage,
           sector: data.sector,
+          stage: data.stage,
           challenge: data.challenge,
           win_definition: data.win_definition,
           video_link: data.video_link,
-          case_study_consent: data.case_study_consent,
-          availability_schedule: data.availability_schedule
+          case_study_consent: data.case_study_consent
         });
 
-      if (detailsError) throw detailsError;
+      if (detailError) throw detailError;
 
-      return application;
+      return baseApp;
+    },
+    onSuccess: () => {
+      toast.success('Application submitted successfully! We\'ll review it and get back to you soon.');
+    },
+    onError: (error) => {
+      console.error('Application submission error:', error);
+      toast.error('Failed to submit application. Please try again.');
     }
   });
 };
 
-const useAdvisorApplication = () => {
+export const useAdvisorApplicationSubmission = () => {
   return useMutation({
     mutationFn: async (data: AdvisorApplicationData) => {
-      // First create base application
-      const { data: application, error: appError } = await supabase
+      // Create base application record
+      const { data: baseApp, error: baseError } = await supabase
         .from('base_applications')
         .insert({
-          type: 'advisor',
-          email: data.email,
           name: data.name,
+          email: data.email,
           location: data.location,
+          type: 'advisor',
           status: 'pending'
         })
         .select()
         .single();
 
-      if (appError) throw appError;
+      if (baseError) throw baseError;
 
-      // Then create advisor-specific details
-      const { error: detailsError } = await supabase
+      // Create advisor-specific details
+      const { error: detailError } = await supabase
         .from('advisor_application_details')
         .insert({
-          application_id: application.id,
+          application_id: baseApp.id,
           linkedin: data.linkedin,
           expertise: data.expertise,
           experience_level: data.experience_level,
           timezone: data.timezone,
           challenge_preference: data.challenge_preference,
-          availability_schedule: data.availability_schedule,
           public_profile_consent: data.public_profile_consent
         });
 
-      if (detailsError) throw detailsError;
+      if (detailError) throw detailError;
 
-      return application;
+      return baseApp;
+    },
+    onSuccess: () => {
+      toast.success('Application submitted successfully! We\'ll review it and get back to you soon.');
+    },
+    onError: (error) => {
+      console.error('Application submission error:', error);
+      toast.error('Failed to submit application. Please try again.');
     }
   });
 };
-
-export { useFounderApplication, useAdvisorApplication };
