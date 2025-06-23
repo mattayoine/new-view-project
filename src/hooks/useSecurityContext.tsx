@@ -10,6 +10,7 @@ interface SecurityContextType {
   isFounder: boolean;
   canAccess: (resource: string, action: string) => boolean;
   loading: boolean;
+  refreshRole: () => Promise<void>;
 }
 
 const SecurityContext = createContext<SecurityContextType | undefined>(undefined);
@@ -19,35 +20,40 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchUserRole = async () => {
+    if (!user || !session) {
+      setUserRole(null);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('role')
+        .eq('auth_id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user role:', error);
+        setUserRole(null);
+      } else {
+        setUserRole(data?.role || null);
+      }
+    } catch (error) {
+      console.error('Error in fetchUserRole:', error);
+      setUserRole(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const refreshRole = async () => {
+    setLoading(true);
+    await fetchUserRole();
+  };
+
   useEffect(() => {
-    const fetchUserRole = async () => {
-      if (!user || !session) {
-        setUserRole(null);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('role')
-          .eq('auth_id', user.id)
-          .single();
-
-        if (error) {
-          console.error('Error fetching user role:', error);
-          setUserRole(null);
-        } else {
-          setUserRole(data?.role || null);
-        }
-      } catch (error) {
-        console.error('Error in fetchUserRole:', error);
-        setUserRole(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchUserRole();
   }, [user, session]);
 
@@ -101,7 +107,8 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       isAdvisor,
       isFounder,
       canAccess,
-      loading
+      loading,
+      refreshRole
     }}>
       {children}
     </SecurityContext.Provider>

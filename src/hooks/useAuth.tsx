@@ -8,6 +8,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signOut: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,6 +18,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const createOrUpdateUserRecord = async (authUser: User) => {
+    try {
+      // Check if user exists in our users table
+      const { data: existingUser, error: fetchError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('auth_id', authUser.id)
+        .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Error checking existing user:', fetchError);
+        return;
+      }
+
+      // If user doesn't exist, create them
+      if (!existingUser) {
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert({
+            auth_id: authUser.id,
+            email: authUser.email!,
+            role: authUser.user_metadata?.role || 'founder',
+            status: 'active',
+            profile_completed: false
+          });
+
+        if (insertError) {
+          console.error('Error creating user record:', insertError);
+        } else {
+          console.log('Created user record for:', authUser.email);
+        }
+      }
+    } catch (error) {
+      console.error('Error in createOrUpdateUserRecord:', error);
+    }
+  };
+
+  const refreshUser = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      await createOrUpdateUserRecord(session.user);
+    }
+  };
+
   useEffect(() => {
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -24,6 +69,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.log('Auth state changed:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // Create/update user record when signed in
+        if (event === 'SIGNED_IN' && session?.user) {
+          setTimeout(async () => {
+            await createOrUpdateUserRecord(session.user);
+          }, 0);
+        }
+        
         setLoading(false);
       }
     );
@@ -33,6 +86,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Initial session:', session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        createOrUpdateUserRecord(session.user);
+      }
+      
       setLoading(false);
     });
 
@@ -65,7 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signOut, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

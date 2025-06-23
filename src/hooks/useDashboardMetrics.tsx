@@ -16,6 +16,17 @@ export const useDashboardMetrics = () => {
   const query = useQuery({
     queryKey: ['dashboard-metrics', user?.id],
     queryFn: async () => {
+      if (!user) throw new Error('User not authenticated');
+
+      // Get the user's internal ID first
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('auth_id', user.id)
+        .single();
+
+      if (userError) throw userError;
+
       const { data, error } = await supabase
         .from('dashboard_metrics')
         .select('*');
@@ -23,6 +34,7 @@ export const useDashboardMetrics = () => {
       if (error) throw error;
       return data as DashboardMetric[];
     },
+    enabled: !!user,
     refetchInterval: 30000 // Refresh every 30 seconds
   });
 
@@ -46,6 +58,8 @@ export const useDashboardMetrics = () => {
   });
 
   const refreshMetrics = async () => {
+    if (!user) return;
+    
     try {
       await supabase.rpc('refresh_dashboard_metrics');
       query.refetch();

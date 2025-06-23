@@ -5,24 +5,25 @@ import { useAuth } from './useAuth';
 
 export const useFounderData = (founderId?: string) => {
   const { user } = useAuth();
-  const actualFounderId = founderId || user?.id;
-
+  
   return useQuery({
-    queryKey: ['founder-data', actualFounderId],
+    queryKey: ['founder-data', founderId || user?.id],
     queryFn: async () => {
-      if (!actualFounderId) throw new Error('Founder ID required');
+      if (!user) throw new Error('User not authenticated');
       
-      // Get founder profile
+      const targetFounderId = founderId || user.id;
+      
+      // Get founder profile using auth_id
       const { data: founder, error: founderError } = await supabase
         .from('users')
         .select('*')
-        .eq('id', actualFounderId)
+        .eq('auth_id', targetFounderId)
         .eq('role', 'founder')
         .single();
       
       if (founderError) throw founderError;
       
-      // Get assignments with advisor details
+      // Get assignments with advisor details using the users table ID
       const { data: assignments, error: assignmentsError } = await supabase
         .from('advisor_founder_assignments')
         .select(`
@@ -30,16 +31,16 @@ export const useFounderData = (founderId?: string) => {
           advisor:users!advisor_id(id, email),
           sessions(id, status, scheduled_at, title, description)
         `)
-        .eq('founder_id', actualFounderId)
+        .eq('founder_id', founder.id)
         .eq('status', 'active');
       
       if (assignmentsError) throw assignmentsError;
       
-      // Get goals
+      // Get goals using the users table ID
       const { data: goals, error: goalsError } = await supabase
         .from('goals')
         .select('*')
-        .eq('founder_id', actualFounderId);
+        .eq('founder_id', founder.id);
       
       if (goalsError) throw goalsError;
       
@@ -49,33 +50,44 @@ export const useFounderData = (founderId?: string) => {
         goals: goals || []
       };
     },
-    enabled: !!actualFounderId
+    enabled: !!user
   });
 };
 
 export const useFounderSessions = (founderId?: string) => {
   const { user } = useAuth();
-  const actualFounderId = founderId || user?.id;
-
+  
   return useQuery({
-    queryKey: ['founder-sessions', actualFounderId],
+    queryKey: ['founder-sessions', founderId || user?.id],
     queryFn: async () => {
-      if (!actualFounderId) throw new Error('Founder ID required');
+      if (!user) throw new Error('User not authenticated');
       
+      const targetFounderId = founderId || user.id;
+      
+      // First get the founder's users table ID
+      const { data: founder, error: founderError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('auth_id', targetFounderId)
+        .single();
+      
+      if (founderError) throw founderError;
+      
+      // Then get sessions through assignments
       const { data: sessions, error } = await supabase
         .from('sessions')
         .select(`
           *,
-          assignment:assignment_id(
+          assignment:advisor_founder_assignments!assignment_id(
             advisor:users!advisor_id(email)
           )
         `)
-        .eq('assignment.founder_id', actualFounderId)
+        .eq('assignment.founder_id', founder.id)
         .order('scheduled_at', { ascending: false });
       
       if (error) throw error;
       return sessions || [];
     },
-    enabled: !!actualFounderId
+    enabled: !!user
   });
 };

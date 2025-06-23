@@ -6,17 +6,27 @@ import { UserProfile, FounderProfileData, AdvisorProfileData, ProfileData } from
 
 export const useUserProfile = (userId?: string) => {
   const { user } = useAuth();
-  const actualUserId = userId || user?.id;
-
+  
   return useQuery({
-    queryKey: ['user-profile', actualUserId],
+    queryKey: ['user-profile', userId || user?.id],
     queryFn: async () => {
-      if (!actualUserId) throw new Error('User ID required');
+      if (!user) throw new Error('User not authenticated');
+      
+      const targetUserId = userId || user.id;
+      
+      // First get the user's internal ID from auth_id
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('auth_id', targetUserId)
+        .single();
+
+      if (userError) throw userError;
 
       const { data: profile, error } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('user_id', actualUserId)
+        .eq('user_id', userData.id)
         .single();
 
       if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found"
@@ -29,18 +39,19 @@ export const useUserProfile = (userId?: string) => {
         profile_data: profile.profile_data as unknown as ProfileData
       } as UserProfile;
     },
-    enabled: !!actualUserId
+    enabled: !!user
   });
 };
 
 export const useUserWithProfile = (userId?: string) => {
   const { user } = useAuth();
-  const actualUserId = userId || user?.id;
-
+  
   return useQuery({
-    queryKey: ['user-with-profile', actualUserId],
+    queryKey: ['user-with-profile', userId || user?.id],
     queryFn: async () => {
-      if (!actualUserId) throw new Error('User ID required');
+      if (!user) throw new Error('User not authenticated');
+      
+      const targetUserId = userId || user.id;
 
       const { data: userData, error: userError } = await supabase
         .from('users')
@@ -48,7 +59,7 @@ export const useUserWithProfile = (userId?: string) => {
           *,
           profile:user_profiles(*)
         `)
-        .eq('id', actualUserId)
+        .eq('auth_id', targetUserId)
         .single();
 
       if (userError) throw userError;
@@ -68,6 +79,6 @@ export const useUserWithProfile = (userId?: string) => {
       
       return userData;
     },
-    enabled: !!actualUserId
+    enabled: !!user
   });
 };
