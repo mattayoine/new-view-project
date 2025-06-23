@@ -62,15 +62,18 @@ export const useDashboardMetrics = () => {
     return metric?.count || 0;
   };
 
+  // Transform array data into structured metrics object
+  const metrics = {
+    activeSessions: getMetricValue('active_sessions'),
+    pendingApplications: getMetricValue('pending_applications'),
+    totalAssignments: getMetricValue('total_assignments'),
+    unreadNotifications: getMetricValue('unread_notifications', user?.id)
+  };
+
   return {
     ...query,
     refreshMetrics,
     getMetricValue,
-    metrics: {
-      activeSessions: getMetricValue('active_sessions'),
-      pendingApplications: getMetricValue('pending_applications'),
-      totalAssignments: getMetricValue('total_assignments'),
-      unreadNotifications: getMetricValue('unread_notifications', user?.id)
-    }
+    metrics
   };
 };

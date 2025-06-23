@@ -23,15 +23,19 @@ export const useRealTimeSubscription = ({
   useEffect(() => {
     const channel = supabase
       .channel(`realtime-${table}`)
-      .on('postgres_changes', {
-        event,
-        schema: 'public',
-        table,
-        filter
-      }, () => {
-        // Invalidate and refetch the query when data changes
-        queryClient.invalidateQueries({ queryKey });
-      })
+      .on(
+        'postgres_changes',
+        {
+          event,
+          schema: 'public',
+          table,
+          filter
+        },
+        () => {
+          // Invalidate and refetch the query when data changes
+          queryClient.invalidateQueries({ queryKey });
+        }
+      )
       .subscribe();
 
     channelRef.current = channel;

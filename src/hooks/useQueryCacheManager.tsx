@@ -108,7 +108,8 @@ export const useQueryCacheManager = (options: CacheManagerOptions = {}) => {
     queries.forEach(query => {
       const state = query.state;
       
-      if (state.isFetching) {
+      // Fix: Use fetchStatus instead of isFetching for loading state
+      if (state.fetchStatus === 'fetching') {
         stats.loading++;
       } else if (state.error) {
         stats.error++;

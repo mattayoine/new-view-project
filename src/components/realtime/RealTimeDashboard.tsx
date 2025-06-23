@@ -23,11 +23,12 @@ export const RealTimeDashboard: React.FC = () => {
   });
   
   const {
-    data: metrics,
+    data: rawMetricsData,
     isLoading,
     error,
     refetch,
-    refreshMetrics
+    refreshMetrics,
+    metrics
   } = useDashboardMetrics();
 
   // Subscribe to real-time updates for all relevant tables
@@ -166,7 +167,7 @@ export const RealTimeDashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title="Active Sessions"
-          value={metrics?.activeSessions || 0}
+          value={metrics.activeSessions}
           icon={<Activity className="w-4 h-4" />}
           trend="+12%"
           isPositive={true}
@@ -174,7 +175,7 @@ export const RealTimeDashboard: React.FC = () => {
         
         <MetricCard
           title="Pending Applications"
-          value={metrics?.pendingApplications || 0}
+          value={metrics.pendingApplications}
           icon={<Activity className="w-4 h-4" />}
           trend="-5%"
           isPositive={true}
@@ -182,7 +183,7 @@ export const RealTimeDashboard: React.FC = () => {
         
         <MetricCard
           title="Total Assignments"
-          value={metrics?.totalAssignments || 0}
+          value={metrics.totalAssignments}
           icon={<Activity className="w-4 h-4" />}
           trend="+8%"
           isPositive={true}
@@ -190,7 +191,7 @@ export const RealTimeDashboard: React.FC = () => {
         
         <MetricCard
           title="Unread Notifications"
-          value={metrics?.unreadNotifications || 0}
+          value={metrics.unreadNotifications}
           icon={<Activity className="w-4 h-4" />}
           trend="0%"
           isPositive={null}
