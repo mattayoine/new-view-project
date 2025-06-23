@@ -66,8 +66,9 @@ export const useFoundersDirectory = () => {
           *,
           founder_profiles:user_profiles!inner(profile_data),
           assignments:advisor_founder_assignments(
-            advisor:advisor_id(email),
-            status
+            advisor:users!advisor_id(email),
+            status,
+            total_sessions
           ),
           goals(status)
         `)
@@ -91,7 +92,7 @@ export const useAdvisorsDirectory = () => {
           *,
           advisor_profiles:user_profiles!inner(profile_data),
           assignments:advisor_founder_assignments(
-            founder:founder_id(email),
+            founder:users!founder_id(email),
             total_sessions,
             avg_rating,
             status
@@ -117,8 +118,8 @@ export const useSessionsTracker = () => {
         .select(`
           *,
           assignment:assignment_id(
-            founder:founder_id(email),
-            advisor:advisor_id(email)
+            founder:users!founder_id(email),
+            advisor:users!advisor_id(email)
           )
         `)
         .order('scheduled_at', { ascending: false })

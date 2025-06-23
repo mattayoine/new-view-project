@@ -23,7 +23,7 @@ export const useFounderData = (founderId?: string) => {
         .from('advisor_founder_assignments')
         .select(`
           *,
-          advisor:advisor_id(id, email),
+          advisor:users!advisor_id(id, email),
           sessions(id, status, scheduled_at, title, description)
         `)
         .eq('founder_id', founderId)
@@ -60,7 +60,7 @@ export const useFounderSessions = (founderId?: string) => {
         .select(`
           *,
           assignment:assignment_id(
-            advisor:advisor_id(email)
+            advisor:users!advisor_id(email)
           )
         `)
         .eq('assignment.founder_id', founderId)

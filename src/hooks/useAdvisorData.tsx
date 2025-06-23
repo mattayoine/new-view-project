@@ -23,7 +23,7 @@ export const useAdvisorData = (advisorId?: string) => {
         .from('advisor_founder_assignments')
         .select(`
           *,
-          founder:founder_id(id, email),
+          founder:users!founder_id(id, email),
           sessions(id, status, scheduled_at, title, description, founder_rating, advisor_rating)
         `)
         .eq('advisor_id', advisorId)
@@ -51,7 +51,7 @@ export const useAdvisorSessions = (advisorId?: string) => {
         .select(`
           *,
           assignment:assignment_id(
-            founder:founder_id(email)
+            founder:users!founder_id(email)
           )
         `)
         .eq('assignment.advisor_id', advisorId)
@@ -74,7 +74,7 @@ export const useAdvisorTestimonials = (advisorId?: string) => {
         .from('testimonials')
         .select(`
           *,
-          from_user:from_user_id(email)
+          from_user:users!from_user_id(email)
         `)
         .eq('to_user_id', advisorId)
         .eq('is_public', true)
