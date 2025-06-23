@@ -1,18 +1,22 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
 
 export const useFounderData = (founderId?: string) => {
+  const { user } = useAuth();
+  const actualFounderId = founderId || user?.id;
+
   return useQuery({
-    queryKey: ['founder-data', founderId],
+    queryKey: ['founder-data', actualFounderId],
     queryFn: async () => {
-      if (!founderId) throw new Error('Founder ID required');
+      if (!actualFounderId) throw new Error('Founder ID required');
       
       // Get founder profile
       const { data: founder, error: founderError } = await supabase
         .from('users')
         .select('*')
-        .eq('id', founderId)
+        .eq('id', actualFounderId)
         .eq('role', 'founder')
         .single();
       
@@ -26,7 +30,7 @@ export const useFounderData = (founderId?: string) => {
           advisor:users!advisor_id(id, email),
           sessions(id, status, scheduled_at, title, description)
         `)
-        .eq('founder_id', founderId)
+        .eq('founder_id', actualFounderId)
         .eq('status', 'active');
       
       if (assignmentsError) throw assignmentsError;
@@ -35,7 +39,7 @@ export const useFounderData = (founderId?: string) => {
       const { data: goals, error: goalsError } = await supabase
         .from('goals')
         .select('*')
-        .eq('founder_id', founderId);
+        .eq('founder_id', actualFounderId);
       
       if (goalsError) throw goalsError;
       
@@ -45,15 +49,18 @@ export const useFounderData = (founderId?: string) => {
         goals: goals || []
       };
     },
-    enabled: !!founderId
+    enabled: !!actualFounderId
   });
 };
 
 export const useFounderSessions = (founderId?: string) => {
+  const { user } = useAuth();
+  const actualFounderId = founderId || user?.id;
+
   return useQuery({
-    queryKey: ['founder-sessions', founderId],
+    queryKey: ['founder-sessions', actualFounderId],
     queryFn: async () => {
-      if (!founderId) throw new Error('Founder ID required');
+      if (!actualFounderId) throw new Error('Founder ID required');
       
       const { data: sessions, error } = await supabase
         .from('sessions')
@@ -63,12 +70,12 @@ export const useFounderSessions = (founderId?: string) => {
             advisor:users!advisor_id(email)
           )
         `)
-        .eq('assignment.founder_id', founderId)
+        .eq('assignment.founder_id', actualFounderId)
         .order('scheduled_at', { ascending: false });
       
       if (error) throw error;
       return sessions || [];
     },
-    enabled: !!founderId
+    enabled: !!actualFounderId
   });
 };

@@ -8,74 +8,93 @@ import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-const Login = () => {
+const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [userType, setUserType] = useState<'founder' | 'advisor'>('founder');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    
+    if (password !== confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Passwords do not match",
+        variant: "destructive",
+      });
+      return;
+    }
 
+    if (password.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLoading(true);
+    
     try {
       // Clean up any existing auth state
       await supabase.auth.signOut({ scope: 'global' });
       
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            role: userType
+          }
+        }
       });
 
       if (error) throw error;
 
       if (data.user) {
-        // Get user role from users table
-        const { data: userData, error: userError } = await supabase
+        // Create user profile entry
+        const { error: profileError } = await supabase
           .from('users')
-          .select('role')
-          .eq('id', data.user.id)
-          .single();
+          .insert({
+            id: data.user.id,
+            email: data.user.email!,
+            role: userType,
+            status: 'active'
+          });
 
-        if (userError) {
-          console.error('User role fetch error:', userError);
-          // Default to the selected user type if we can't fetch from DB
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          // Don't throw here as user is already created
         }
-
-        const userRole = userData?.role || userType;
 
         toast({
           title: "Success!",
-          description: "Logged in successfully",
+          description: "Account created successfully. Please check your email to verify your account.",
         });
 
-        // Redirect based on user role
-        if (userRole === 'founder') {
-          navigate('/founder-dashboard');
-        } else if (userRole === 'advisor') {
-          navigate('/advisor-dashboard');
-        } else if (userRole === 'admin') {
-          navigate('/admin-dashboard');
-        } else {
-          navigate('/');
-        }
+        // Redirect to login page
+        navigate('/login');
       }
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('Signup error:', error);
       
-      let errorMessage = "Login failed";
-      if (error.message.includes('Invalid login credentials')) {
-        errorMessage = "Invalid email or password";
-      } else if (error.message.includes('Email not confirmed')) {
-        errorMessage = "Please check your email and confirm your account";
+      let errorMessage = "An error occurred during signup";
+      if (error.message.includes('already registered')) {
+        errorMessage = "An account with this email already exists";
+      } else if (error.message.includes('Invalid email')) {
+        errorMessage = "Please enter a valid email address";
       } else if (error.message) {
         errorMessage = error.message;
       }
       
       toast({
-        title: "Login Failed",
+        title: "Signup Failed",
         description: errorMessage,
         variant: "destructive",
       });
@@ -96,16 +115,16 @@ const Login = () => {
           <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-green-600 rounded-xl flex items-center justify-center mx-auto mb-4">
             <span className="text-white font-bold text-2xl">C</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
-          <p className="text-gray-600">Sign in to your CoPilot dashboard</p>
+          <h1 className="text-2xl font-bold text-gray-900">Join CoPilot</h1>
+          <p className="text-gray-600">Create your account to get started</p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Sign In</CardTitle>
+            <CardTitle>Sign Up</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleSignup} className="space-y-4">
               {/* User Type Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -162,6 +181,22 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   disabled={loading}
+                  minLength={6}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Confirm Password
+                </label>
+                <Input
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  disabled={loading}
+                  minLength={6}
                 />
               </div>
 
@@ -174,15 +209,15 @@ const Login = () => {
                 }`}
                 disabled={loading}
               >
-                {loading ? "Signing In..." : `Sign In as ${userType === 'founder' ? 'Founder' : 'Advisor'}`}
+                {loading ? "Creating Account..." : `Sign Up as ${userType === 'founder' ? 'Founder' : 'Advisor'}`}
               </Button>
             </form>
 
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
-                Don't have an account?{' '}
-                <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-medium">
-                  Sign up here
+                Already have an account?{' '}
+                <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">
+                  Sign in here
                 </Link>
               </p>
             </div>
@@ -193,4 +228,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Signup;
