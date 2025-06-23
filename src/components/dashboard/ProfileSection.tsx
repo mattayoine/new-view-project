@@ -38,7 +38,8 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ userId }) => {
   }
 
   const profile = userWithProfile.profile;
-  const profileData = profile.profile_data as FounderProfileData | AdvisorProfileData;
+  // Fix the type casting by first converting to unknown, then to our expected type
+  const profileData = profile.profile_data as unknown as FounderProfileData | AdvisorProfileData;
 
   return (
     <Card>
