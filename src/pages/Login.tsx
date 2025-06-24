@@ -1,191 +1,172 @@
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+
+  // Redirect if already logged in
+  React.useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
+
+  const cleanupAuthState = () => {
+    // Clear all auth-related storage
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        localStorage.removeItem(key);
+      }
+    });
+    
+    Object.keys(sessionStorage || {}).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!email || !password) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLoading(true);
+    setError('');
 
     try {
+      // Clean up any existing auth state
+      cleanupAuthState();
+      
+      // Attempt to sign out any existing session
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continue even if this fails
+        console.log('Signout cleanup failed, continuing...');
+      }
+
       console.log('Attempting login for:', email);
       
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error: loginError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
-        password,
+        password: password
       });
 
-      if (error) {
-        console.error('Login error:', error);
-        throw error;
+      if (loginError) {
+        console.error('Login error:', loginError);
+        setError(loginError.message);
+        return;
       }
 
-      if (!data.user) {
-        throw new Error('No user returned from login');
+      if (data.user) {
+        console.log('Login successful for user:', data.user.email);
+        
+        // Force a complete page refresh to ensure clean state
+        window.location.href = '/';
       }
-
-      console.log('Login successful for:', data.user.email);
-
-      toast({
-        title: "Success!",
-        description: "Logged in successfully",
-      });
-
-      // Wait a moment for auth state to update, then redirect
-      setTimeout(() => {
-        // Get user role to determine redirect
-        supabase
-          .from('users')
-          .select('role')
-          .eq('auth_id', data.user.id)
-          .single()
-          .then(({ data: userData }) => {
-            const userRole = userData?.role;
-            console.log('Redirecting user with role:', userRole);
-
-            if (userRole === 'founder') {
-              navigate('/founder-dashboard');
-            } else if (userRole === 'advisor') {
-              navigate('/advisor-dashboard');
-            } else if (userRole === 'admin') {
-              navigate('/admin-dashboard');
-            } else {
-              navigate('/');
-            }
-          })
-          .catch(() => {
-            // If role fetch fails, redirect to home
-            navigate('/');
-          });
-      }, 1000);
-
-    } catch (error: any) {
-      console.error('Login failed:', error);
-      
-      let errorMessage = "Login failed. Please try again.";
-      
-      if (error.message?.includes('Invalid login credentials')) {
-        errorMessage = "Invalid email or password. Please check your credentials.";
-      } else if (error.message?.includes('Email not confirmed')) {
-        errorMessage = "Please check your email and confirm your account before signing in.";
-      } else if (error.message?.includes('Too many requests')) {
-        errorMessage = "Too many login attempts. Please wait a moment and try again.";
-      }
-      
-      toast({
-        title: "Login Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
+    } catch (err: any) {
+      console.error('Login exception:', err);
+      setError(err.message || 'An unexpected error occurred');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center text-gray-600 hover:text-blue-600 mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Home
-          </Link>
-          <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-green-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-2xl">C</span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Welcome Back</h1>
-          <p className="text-gray-600">Sign in to your CoPilot dashboard</p>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Sign In</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
-                </label>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold text-center">Sign In</CardTitle>
+          <p className="text-gray-600 text-center">
+            Enter your credentials to access your dashboard
+          </p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleLogin} className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
                 <Input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  disabled={loading}
-                  autoComplete="email"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
-                </label>
-                <Input
-                  type="password"
-                  required
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  required
                   disabled={loading}
-                  autoComplete="current-password"
                 />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={loading}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
               </div>
-
-              <Button 
-                type="submit" 
-                className="w-full bg-blue-600 hover:bg-blue-700"
-                disabled={loading}
-              >
-                {loading ? "Signing In..." : "Sign In"}
-              </Button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                Don't have an account?{' '}
-                <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-medium">
-                  Sign up here
-                </Link>
-              </p>
-              <p className="text-sm text-gray-600 mt-2">
-                Want to apply?{' '}
-                <Link to="/apply-copilot" className="text-blue-600 hover:text-blue-700 font-medium">
-                  Apply as Founder
-                </Link>
-                {' or '}
-                <Link to="/apply-sme" className="text-blue-600 hover:text-blue-700 font-medium">
-                  Apply as Advisor
-                </Link>
-              </p>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loading}
+            >
+              {loading ? 'Signing in...' : 'Sign In'}
+            </Button>
+          </form>
+          
+          <div className="mt-6 text-center text-sm">
+            <p className="text-gray-600">
+              Don't have an account?{' '}
+              <Link to="/apply-copilot" className="text-blue-600 hover:underline font-medium">
+                Apply as Founder
+              </Link>
+              {' '}or{' '}
+              <Link to="/apply-sme" className="text-blue-600 hover:underline font-medium">
+                Apply as Advisor
+              </Link>
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
