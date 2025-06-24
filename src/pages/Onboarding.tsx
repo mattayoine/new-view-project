@@ -1,12 +1,9 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Link } from "react-router-dom";
-import { ArrowLeft, CheckCircle, Clock, Users, Target, Shield, Calendar } from "lucide-react";
+import { CheckCircle, Clock, Users, Target, Shield, Calendar } from "lucide-react";
 import FounderForm from "@/components/onboarding/FounderForm";
 import AdvisorForm from "@/components/onboarding/AdvisorForm";
 
@@ -27,16 +24,18 @@ const Onboarding = () => {
       <nav className="bg-white/90 backdrop-blur-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <Link to="/" className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-green-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xl">C</span>
               </div>
               <span className="text-2xl font-bold text-gray-900">CoPilot</span>
-            </Link>
+            </div>
             <div className="flex items-center space-x-4">
-              <Link to="/" className="text-gray-700 hover:text-blue-600 transition-colors">
-                <ArrowLeft className="h-5 w-5 inline mr-2" />
-                Back to Home
+              <Link to="/home" className="text-gray-700 hover:text-blue-600 transition-colors">
+                Platform Info
+              </Link>
+              <Link to="/login">
+                <Button variant="outline" size="sm">Login</Button>
               </Link>
             </div>
           </div>
@@ -248,7 +247,7 @@ const Onboarding = () => {
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
-            <Link to="/" className="flex items-center justify-center space-x-3 mb-4">
+            <Link to="/home" className="flex items-center justify-center space-x-3 mb-4">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-green-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xl">C</span>
               </div>

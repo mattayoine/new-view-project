@@ -7,10 +7,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SecurityProvider } from "@/hooks/useSecurityContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import Onboarding from "./pages/Onboarding";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import Onboarding from "./pages/Onboarding";
 import ApplyCoPilot from "./pages/ApplyCoPilot";
 import ApplySME from "./pages/ApplySME";
 import FounderDashboard from "./pages/FounderDashboard";
@@ -29,10 +29,10 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<Onboarding />} />
+              <Route path="/home" element={<Index />} />
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
-              <Route path="/onboarding" element={<Onboarding />} />
               <Route path="/apply-copilot" element={<ApplyCoPilot />} />
               <Route path="/apply-sme" element={<ApplySME />} />
               <Route path="/founder-dashboard" element={

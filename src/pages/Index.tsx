@@ -3,21 +3,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { ArrowRight, CheckCircle, Users, TrendingUp, Globe, Handshake, Shield, DollarSign } from "lucide-react";
+
 const Index = () => {
-  return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Navigation */}
       <nav className="bg-white/90 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center space-x-3">
+            <Link to="/" className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-green-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xl">C</span>
               </div>
               <span className="text-2xl font-bold text-gray-900">CoPilot</span>
-            </div>
+            </Link>
             <div className="flex items-center space-x-4">
-              <Link to="/apply-sme" className="text-gray-700 hover:text-blue-600 transition-colors">For SMEs</Link>
-              <Link to="/apply-copilot" className="text-gray-700 hover:text-blue-600 transition-colors">For CoPilots</Link>
+              <Link to="/" className="text-gray-700 hover:text-blue-600 transition-colors">Apply Now</Link>
               <Button variant="outline" size="sm">Login</Button>
             </div>
           </div>
@@ -43,15 +44,9 @@ const Index = () => {
               a few hours a month into real revenue and impact.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/apply-sme">
+              <Link to="/">
                 <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full">
-                  Apply as SME
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-              <Link to="/apply-copilot">
-                <Button size="lg" variant="outline" className="border-2 border-green-600 text-green-700 hover:bg-green-50 px-8 py-3 rounded-full">
-                  Apply as CoPilot
+                  Apply Now
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
@@ -284,15 +279,9 @@ const Index = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold text-gray-900 mb-8">Ready to Bridge the Gap?</h2>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
-            <Link to="/apply-sme">
+            <Link to="/">
               <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-4 rounded-full text-lg">
-                Start as SME
-                <ArrowRight className="ml-3 h-6 w-6" />
-              </Button>
-            </Link>
-            <Link to="/apply-copilot">
-              <Button size="lg" variant="outline" className="border-2 border-green-600 text-green-700 hover:bg-green-50 px-12 py-4 rounded-full text-lg">
-                Become a CoPilot
+                Get Started
                 <ArrowRight className="ml-3 h-6 w-6" />
               </Button>
             </Link>
@@ -323,6 +312,8 @@ const Index = () => {
           </div>
         </div>
       </footer>
-    </div>;
+    </div>
+  );
 };
+
 export default Index;
