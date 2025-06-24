@@ -7,11 +7,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SecurityProvider } from "@/hooks/useSecurityContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import ProtectedRoute from "@/components/ProtectedRoute";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import Onboarding from "./pages/Onboarding";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import PendingApproval from "./pages/PendingApproval";
 import ApplyCoPilot from "./pages/ApplyCoPilot";
 import ApplySME from "./pages/ApplySME";
 import FounderDashboard from "./pages/FounderDashboard";
@@ -42,22 +43,23 @@ const App = () => (
                 <Route path="/home" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
+                <Route path="/pending-approval" element={<PendingApproval />} />
                 <Route path="/apply-copilot" element={<ApplyCoPilot />} />
                 <Route path="/apply-sme" element={<ApplySME />} />
                 <Route path="/founder-dashboard" element={
-                  <ProtectedRoute requiredRole="founder">
+                  <AuthGuard requiredRole="founder">
                     <FounderDashboard />
-                  </ProtectedRoute>
+                  </AuthGuard>
                 } />
                 <Route path="/advisor-dashboard" element={
-                  <ProtectedRoute requiredRole="advisor">
+                  <AuthGuard requiredRole="advisor">
                     <AdvisorDashboard />
-                  </ProtectedRoute>
+                  </AuthGuard>
                 } />
                 <Route path="/admin-dashboard" element={
-                  <ProtectedRoute requiredRole="admin">
+                  <AuthGuard requiredRole="admin">
                     <AdminDashboard />
-                  </ProtectedRoute>
+                  </AuthGuard>
                 } />
                 <Route path="*" element={<NotFound />} />
               </Routes>
