@@ -7,8 +7,8 @@ import SessionTracker from '@/components/admin/SessionTracker';
 import AdvisorDirectory from '@/components/admin/AdvisorDirectory';
 import FounderDirectory from '@/components/admin/FounderDirectory';
 import CaseStudyLibrary from '@/components/admin/CaseStudyLibrary';
-import ApplicationReview from '@/components/admin/ApplicationReview';
-import { usePendingApplicationsCount } from '@/hooks/useAdminApplications';
+import EnhancedApplicationReview from '@/components/admin/EnhancedApplicationReview';
+import { usePendingApplicationsCount } from '@/hooks/useApplicationActions';
 import { Badge } from '@/components/ui/badge';
 
 const AdminDashboard = () => {
@@ -47,7 +47,7 @@ const AdminDashboard = () => {
         </TabsContent>
 
         <TabsContent value="applications">
-          <ApplicationReview />
+          <EnhancedApplicationReview />
         </TabsContent>
 
         <TabsContent value="sessions">

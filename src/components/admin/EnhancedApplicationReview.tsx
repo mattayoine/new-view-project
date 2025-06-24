@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useAdminApplications } from '@/hooks/useAdminApplications';
-import { useEnhancedApplicationActions } from '@/hooks/useEnhancedAdminApplications';
+import { useEnhancedApplicationActions } from '@/hooks/useEnhancedApplicationActions';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle, XCircle, Clock, User, Building, MapPin, Globe, Mail } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, User, Building, MapPin, Globe, Mail, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 
 const EnhancedApplicationReview = () => {
@@ -17,7 +17,10 @@ const EnhancedApplicationReview = () => {
   const [rejectionReason, setRejectionReason] = useState<{[key: string]: string}>({});
 
   const handleApprove = async (applicationId: string) => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      toast.error('You must be logged in to approve applications');
+      return;
+    }
     
     try {
       await approveApplication.mutateAsync({ 
@@ -30,7 +33,10 @@ const EnhancedApplicationReview = () => {
   };
 
   const handleReject = async (applicationId: string) => {
-    if (!user?.id || !rejectionReason[applicationId]) return;
+    if (!user?.id || !rejectionReason[applicationId]) {
+      toast.error('Please provide a rejection reason');
+      return;
+    }
     
     try {
       await rejectApplication.mutateAsync({
@@ -143,7 +149,7 @@ const EnhancedApplicationReview = () => {
           </Badge>
           <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
             <Mail className="w-3 h-3 mr-1" />
-            Email Notifications Enabled
+            Full User Creation Pipeline
           </Badge>
         </div>
       </div>
@@ -192,6 +198,19 @@ const EnhancedApplicationReview = () => {
                     : renderAdvisorApplication(app, app.advisor_details?.[0])
                   }
                   
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <p className="text-sm font-medium text-blue-800 flex items-center">
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Approval Actions:
+                    </p>
+                    <ul className="text-sm text-blue-700 mt-2 space-y-1">
+                      <li>• Create user account with secure login</li>
+                      <li>• Assign {app.type} role and activate profile</li>
+                      <li>• Send welcome email with login instructions</li>
+                      <li>• Enable dashboard access immediately</li>
+                    </ul>
+                  </div>
+                  
                   <div className="flex items-center justify-between pt-4 border-t">
                     <div className="flex gap-2">
                       <Button 
@@ -200,7 +219,7 @@ const EnhancedApplicationReview = () => {
                         className="bg-green-600 hover:bg-green-700"
                       >
                         <CheckCircle className="w-4 h-4 mr-2" />
-                        {approveApplication.isPending ? 'Approving...' : 'Approve & Notify'}
+                        {approveApplication.isPending ? 'Creating User...' : 'Approve & Create User'}
                       </Button>
                     </div>
                     <div className="flex gap-2 items-end">
@@ -256,6 +275,14 @@ const EnhancedApplicationReview = () => {
                   </span>
                 </div>
               </CardHeader>
+              {app.status === 'approved' && (
+                <CardContent>
+                  <div className="bg-green-50 p-3 rounded">
+                    <p className="text-sm font-medium text-green-800">✅ User Account Created Successfully</p>
+                    <p className="text-sm text-green-700">Welcome email sent and dashboard access enabled</p>
+                  </div>
+                </CardContent>
+              )}
               {app.status === 'rejected' && app.rejection_reason && (
                 <CardContent>
                   <div className="bg-red-50 p-3 rounded">
