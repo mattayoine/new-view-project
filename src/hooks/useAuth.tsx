@@ -20,6 +20,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const createOrUpdateUserRecord = async (authUser: User) => {
     try {
+      console.log('Creating/updating user record for:', authUser.email);
+      
       // Check if user exists in our users table
       const { data: existingUser, error: fetchError } = await supabase
         .from('users')
@@ -34,6 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // If user doesn't exist, create them
       if (!existingUser) {
+        console.log('Creating new user record');
         const { error: insertError } = await supabase
           .from('users')
           .insert({
@@ -49,6 +52,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           console.log('Created user record for:', authUser.email);
         }
+      } else {
+        console.log('User record already exists');
       }
     } catch (error) {
       console.error('Error in createOrUpdateUserRecord:', error);
@@ -56,60 +61,99 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const refreshUser = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      await createOrUpdateUserRecord(session.user);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await createOrUpdateUserRecord(session.user);
+      }
+    } catch (error) {
+      console.error('Error refreshing user:', error);
     }
   };
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
+        if (!mounted) return;
+        
+        console.log('Auth state changed:', event, session?.user?.email);
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         // Create/update user record when signed in
         if (event === 'SIGNED_IN' && session?.user) {
+          // Defer user record creation to avoid auth callback conflicts
           setTimeout(async () => {
-            await createOrUpdateUserRecord(session.user);
-          }, 0);
+            if (mounted) {
+              await createOrUpdateUserRecord(session.user);
+            }
+          }, 100);
         }
         
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     );
 
     // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session:', session?.user?.id);
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        createOrUpdateUserRecord(session.user);
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+        }
+        
+        if (mounted) {
+          console.log('Initial session:', session?.user?.email);
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            await createOrUpdateUserRecord(session.user);
+          }
+          
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) {
+          setLoading(false);
+        }
       }
-      
-      setLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
-    setLoading(true);
     try {
-      // Clean up auth state
-      Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-          localStorage.removeItem(key);
-        }
-      });
+      setLoading(true);
+      console.log('Signing out user');
+      
+      // Clean up auth state first
+      const keysToRemove = Object.keys(localStorage).filter(key => 
+        key.startsWith('supabase.auth.') || key.includes('sb-')
+      );
+      keysToRemove.forEach(key => localStorage.removeItem(key));
       
       await supabase.auth.signOut({ scope: 'global' });
       
-      // Force page reload for clean state
+      // Clear state
+      setSession(null);
+      setUser(null);
+      
+      // Force redirect to home
       window.location.href = '/';
     } catch (error) {
       console.error('Sign out error:', error);

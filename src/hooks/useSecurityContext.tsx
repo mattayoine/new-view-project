@@ -16,7 +16,7 @@ interface SecurityContextType {
 const SecurityContext = createContext<SecurityContextType | undefined>(undefined);
 
 export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, session } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -28,6 +28,8 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     try {
+      console.log('Fetching user role for:', user.email);
+      
       const { data, error } = await supabase
         .from('users')
         .select('role')
@@ -38,6 +40,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         console.error('Error fetching user role:', error);
         setUserRole(null);
       } else {
+        console.log('User role:', data?.role);
         setUserRole(data?.role || null);
       }
     } catch (error) {
@@ -54,8 +57,13 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   useEffect(() => {
+    if (authLoading) {
+      setLoading(true);
+      return;
+    }
+
     fetchUserRole();
-  }, [user, session]);
+  }, [user, session, authLoading]);
 
   const isAdmin = userRole === 'admin';
   const isAdvisor = userRole === 'advisor';

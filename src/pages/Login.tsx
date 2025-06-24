@@ -17,44 +17,68 @@ const Login = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        title: "Error",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // Clean up any existing auth state
-      Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-          localStorage.removeItem(key);
-        }
-      });
+      console.log('Attempting login for:', email);
       
+      // Clean up any existing auth state first
+      const keysToRemove = Object.keys(localStorage).filter(key => 
+        key.startsWith('supabase.auth.') || key.includes('sb-')
+      );
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      
+      // Sign out any existing session
       await supabase.auth.signOut({ scope: 'global' });
       
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Login error:', error);
+        throw error;
+      }
 
-      if (data.user) {
-        // Get user role from users table
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('role')
-          .eq('auth_id', data.user.id)
-          .single();
+      if (!data.user) {
+        throw new Error('No user returned from login');
+      }
 
-        if (userError) {
-          console.error('User role fetch error:', userError);
-        }
+      console.log('Login successful for:', data.user.email);
 
-        const userRole = userData?.role;
+      // Get user role to determine redirect
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('role')
+        .eq('auth_id', data.user.id)
+        .single();
 
-        toast({
-          title: "Success!",
-          description: "Logged in successfully",
-        });
+      if (userError) {
+        console.error('User role fetch error:', userError);
+        // Don't fail login for this, just redirect to home
+      }
 
+      const userRole = userData?.role;
+      console.log('User role:', userRole);
+
+      toast({
+        title: "Success!",
+        description: "Logged in successfully",
+      });
+
+      // Small delay to ensure auth state is updated
+      setTimeout(() => {
         // Redirect based on user role
         if (userRole === 'founder') {
           navigate('/founder-dashboard');
@@ -65,15 +89,19 @@ const Login = () => {
         } else {
           navigate('/');
         }
-      }
+      }, 500);
+
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('Login failed:', error);
       
-      let errorMessage = "Login failed";
-      if (error.message.includes('Invalid login credentials')) {
-        errorMessage = "Invalid email or password";
-      } else if (error.message.includes('Email not confirmed')) {
-        errorMessage = "Please check your email and confirm your account";
+      let errorMessage = "Login failed. Please try again.";
+      
+      if (error.message?.includes('Invalid login credentials')) {
+        errorMessage = "Invalid email or password. Please check your credentials.";
+      } else if (error.message?.includes('Email not confirmed')) {
+        errorMessage = "Please check your email and confirm your account before signing in.";
+      } else if (error.message?.includes('Too many requests')) {
+        errorMessage = "Too many login attempts. Please wait a moment and try again.";
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -121,6 +149,7 @@ const Login = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
                   disabled={loading}
+                  autoComplete="email"
                 />
               </div>
 
@@ -135,6 +164,7 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   disabled={loading}
+                  autoComplete="current-password"
                 />
               </div>
 
