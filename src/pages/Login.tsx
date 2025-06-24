@@ -32,15 +32,6 @@ const Login = () => {
     try {
       console.log('Attempting login for:', email);
       
-      // Clean up any existing auth state first
-      const keysToRemove = Object.keys(localStorage).filter(key => 
-        key.startsWith('supabase.auth.') || key.includes('sb-')
-      );
-      keysToRemove.forEach(key => localStorage.removeItem(key));
-      
-      // Sign out any existing session
-      await supabase.auth.signOut({ scope: 'global' });
-      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
@@ -57,39 +48,38 @@ const Login = () => {
 
       console.log('Login successful for:', data.user.email);
 
-      // Get user role to determine redirect
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('role')
-        .eq('auth_id', data.user.id)
-        .single();
-
-      if (userError) {
-        console.error('User role fetch error:', userError);
-        // Don't fail login for this, just redirect to home
-      }
-
-      const userRole = userData?.role;
-      console.log('User role:', userRole);
-
       toast({
         title: "Success!",
         description: "Logged in successfully",
       });
 
-      // Small delay to ensure auth state is updated
+      // Wait a moment for auth state to update, then redirect
       setTimeout(() => {
-        // Redirect based on user role
-        if (userRole === 'founder') {
-          navigate('/founder-dashboard');
-        } else if (userRole === 'advisor') {
-          navigate('/advisor-dashboard');
-        } else if (userRole === 'admin') {
-          navigate('/admin-dashboard');
-        } else {
-          navigate('/');
-        }
-      }, 500);
+        // Get user role to determine redirect
+        supabase
+          .from('users')
+          .select('role')
+          .eq('auth_id', data.user.id)
+          .single()
+          .then(({ data: userData }) => {
+            const userRole = userData?.role;
+            console.log('Redirecting user with role:', userRole);
+
+            if (userRole === 'founder') {
+              navigate('/founder-dashboard');
+            } else if (userRole === 'advisor') {
+              navigate('/advisor-dashboard');
+            } else if (userRole === 'admin') {
+              navigate('/admin-dashboard');
+            } else {
+              navigate('/');
+            }
+          })
+          .catch(() => {
+            // If role fetch fails, redirect to home
+            navigate('/');
+          });
+      }, 1000);
 
     } catch (error: any) {
       console.error('Login failed:', error);
@@ -102,8 +92,6 @@ const Login = () => {
         errorMessage = "Please check your email and confirm your account before signing in.";
       } else if (error.message?.includes('Too many requests')) {
         errorMessage = "Too many login attempts. Please wait a moment and try again.";
-      } else if (error.message) {
-        errorMessage = error.message;
       }
       
       toast({

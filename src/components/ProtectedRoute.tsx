@@ -38,7 +38,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Check role-based access
   if (requiredRole && userRole !== requiredRole && userRole !== 'admin') {
-    console.log('ProtectedRoute: Insufficient role, redirecting to home');
+    console.log('ProtectedRoute: Insufficient role, user has:', userRole, 'required:', requiredRole);
     return <Navigate to="/" replace />;
   }
 

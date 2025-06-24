@@ -18,11 +18,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const createOrUpdateUserRecord = async (authUser: User) => {
+  const createUserRecord = async (authUser: User) => {
     try {
-      console.log('Creating/updating user record for:', authUser.email);
+      console.log('Checking/creating user record for:', authUser.email);
       
-      // Check if user exists in our users table
+      // Check if user exists
       const { data: existingUser, error: fetchError } = await supabase
         .from('users')
         .select('*')
@@ -34,7 +34,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      // If user doesn't exist, create them
       if (!existingUser) {
         console.log('Creating new user record');
         const { error: insertError } = await supabase
@@ -50,13 +49,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (insertError) {
           console.error('Error creating user record:', insertError);
         } else {
-          console.log('Created user record for:', authUser.email);
+          console.log('Successfully created user record');
         }
-      } else {
-        console.log('User record already exists');
       }
     } catch (error) {
-      console.error('Error in createOrUpdateUserRecord:', error);
+      console.error('Error in createUserRecord:', error);
     }
   };
 
@@ -64,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        await createOrUpdateUserRecord(session.user);
+        await createUserRecord(session.user);
       }
     } catch (error) {
       console.error('Error refreshing user:', error);
@@ -74,7 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let mounted = true;
 
-    // Set up auth state listener first
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
@@ -84,12 +81,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Create/update user record when signed in
+        // Create user record for new signups/logins
         if (event === 'SIGNED_IN' && session?.user) {
-          // Defer user record creation to avoid auth callback conflicts
           setTimeout(async () => {
             if (mounted) {
-              await createOrUpdateUserRecord(session.user);
+              await createUserRecord(session.user);
             }
           }, 100);
         }
@@ -100,13 +96,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // Then check for existing session
-    const initializeAuth = async () => {
+    // Get initial session
+    const getInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Error getting session:', error);
+          console.error('Error getting initial session:', error);
         }
         
         if (mounted) {
@@ -115,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(session?.user ?? null);
           
           if (session?.user) {
-            await createOrUpdateUserRecord(session.user);
+            await createUserRecord(session.user);
           }
           
           setLoading(false);
@@ -128,7 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    initializeAuth();
+    getInitialSession();
 
     return () => {
       mounted = false;
@@ -141,19 +137,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       console.log('Signing out user');
       
-      // Clean up auth state first
-      const keysToRemove = Object.keys(localStorage).filter(key => 
-        key.startsWith('supabase.auth.') || key.includes('sb-')
-      );
-      keysToRemove.forEach(key => localStorage.removeItem(key));
-      
-      await supabase.auth.signOut({ scope: 'global' });
+      await supabase.auth.signOut();
       
       // Clear state
       setSession(null);
       setUser(null);
       
-      // Force redirect to home
+      // Redirect to home
       window.location.href = '/';
     } catch (error) {
       console.error('Sign out error:', error);

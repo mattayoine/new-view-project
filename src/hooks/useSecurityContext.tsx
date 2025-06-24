@@ -40,7 +40,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         console.error('Error fetching user role:', error);
         setUserRole(null);
       } else {
-        console.log('User role:', data?.role);
+        console.log('User role fetched:', data?.role);
         setUserRole(data?.role || null);
       }
     } catch (error) {
