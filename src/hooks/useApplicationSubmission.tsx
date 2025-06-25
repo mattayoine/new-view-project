@@ -32,6 +32,8 @@ interface AdvisorApplicationData {
 export const useFounderApplicationSubmission = () => {
   return useMutation({
     mutationFn: async (data: FounderApplicationData) => {
+      console.log('Submitting founder application:', data);
+      
       // Create base application record
       const { data: baseApp, error: baseError } = await supabase
         .from('base_applications')
@@ -45,7 +47,12 @@ export const useFounderApplicationSubmission = () => {
         .select()
         .single();
 
-      if (baseError) throw baseError;
+      if (baseError) {
+        console.error('Base application error:', baseError);
+        throw baseError;
+      }
+
+      console.log('Base application created:', baseApp);
 
       // Create founder-specific details
       const { error: detailError } = await supabase
@@ -62,11 +69,16 @@ export const useFounderApplicationSubmission = () => {
           case_study_consent: data.case_study_consent
         });
 
-      if (detailError) throw detailError;
+      if (detailError) {
+        console.error('Founder details error:', detailError);
+        throw detailError;
+      }
 
+      console.log('Founder application details created successfully');
       return baseApp;
     },
     onSuccess: () => {
+      console.log('Founder application submitted successfully');
       toast.success('Application submitted successfully! We\'ll review it and get back to you soon.');
     },
     onError: (error) => {
@@ -79,6 +91,8 @@ export const useFounderApplicationSubmission = () => {
 export const useAdvisorApplicationSubmission = () => {
   return useMutation({
     mutationFn: async (data: AdvisorApplicationData) => {
+      console.log('Submitting advisor application:', data);
+      
       // Create base application record
       const { data: baseApp, error: baseError } = await supabase
         .from('base_applications')
@@ -92,7 +106,12 @@ export const useAdvisorApplicationSubmission = () => {
         .select()
         .single();
 
-      if (baseError) throw baseError;
+      if (baseError) {
+        console.error('Base application error:', baseError);
+        throw baseError;
+      }
+
+      console.log('Base application created:', baseApp);
 
       // Create advisor-specific details
       const { error: detailError } = await supabase
@@ -107,11 +126,16 @@ export const useAdvisorApplicationSubmission = () => {
           public_profile_consent: data.public_profile_consent
         });
 
-      if (detailError) throw detailError;
+      if (detailError) {
+        console.error('Advisor details error:', detailError);
+        throw detailError;
+      }
 
+      console.log('Advisor application details created successfully');
       return baseApp;
     },
     onSuccess: () => {
+      console.log('Advisor application submitted successfully');
       toast.success('Application submitted successfully! We\'ll review it and get back to you soon.');
     },
     onError: (error) => {

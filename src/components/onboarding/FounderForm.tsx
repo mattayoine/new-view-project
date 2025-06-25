@@ -32,7 +32,18 @@ const FounderForm = ({ onBack }: FounderFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('Form submitted with data:', formData);
+    
+    // Validate required fields
+    if (!formData.name || !formData.email || !formData.location || 
+        !formData.startup_name || !formData.sector || !formData.stage || 
+        !formData.challenge || !formData.win_definition) {
+      console.error('Missing required fields');
+      return;
+    }
+    
     try {
+      console.log('Attempting to submit application...');
       await submitApplication.mutateAsync({
         name: formData.name,
         email: formData.email,
@@ -47,9 +58,10 @@ const FounderForm = ({ onBack }: FounderFormProps) => {
         case_study_consent: formData.case_study_consent
       });
       
+      console.log('Application submitted successfully');
       setSubmitted(true);
     } catch (error) {
-      // Error handling is done in the hook
+      console.error('Form submission error:', error);
     }
   };
 
