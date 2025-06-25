@@ -41,27 +41,6 @@ const Login = () => {
     });
   };
 
-  const checkUserExists = async (email: string) => {
-    try {
-      // Check if user exists in our users table
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, role, status')
-        .eq('email', email.trim())
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error checking user:', error);
-        return null;
-      }
-
-      return data;
-    } catch (err) {
-      console.error('Error in checkUserExists:', err);
-      return null;
-    }
-  };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -79,17 +58,6 @@ const Login = () => {
         console.log('Signout cleanup failed, continuing...');
       }
 
-      // First check if user exists in our system
-      const existingUser = await checkUserExists(email);
-      
-      if (!existingUser) {
-        // User doesn't exist in our system - redirect to application
-        setError('No account found. Please apply as a founder or advisor first.');
-        setLoading(false);
-        return;
-      }
-
-      // User exists, attempt login
       console.log('Attempting login for:', email);
       
       const { data, error: loginError } = await supabase.auth.signInWithPassword({
@@ -99,15 +67,7 @@ const Login = () => {
 
       if (loginError) {
         console.error('Login error:', loginError);
-        
-        // Handle specific error cases
-        if (loginError.message.includes('Invalid login credentials')) {
-          setError('Invalid email or password. Please check your credentials and try again.');
-        } else if (loginError.message.includes('Email not confirmed')) {
-          setError('Please check your email and click the confirmation link before logging in.');
-        } else {
-          setError(loginError.message);
-        }
+        setError(loginError.message);
         return;
       }
 
@@ -194,25 +154,15 @@ const Login = () => {
           </form>
           
           <div className="mt-6 text-center text-sm">
-            <p className="text-gray-600 mb-3">
-              Don't have an account? Apply to join:
-            </p>
-            <div className="space-y-2">
-              <Link 
-                to="/apply-copilot" 
-                className="block w-full bg-blue-50 hover:bg-blue-100 text-blue-700 py-2 px-4 rounded-lg transition-colors"
-              >
+            <p className="text-gray-600">
+              Don't have an account?{' '}
+              <Link to="/apply-copilot" className="text-blue-600 hover:underline font-medium">
                 Apply as Founder
               </Link>
-              <Link 
-                to="/apply-sme" 
-                className="block w-full bg-green-50 hover:bg-green-100 text-green-700 py-2 px-4 rounded-lg transition-colors"
-              >
+              {' '}or{' '}
+              <Link to="/apply-sme" className="text-blue-600 hover:underline font-medium">
                 Apply as Advisor
               </Link>
-            </div>
-            <p className="text-xs text-gray-500 mt-3">
-              New applicants must be approved by our team before accessing the platform
             </p>
           </div>
         </CardContent>
