@@ -4,10 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, AlertCircle } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
@@ -51,13 +50,14 @@ const Signup = () => {
       
       await supabase.auth.signOut({ scope: 'global' });
       
-      // Create auth user without role metadata (prevents auto-access)
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/pending-approval`,
-          // Deliberately NOT setting role metadata to prevent auto-access
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            role: userType
+          }
         }
       });
 
@@ -65,13 +65,12 @@ const Signup = () => {
 
       if (data.user) {
         toast({
-          title: "Registration Successful!",
-          description: "Please check your email to verify your account, then complete your application.",
+          title: "Success!",
+          description: "Account created successfully. Please check your email to verify your account.",
         });
 
-        // Redirect to application form based on user type
-        const applicationRoute = userType === 'founder' ? '/apply-copilot' : '/apply-sme';
-        navigate(applicationRoute);
+        // Redirect to login page
+        navigate('/login');
       }
     } catch (error: any) {
       console.error('Signup error:', error);
@@ -108,7 +107,7 @@ const Signup = () => {
             <span className="text-white font-bold text-2xl">C</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Join CoPilot</h1>
-          <p className="text-gray-600">Create your account and apply to join</p>
+          <p className="text-gray-600">Create your account to get started</p>
         </div>
 
         <Card>
@@ -116,18 +115,11 @@ const Signup = () => {
             <CardTitle>Sign Up</CardTitle>
           </CardHeader>
           <CardContent>
-            <Alert className="mb-6">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                After registration, you'll need to complete an application and await approval before accessing the platform.
-              </AlertDescription>
-            </Alert>
-
             <form onSubmit={handleSignup} className="space-y-4">
               {/* User Type Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  I want to apply as a:
+                  I am a:
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -208,19 +200,19 @@ const Signup = () => {
                 }`}
                 disabled={loading}
               >
-                {loading ? "Creating Account..." : `Continue as ${userType === 'founder' ? 'Founder' : 'Advisor'}`}
+                {loading ? "Creating Account..." : `Sign Up as ${userType === 'founder' ? 'Founder' : 'Advisor'}`}
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-sm">
-              <p className="text-gray-600">
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
                 Already have an account?{' '}
                 <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">
                   Sign in here
                 </Link>
               </p>
-              <p className="text-gray-600 mt-2">
-                Want to apply directly?{' '}
+              <p className="text-sm text-gray-600 mt-2">
+                Want to apply first?{' '}
                 <Link to="/apply-copilot" className="text-blue-600 hover:text-blue-700 font-medium">
                   Apply as Founder
                 </Link>

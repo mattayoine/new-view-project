@@ -35,28 +35,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (!existingUser) {
-        // Only create user record if they have a role in metadata
-        // This prevents auto-creation for unapproved users
-        const userRole = authUser.user_metadata?.role;
-        if (userRole && ['founder', 'advisor', 'admin'].includes(userRole)) {
-          console.log('Creating new user record with role:', userRole);
-          const { error: insertError } = await supabase
-            .from('users')
-            .insert({
-              auth_id: authUser.id,
-              email: authUser.email!,
-              role: userRole,
-              status: 'active',
-              profile_completed: false
-            });
+        console.log('Creating new user record');
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert({
+            auth_id: authUser.id,
+            email: authUser.email!,
+            role: authUser.user_metadata?.role || 'founder',
+            status: 'active',
+            profile_completed: false
+          });
 
-          if (insertError) {
-            console.error('Error creating user record:', insertError);
-          } else {
-            console.log('Successfully created user record');
-          }
+        if (insertError) {
+          console.error('Error creating user record:', insertError);
         } else {
-          console.log('User has no valid role, skipping user record creation');
+          console.log('Successfully created user record');
         }
       }
     } catch (error) {
@@ -88,7 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Create user record for approved users only
+        // Create user record for new signups/logins
         if (event === 'SIGNED_IN' && session?.user) {
           setTimeout(async () => {
             if (mounted) {
@@ -143,13 +136,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       console.log('Signing out user');
-      
-      // Clean up auth state
-      Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-          localStorage.removeItem(key);
-        }
-      });
       
       await supabase.auth.signOut();
       
