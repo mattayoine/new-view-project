@@ -10,6 +10,8 @@ export const useEnhancedApplicationActions = () => {
 
   const approveApplication = useMutation({
     mutationFn: async ({ applicationId, reviewerId }: { applicationId: string, reviewerId: string }) => {
+      console.log('Starting application approval process for:', applicationId);
+      
       // Get application details first
       const { data: application, error: fetchError } = await supabase
         .from('base_applications')
@@ -22,26 +24,36 @@ export const useEnhancedApplicationActions = () => {
         .single();
 
       if (fetchError || !application) {
+        console.error('Failed to fetch application:', fetchError);
         throw new Error('Application not found');
       }
 
-      // Create user account in auth
+      console.log('Application fetched:', application.email, application.type);
+
+      // Generate a secure random password
+      const tempPassword = Math.random().toString(36).slice(-12) + 'A1!';
+      
+      // Create user account in auth using admin API
       const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
         email: application.email,
-        password: Math.random().toString(36).slice(-8) + 'A1!', // Temporary password
+        password: tempPassword,
         email_confirm: true,
         user_metadata: {
           name: application.name,
-          role: application.type
+          role: application.type,
+          approved_by: reviewerId
         }
       });
 
       if (authError) {
+        console.error('Auth user creation failed:', authError);
         throw new Error(`Failed to create auth user: ${authError.message}`);
       }
 
+      console.log('Auth user created:', authUser.user.id);
+
       // Create user record in users table
-      const { error: userError } = await supabase
+      const { data: newUser, error: userError } = await supabase
         .from('users')
         .insert({
           auth_id: authUser.user.id,
@@ -49,22 +61,22 @@ export const useEnhancedApplicationActions = () => {
           role: application.type,
           status: 'active',
           profile_completed: true
-        });
+        })
+        .select()
+        .single();
 
       if (userError) {
+        console.error('User record creation failed:', userError);
+        // Try to cleanup auth user
+        try {
+          await supabase.auth.admin.deleteUser(authUser.user.id);
+        } catch (cleanupError) {
+          console.error('Failed to cleanup auth user:', cleanupError);
+        }
         throw new Error(`Failed to create user record: ${userError.message}`);
       }
 
-      // Get the created user ID
-      const { data: newUser, error: getUserError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('auth_id', authUser.user.id)
-        .single();
-
-      if (getUserError || !newUser) {
-        throw new Error('Failed to retrieve created user');
-      }
+      console.log('User record created:', newUser.id);
 
       // Create user profile
       const profileData = application.type === 'founder' 
@@ -113,21 +125,34 @@ export const useEnhancedApplicationActions = () => {
         .eq('id', applicationId);
 
       if (updateError) {
+        console.error('Application update failed:', updateError);
         throw new Error(`Failed to update application: ${updateError.message}`);
       }
 
-      // Send welcome notification
-      await sendNotification.mutateAsync({
-        applicationId,
-        status: 'approved'
-      });
+      console.log('Application approved successfully');
 
-      return { userId: newUser.id, authUserId: authUser.user.id };
+      // Send welcome notification
+      try {
+        await sendNotification.mutateAsync({
+          applicationId,
+          status: 'approved'
+        });
+        console.log('Welcome notification sent');
+      } catch (notificationError) {
+        console.error('Failed to send notification:', notificationError);
+        // Don't throw here as the main approval succeeded
+      }
+
+      return { 
+        userId: newUser.id, 
+        authUserId: authUser.user.id,
+        tempPassword 
+      };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['admin-applications'] });
       queryClient.invalidateQueries({ queryKey: ['pending-applications-count'] });
-      toast.success('Application approved! User account created and welcome email sent.');
+      toast.success(`Application approved! User account created. Temporary password: ${data.tempPassword}`);
     },
     onError: (error) => {
       console.error('Error approving application:', error);

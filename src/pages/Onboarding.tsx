@@ -1,4 +1,5 @@
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,9 +7,39 @@ import { Link } from "react-router-dom";
 import { CheckCircle, Clock, Users, Target, Shield, Calendar } from "lucide-react";
 import FounderForm from "@/components/onboarding/FounderForm";
 import AdvisorForm from "@/components/onboarding/AdvisorForm";
+import { useAuth } from "@/hooks/useAuth";
+import { useSecurity } from "@/hooks/useSecurityContext";
 
 const Onboarding = () => {
   const [selectedRole, setSelectedRole] = useState<'founder' | 'advisor' | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { userRole } = useSecurity();
+
+  // Handle state from login page redirect
+  useEffect(() => {
+    if (location.state?.selectedRole) {
+      setSelectedRole(location.state.selectedRole);
+    }
+  }, [location.state]);
+
+  // Redirect authenticated users to their dashboard
+  useEffect(() => {
+    if (user && userRole) {
+      switch (userRole) {
+        case 'founder':
+          navigate('/founder-dashboard');
+          break;
+        case 'advisor':
+          navigate('/advisor-dashboard');
+          break;
+        case 'admin':
+          navigate('/admin-dashboard');
+          break;
+      }
+    }
+  }, [user, userRole, navigate]);
 
   if (selectedRole === 'founder') {
     return <FounderForm onBack={() => setSelectedRole(null)} />;
@@ -31,9 +62,6 @@ const Onboarding = () => {
               <span className="text-2xl font-bold text-gray-900">CoPilot</span>
             </div>
             <div className="flex items-center space-x-4">
-              <Link to="/home" className="text-gray-700 hover:text-blue-600 transition-colors">
-                Platform Info
-              </Link>
               <Link to="/login">
                 <Button variant="outline" size="sm">Login</Button>
               </Link>
@@ -247,7 +275,7 @@ const Onboarding = () => {
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
-            <Link to="/home" className="flex items-center justify-center space-x-3 mb-4">
+            <Link to="/" className="flex items-center justify-center space-x-3 mb-4">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-green-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xl">C</span>
               </div>

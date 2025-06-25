@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useSecurity } from '@/hooks/useSecurityContext';
 import { Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
@@ -17,14 +18,27 @@ const Login = () => {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const { user } = useAuth();
+  const { userRole } = useSecurity();
   const navigate = useNavigate();
 
   // Redirect if already logged in
   React.useEffect(() => {
-    if (user) {
-      navigate('/');
+    if (user && userRole) {
+      switch (userRole) {
+        case 'founder':
+          navigate('/founder-dashboard');
+          break;
+        case 'advisor':
+          navigate('/advisor-dashboard');
+          break;
+        case 'admin':
+          navigate('/admin-dashboard');
+          break;
+        default:
+          navigate('/');
+      }
     }
-  }, [user, navigate]);
+  }, [user, userRole, navigate]);
 
   const cleanupAuthState = () => {
     // Clear all auth-related storage
@@ -67,6 +81,14 @@ const Login = () => {
 
       if (loginError) {
         console.error('Login error:', loginError);
+        
+        // Check if it's a user not found error - redirect to application forms
+        if (loginError.message.includes('Invalid login credentials') || 
+            loginError.message.includes('User not found')) {
+          setError('No account found with these credentials. Please apply below if you\'re new.');
+          return;
+        }
+        
         setError(loginError.message);
         return;
       }
@@ -74,8 +96,38 @@ const Login = () => {
       if (data.user) {
         console.log('Login successful for user:', data.user.email);
         
-        // Force a complete page refresh to ensure clean state
-        window.location.href = '/';
+        // Check if user has a role in the system
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('role, status')
+          .eq('auth_id', data.user.id)
+          .single();
+
+        if (userError || !userData) {
+          // User exists in auth but not in our system - redirect to application
+          setError('Please complete your application to access the platform.');
+          return;
+        }
+
+        if (userData.status !== 'active') {
+          navigate('/pending-approval');
+          return;
+        }
+
+        // Redirect to appropriate dashboard
+        switch (userData.role) {
+          case 'founder':
+            navigate('/founder-dashboard');
+            break;
+          case 'advisor':
+            navigate('/advisor-dashboard');
+            break;
+          case 'admin':
+            navigate('/admin-dashboard');
+            break;
+          default:
+            navigate('/');
+        }
       }
     } catch (err: any) {
       console.error('Login exception:', err);
@@ -154,16 +206,21 @@ const Login = () => {
           </form>
           
           <div className="mt-6 text-center text-sm">
-            <p className="text-gray-600">
-              Don't have an account?{' '}
-              <Link to="/apply-copilot" className="text-blue-600 hover:underline font-medium">
-                Apply as Founder
-              </Link>
-              {' '}or{' '}
-              <Link to="/apply-sme" className="text-blue-600 hover:underline font-medium">
-                Apply as Advisor
-              </Link>
+            <p className="text-gray-600 mb-4">
+              Don't have an account? Apply below:
             </p>
+            <div className="space-y-2">
+              <Link to="/" state={{ selectedRole: 'founder' }} className="block">
+                <Button variant="outline" className="w-full">
+                  Apply as Founder
+                </Button>
+              </Link>
+              <Link to="/" state={{ selectedRole: 'advisor' }} className="block">
+                <Button variant="outline" className="w-full">
+                  Apply as Advisor
+                </Button>
+              </Link>
+            </div>
           </div>
         </CardContent>
       </Card>

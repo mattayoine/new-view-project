@@ -9,12 +9,12 @@ import { SecurityProvider } from "@/hooks/useSecurityContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import Onboarding from "./pages/Onboarding";
-import Index from "./pages/Index";
+// import Index from "./pages/Index"; // Hidden
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import PendingApproval from "./pages/PendingApproval";
-import ApplyCoPilot from "./pages/ApplyCoPilot";
-import ApplySME from "./pages/ApplySME";
+// import ApplyCoPilot from "./pages/ApplyCoPilot"; // Hidden
+// import ApplySME from "./pages/ApplySME"; // Hidden
 import FounderDashboard from "./pages/FounderDashboard";
 import AdvisorDashboard from "./pages/AdvisorDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -40,12 +40,12 @@ const App = () => (
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Onboarding />} />
-                <Route path="/home" element={<Index />} />
+                {/* <Route path="/home" element={<Index />} /> Hidden */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/pending-approval" element={<PendingApproval />} />
-                <Route path="/apply-copilot" element={<ApplyCoPilot />} />
-                <Route path="/apply-sme" element={<ApplySME />} />
+                {/* <Route path="/apply-copilot" element={<ApplyCoPilot />} /> Hidden */}
+                {/* <Route path="/apply-sme" element={<ApplySME />} /> Hidden */}
                 <Route path="/founder-dashboard" element={
                   <AuthGuard requiredRole="founder">
                     <FounderDashboard />
