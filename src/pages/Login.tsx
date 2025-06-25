@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { Eye, EyeOff, UserPlus, Users } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -16,7 +16,6 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [showApplicationOptions, setShowApplicationOptions] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -46,7 +45,6 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    setShowApplicationOptions(false);
 
     try {
       // Clean up any existing auth state
@@ -69,15 +67,6 @@ const Login = () => {
 
       if (loginError) {
         console.error('Login error:', loginError);
-        
-        // Check if it's an invalid credentials error - suggest application
-        if (loginError.message.includes('Invalid login credentials') || 
-            loginError.message.includes('Email not confirmed')) {
-          setError('No account found with these credentials.');
-          setShowApplicationOptions(true);
-          return;
-        }
-        
         setError(loginError.message);
         return;
       }
@@ -164,41 +153,18 @@ const Login = () => {
             </Button>
           </form>
           
-          {showApplicationOptions && (
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h3 className="text-lg font-semibold text-blue-900 mb-3 text-center">
-                Don't have an account yet?
-              </h3>
-              <p className="text-sm text-blue-700 mb-4 text-center">
-                Apply to join our platform and get approved by our admin team.
-              </p>
-              <div className="space-y-3">
-                <Link to="/onboarding" className="block">
-                  <Button variant="outline" className="w-full border-blue-300 text-blue-700 hover:bg-blue-100">
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Apply as Founder
-                  </Button>
-                </Link>
-                <Link to="/onboarding" className="block">
-                  <Button variant="outline" className="w-full border-green-300 text-green-700 hover:bg-green-100">
-                    <Users className="h-4 w-4 mr-2" />
-                    Apply as Advisor
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          )}
-          
-          {!showApplicationOptions && (
-            <div className="mt-6 text-center text-sm">
-              <p className="text-gray-600">
-                Don't have an account?{' '}
-                <Link to="/onboarding" className="text-blue-600 hover:underline font-medium">
-                  Apply to join
-                </Link>
-              </p>
-            </div>
-          )}
+          <div className="mt-6 text-center text-sm">
+            <p className="text-gray-600">
+              Don't have an account?{' '}
+              <Link to="/apply-copilot" className="text-blue-600 hover:underline font-medium">
+                Apply as Founder
+              </Link>
+              {' '}or{' '}
+              <Link to="/apply-sme" className="text-blue-600 hover:underline font-medium">
+                Apply as Advisor
+              </Link>
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>

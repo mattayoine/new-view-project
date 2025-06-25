@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,20 +6,9 @@ import { Link } from "react-router-dom";
 import { CheckCircle, Clock, Users, Target, Shield, Calendar } from "lucide-react";
 import FounderForm from "@/components/onboarding/FounderForm";
 import AdvisorForm from "@/components/onboarding/AdvisorForm";
-import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
 
 const Onboarding = () => {
   const [selectedRole, setSelectedRole] = useState<'founder' | 'advisor' | null>(null);
-  const { user } = useAuth();
-  const navigate = useNavigate();
-
-  // Redirect authenticated users to their dashboard
-  React.useEffect(() => {
-    if (user) {
-      navigate('/');
-    }
-  }, [user, navigate]);
 
   if (selectedRole === 'founder') {
     return <FounderForm onBack={() => setSelectedRole(null)} />;
@@ -43,8 +31,11 @@ const Onboarding = () => {
               <span className="text-2xl font-bold text-gray-900">CoPilot</span>
             </div>
             <div className="flex items-center space-x-4">
+              <Link to="/home" className="text-gray-700 hover:text-blue-600 transition-colors">
+                Platform Info
+              </Link>
               <Link to="/login">
-                <Button variant="outline" size="sm">Already have an account? Login</Button>
+                <Button variant="outline" size="sm">Login</Button>
               </Link>
             </div>
           </div>
@@ -55,24 +46,24 @@ const Onboarding = () => {
       <section className="pt-16 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
           <Badge className="mb-6 bg-green-100 text-green-800 hover:bg-green-100">
-            Application Portal
+            Pilot Program Registration
           </Badge>
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6 leading-tight">
             Join the 
             <span className="bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-              CoPilot Platform
+              CoPilot Pilot Program
             </span>
           </h1>
           <p className="text-xl text-gray-600 mb-8">
-            Apply to connect African founders with Diaspora experts for growth and impact
+            A 6-week advisory pilot connecting African founders with Diaspora experts
           </p>
         </div>
       </section>
 
-      {/* Application Options */}
+      {/* Who This Is For */}
       <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">Choose Your Application</h2>
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">Who This Is For</h2>
           
           <div className="grid lg:grid-cols-2 gap-8">
             <Card className="border-2 border-blue-100 hover:border-blue-300 transition-colors cursor-pointer" onClick={() => setSelectedRole('founder')}>
