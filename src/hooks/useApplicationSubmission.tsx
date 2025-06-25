@@ -34,56 +34,78 @@ export const useFounderApplicationSubmission = () => {
     mutationFn: async (data: FounderApplicationData) => {
       console.log('Submitting founder application:', data);
       
-      // Create base application record
-      const { data: baseApp, error: baseError } = await supabase
-        .from('base_applications')
-        .insert({
-          name: data.name,
-          email: data.email,
-          location: data.location,
-          type: 'founder',
-          status: 'pending'
-        })
-        .select()
-        .single();
+      try {
+        // Create base application record with explicit error handling
+        const { data: baseApp, error: baseError } = await supabase
+          .from('base_applications')
+          .insert({
+            name: data.name,
+            email: data.email,
+            location: data.location,
+            type: 'founder',
+            status: 'pending'
+          })
+          .select()
+          .single();
 
-      if (baseError) {
-        console.error('Base application error:', baseError);
-        throw baseError;
+        if (baseError) {
+          console.error('Base application error:', baseError);
+          console.error('Base application error details:', {
+            code: baseError.code,
+            message: baseError.message,
+            details: baseError.details,
+            hint: baseError.hint
+          });
+          throw new Error(`Failed to create application: ${baseError.message}`);
+        }
+
+        if (!baseApp) {
+          throw new Error('No application data returned');
+        }
+
+        console.log('Base application created successfully:', baseApp);
+
+        // Create founder-specific details
+        const { error: detailError } = await supabase
+          .from('founder_application_details')
+          .insert({
+            application_id: baseApp.id,
+            startup_name: data.startup_name,
+            website: data.website,
+            sector: data.sector,
+            stage: data.stage,
+            challenge: data.challenge,
+            win_definition: data.win_definition,
+            video_link: data.video_link,
+            case_study_consent: data.case_study_consent
+          });
+
+        if (detailError) {
+          console.error('Founder details error:', detailError);
+          console.error('Founder details error details:', {
+            code: detailError.code,
+            message: detailError.message,
+            details: detailError.details,
+            hint: detailError.hint
+          });
+          throw new Error(`Failed to save application details: ${detailError.message}`);
+        }
+
+        console.log('Founder application details created successfully');
+        return baseApp;
+        
+      } catch (error) {
+        console.error('Application submission failed:', error);
+        throw error;
       }
-
-      console.log('Base application created:', baseApp);
-
-      // Create founder-specific details
-      const { error: detailError } = await supabase
-        .from('founder_application_details')
-        .insert({
-          application_id: baseApp.id,
-          startup_name: data.startup_name,
-          website: data.website,
-          sector: data.sector,
-          stage: data.stage,
-          challenge: data.challenge,
-          win_definition: data.win_definition,
-          video_link: data.video_link,
-          case_study_consent: data.case_study_consent
-        });
-
-      if (detailError) {
-        console.error('Founder details error:', detailError);
-        throw detailError;
-      }
-
-      console.log('Founder application details created successfully');
-      return baseApp;
     },
     onSuccess: () => {
       console.log('Founder application submitted successfully');
       toast.success('Application submitted successfully! We\'ll review it and get back to you soon.');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Application submission error:', error);
-      toast.error('Failed to submit application. Please try again.');
+      toast.error(`Failed to submit application: ${error.message}`);
     }
   });
 };
@@ -93,54 +115,76 @@ export const useAdvisorApplicationSubmission = () => {
     mutationFn: async (data: AdvisorApplicationData) => {
       console.log('Submitting advisor application:', data);
       
-      // Create base application record
-      const { data: baseApp, error: baseError } = await supabase
-        .from('base_applications')
-        .insert({
-          name: data.name,
-          email: data.email,
-          location: data.location,
-          type: 'advisor',
-          status: 'pending'
-        })
-        .select()
-        .single();
+      try {
+        // Create base application record with explicit error handling
+        const { data: baseApp, error: baseError } = await supabase
+          .from('base_applications')
+          .insert({
+            name: data.name,
+            email: data.email,
+            location: data.location,
+            type: 'advisor',
+            status: 'pending'
+          })
+          .select()
+          .single();
 
-      if (baseError) {
-        console.error('Base application error:', baseError);
-        throw baseError;
+        if (baseError) {
+          console.error('Base application error:', baseError);
+          console.error('Base application error details:', {
+            code: baseError.code,
+            message: baseError.message,
+            details: baseError.details,
+            hint: baseError.hint
+          });
+          throw new Error(`Failed to create application: ${baseError.message}`);
+        }
+
+        if (!baseApp) {
+          throw new Error('No application data returned');
+        }
+
+        console.log('Base application created successfully:', baseApp);
+
+        // Create advisor-specific details
+        const { error: detailError } = await supabase
+          .from('advisor_application_details')
+          .insert({
+            application_id: baseApp.id,
+            linkedin: data.linkedin,
+            expertise: data.expertise,
+            experience_level: data.experience_level,
+            timezone: data.timezone,
+            challenge_preference: data.challenge_preference,
+            public_profile_consent: data.public_profile_consent
+          });
+
+        if (detailError) {
+          console.error('Advisor details error:', detailError);
+          console.error('Advisor details error details:', {
+            code: detailError.code,
+            message: detailError.message,
+            details: detailError.details,
+            hint: detailError.hint
+          });
+          throw new Error(`Failed to save application details: ${detailError.message}`);
+        }
+
+        console.log('Advisor application details created successfully');
+        return baseApp;
+        
+      } catch (error) {
+        console.error('Application submission failed:', error);
+        throw error;
       }
-
-      console.log('Base application created:', baseApp);
-
-      // Create advisor-specific details
-      const { error: detailError } = await supabase
-        .from('advisor_application_details')
-        .insert({
-          application_id: baseApp.id,
-          linkedin: data.linkedin,
-          expertise: data.expertise,
-          experience_level: data.experience_level,
-          timezone: data.timezone,
-          challenge_preference: data.challenge_preference,
-          public_profile_consent: data.public_profile_consent
-        });
-
-      if (detailError) {
-        console.error('Advisor details error:', detailError);
-        throw detailError;
-      }
-
-      console.log('Advisor application details created successfully');
-      return baseApp;
     },
     onSuccess: () => {
       console.log('Advisor application submitted successfully');
       toast.success('Application submitted successfully! We\'ll review it and get back to you soon.');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Application submission error:', error);
-      toast.error('Failed to submit application. Please try again.');
+      toast.error(`Failed to submit application: ${error.message}`);
     }
   });
 };

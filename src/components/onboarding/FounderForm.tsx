@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, CheckCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
 import { useFounderApplicationSubmission } from "@/hooks/useApplicationSubmission";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface FounderFormProps {
   onBack: () => void;
@@ -27,41 +28,67 @@ const FounderForm = ({ onBack }: FounderFormProps) => {
   });
 
   const [submitted, setSubmitted] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const submitApplication = useFounderApplicationSubmission();
+
+  const validateForm = () => {
+    const errors: string[] = [];
+    
+    if (!formData.name.trim()) errors.push("Name is required");
+    if (!formData.email.trim()) errors.push("Email is required");
+    if (!formData.location.trim()) errors.push("Location is required");
+    if (!formData.startup_name.trim()) errors.push("Startup name is required");
+    if (!formData.sector.trim()) errors.push("Sector is required");
+    if (!formData.stage.trim()) errors.push("Stage is required");
+    if (!formData.challenge.trim()) errors.push("Current challenge is required");
+    if (!formData.win_definition.trim()) errors.push("Win definition is required");
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (formData.email && !emailRegex.test(formData.email)) {
+      errors.push("Please enter a valid email address");
+    }
+    
+    return errors;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    console.log('Form submitted with data:', formData);
+    console.log('Form submission started with data:', formData);
     
-    // Validate required fields
-    if (!formData.name || !formData.email || !formData.location || 
-        !formData.startup_name || !formData.sector || !formData.stage || 
-        !formData.challenge || !formData.win_definition) {
-      console.error('Missing required fields');
+    // Clear previous validation errors
+    setValidationErrors([]);
+    
+    // Validate form
+    const errors = validateForm();
+    if (errors.length > 0) {
+      console.error('Form validation failed:', errors);
+      setValidationErrors(errors);
       return;
     }
     
     try {
       console.log('Attempting to submit application...');
       await submitApplication.mutateAsync({
-        name: formData.name,
-        email: formData.email,
-        location: formData.location,
-        startup_name: formData.startup_name,
-        website: formData.website || undefined,
-        sector: formData.sector,
-        stage: formData.stage,
-        challenge: formData.challenge,
-        win_definition: formData.win_definition,
-        video_link: formData.video_link || undefined,
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        location: formData.location.trim(),
+        startup_name: formData.startup_name.trim(),
+        website: formData.website.trim() || undefined,
+        sector: formData.sector.trim(),
+        stage: formData.stage.trim(),
+        challenge: formData.challenge.trim(),
+        win_definition: formData.win_definition.trim(),
+        video_link: formData.video_link.trim() || undefined,
         case_study_consent: formData.case_study_consent
       });
       
       console.log('Application submitted successfully');
       setSubmitted(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Form submission error:', error);
+      setValidationErrors([error.message || 'An error occurred while submitting your application']);
     }
   };
 
@@ -104,6 +131,19 @@ const FounderForm = ({ onBack }: FounderFormProps) => {
             <CardTitle className="text-2xl text-blue-600">Apply as Founder</CardTitle>
           </CardHeader>
           <CardContent>
+            {validationErrors.length > 0 && (
+              <Alert className="mb-6" variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  <div className="space-y-1">
+                    {validationErrors.map((error, index) => (
+                      <div key={index}>• {error}</div>
+                    ))}
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Basic Info */}
               <div className="space-y-4">
