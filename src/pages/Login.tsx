@@ -96,14 +96,7 @@ const Login = () => {
       if (data.user) {
         console.log('Login successful for user:', data.user.email);
         
-        // SPECIAL HANDLING FOR ADMIN EMAIL
-        if (data.user.email === 'ainestuart58@gmail.com') {
-          console.log('Admin login detected, redirecting to admin dashboard');
-          navigate('/admin-dashboard');
-          return;
-        }
-        
-        // Check if user has a role in the system for non-admin users
+        // Check if user has a role in the system
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('role, status, profile_completed')
@@ -113,6 +106,13 @@ const Login = () => {
         if (userError || !userData) {
           // User exists in auth but not in our system - redirect to application
           setError('Please complete your application to access the platform.');
+          return;
+        }
+
+        // ADMIN BYPASS LOGIC: If user is admin, let them in regardless of profile completion
+        if (userData.role === 'admin') {
+          console.log('Admin user detected, bypassing application flow');
+          navigate('/admin-dashboard');
           return;
         }
 
@@ -129,9 +129,6 @@ const Login = () => {
             break;
           case 'advisor':
             navigate('/advisor-dashboard');
-            break;
-          case 'admin':
-            navigate('/admin-dashboard');
             break;
           default:
             navigate('/');

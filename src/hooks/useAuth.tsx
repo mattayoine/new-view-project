@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,12 +21,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Checking/creating user record for:', authUser.email);
       
-      // Special handling for admin email - ensure they get admin role
-      const isAdminEmail = authUser.email === 'ainestuart58@gmail.com';
-      const userRole = isAdminEmail ? 'admin' : (authUser.user_metadata?.role || 'founder');
+      // Use service role or a safer approach to check if user exists
+      // First try to create the user record, if it fails due to conflict, that means it exists
+      const userRole = authUser.user_metadata?.role || 'founder';
       
-      console.log('Creating new user record with role:', userRole, 'for email:', authUser.email);
-      
+      console.log('Creating new user record with role:', userRole);
       const { data, error: insertError } = await supabase
         .from('users')
         .insert({
@@ -42,26 +40,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (insertError) {
         if (insertError.code === '23505') {
-          // User already exists, update if it's the admin
-          console.log('User record already exists, checking if admin update needed');
-          
-          if (isAdminEmail) {
-            console.log('Updating existing record to ensure admin status');
-            const { error: updateError } = await supabase
-              .from('users')
-              .update({
-                role: 'admin',
-                status: 'active',
-                profile_completed: true
-              })
-              .eq('auth_id', authUser.id);
-              
-            if (updateError) {
-              console.error('Error updating admin record:', updateError);
-            } else {
-              console.log('Successfully updated admin record');
-            }
-          }
+          // User already exists, that's fine
+          console.log('User record already exists, fetching existing record');
           
           // Try to fetch the existing user record
           const { data: existingUser, error: fetchError } = await supabase
@@ -81,27 +61,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (error) {
       console.error('Error in createUserRecord:', error);
-      
-      // For admin email, try a direct approach if the above fails
-      if (authUser.email === 'ainestuart58@gmail.com') {
-        console.log('Attempting direct admin record creation');
-        try {
-          await supabase
-            .from('users')
-            .upsert({
-              auth_id: authUser.id,
-              email: authUser.email,
-              role: 'admin',
-              status: 'active',
-              profile_completed: true
-            }, {
-              onConflict: 'auth_id'
-            });
-          console.log('Direct admin upsert completed');
-        } catch (upsertError) {
-          console.error('Direct admin upsert failed:', upsertError);
-        }
-      }
     }
   };
 

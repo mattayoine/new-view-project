@@ -32,9 +32,9 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
     return <Navigate to={redirectTo} replace />;
   }
 
-  // PRIORITY ADMIN BYPASS: Allow admins through regardless of anything else
-  if (requireAuth && user && (userRole === 'admin' || user.email === 'ainestuart58@gmail.com')) {
-    console.log('AuthGuard: Admin user detected (role:', userRole, 'email:', user.email, '), allowing access');
+  // ADMIN BYPASS: Allow admins through regardless of profile completion or other role requirements
+  if (requireAuth && user && userRole === 'admin') {
+    console.log('AuthGuard: Admin user detected, allowing access');
     return <>{children}</>;
   }
 
@@ -45,7 +45,8 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
   }
 
   // For non-admin users, check if they have a proper role assignment
-  if (requireAuth && user && !userRole && user.email !== 'ainestuart58@gmail.com') {
+  // Give a bit more grace period for role loading for new users
+  if (requireAuth && user && !userRole) {
     console.log('AuthGuard: User exists but no role assigned, checking if admin bypass applies');
     
     // If we're still loading or it's been a very short time since login, show loading
