@@ -50,57 +50,124 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Application not found');
     }
 
+    if (application.status === 'approved') {
+      console.log('Application already approved, skipping');
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Application already approved',
+          tempPassword: 'Already approved - check existing credentials'
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        }
+      );
+    }
+
     console.log('Application fetched:', application.email, application.type);
 
-    // Generate secure temporary password
-    const tempPassword = Math.random().toString(36).slice(-12) + 'A1!';
+    // Check if user already exists in auth
+    const { data: existingAuthUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
     
-    // Create user account using admin API
-    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: application.email,
-      password: tempPassword,
-      email_confirm: true,
-      user_metadata: {
-        name: application.name,
-        role: application.type,
-        approved_by: reviewerId
-      }
-    });
-
-    if (authError) {
-      console.error('Auth user creation failed:', authError);
-      throw new Error(`Failed to create auth user: ${authError.message}`);
+    if (listError) {
+      console.error('Error listing users:', listError);
+      throw new Error(`Failed to check existing users: ${listError.message}`);
     }
 
-    console.log('Auth user created:', authUser.user.id);
+    const existingAuthUser = existingAuthUsers.users.find(user => user.email === application.email);
+    let authUser;
+    let tempPassword = '';
 
-    // Create user record in users table
-    const { data: newUser, error: userError } = await supabaseAdmin
-      .from('users')
-      .insert({
-        auth_id: authUser.user.id,
+    if (existingAuthUser) {
+      console.log('Auth user already exists, using existing user:', existingAuthUser.id);
+      authUser = { user: existingAuthUser };
+      tempPassword = 'User already exists - password unchanged';
+    } else {
+      // Generate secure temporary password
+      tempPassword = Math.random().toString(36).slice(-12) + 'A1!';
+      
+      // Create user account using admin API
+      const { data: newAuthUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
         email: application.email,
-        role: application.type,
-        status: 'active',
-        profile_completed: true
-      })
-      .select()
-      .single();
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: {
+          name: application.name,
+          role: application.type,
+          approved_by: reviewerId
+        }
+      });
 
-    if (userError) {
-      console.error('User record creation failed:', userError);
-      // Cleanup auth user if user record creation fails
-      try {
-        await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
-      } catch (cleanupError) {
-        console.error('Failed to cleanup auth user:', cleanupError);
+      if (authError) {
+        console.error('Auth user creation failed:', authError);
+        throw new Error(`Failed to create auth user: ${authError.message}`);
       }
-      throw new Error(`Failed to create user record: ${userError.message}`);
+
+      console.log('Auth user created:', newAuthUser.user.id);
+      authUser = newAuthUser;
     }
 
-    console.log('User record created:', newUser.id);
+    // Check if user record already exists in users table
+    const { data: existingUser, error: userCheckError } = await supabaseAdmin
+      .from('users')
+      .select('id, role, status')
+      .eq('auth_id', authUser.user.id)
+      .maybeSingle();
 
-    // Create user profile
+    if (userCheckError) {
+      console.error('Error checking existing user:', userCheckError);
+      throw new Error(`Failed to check existing user record: ${userCheckError.message}`);
+    }
+
+    let userId;
+    
+    if (existingUser) {
+      console.log('User record already exists, updating:', existingUser.id);
+      // Update existing user record
+      const { data: updatedUser, error: updateError } = await supabaseAdmin
+        .from('users')
+        .update({
+          role: application.type,
+          status: 'active',
+          profile_completed: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingUser.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('User record update failed:', updateError);
+        throw new Error(`Failed to update user record: ${updateError.message}`);
+      }
+
+      userId = updatedUser.id;
+      console.log('User record updated:', userId);
+    } else {
+      // Create new user record
+      const { data: newUser, error: userError } = await supabaseAdmin
+        .from('users')
+        .insert({
+          auth_id: authUser.user.id,
+          email: application.email,
+          role: application.type,
+          status: 'active',
+          profile_completed: true
+        })
+        .select()
+        .single();
+
+      if (userError) {
+        console.error('User record creation failed:', userError);
+        throw new Error(`Failed to create user record: ${userError.message}`);
+      }
+
+      userId = newUser.id;
+      console.log('User record created:', userId);
+    }
+
+    // Create or update user profile
     const profileData = application.type === 'founder' 
       ? {
           name: application.name,
@@ -123,17 +190,44 @@ const handler = async (req: Request): Promise<Response> => {
           challenge_preference: application.advisor_details?.[0]?.challenge_preference
         };
 
-    const { error: profileError } = await supabaseAdmin
+    // Check if profile already exists
+    const { data: existingProfile } = await supabaseAdmin
       .from('user_profiles')
-      .insert({
-        user_id: newUser.id,
-        profile_type: application.type,
-        profile_data: profileData
-      });
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
 
-    if (profileError) {
-      console.error('Profile creation error:', profileError);
-      // Don't throw here as the main user creation succeeded
+    if (existingProfile) {
+      // Update existing profile
+      const { error: profileUpdateError } = await supabaseAdmin
+        .from('user_profiles')
+        .update({
+          profile_type: application.type,
+          profile_data: profileData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+
+      if (profileUpdateError) {
+        console.error('Profile update error:', profileUpdateError);
+      } else {
+        console.log('Profile updated successfully');
+      }
+    } else {
+      // Create new profile
+      const { error: profileError } = await supabaseAdmin
+        .from('user_profiles')
+        .insert({
+          user_id: userId,
+          profile_type: application.type,
+          profile_data: profileData
+        });
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+      } else {
+        console.log('Profile created successfully');
+      }
     }
 
     // Update application status
@@ -156,7 +250,7 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        userId: newUser.id, 
+        userId: userId, 
         authUserId: authUser.user.id,
         tempPassword 
       }),
