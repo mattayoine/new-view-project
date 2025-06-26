@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -51,10 +52,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (insertError) {
           console.error('Error creating user record:', insertError);
         } else {
-          console.log('Successfully created user record');
+          console.log('Successfully created user record with role:', userRole);
         }
       } else {
-        console.log('User record already exists:', existingUser.role);
+        console.log('User record already exists with role:', existingUser.role);
       }
     } catch (error) {
       console.error('Error in createUserRecord:', error);

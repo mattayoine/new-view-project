@@ -21,7 +21,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
   const { user, session, loading: authLoading } = useAuth();
   const { userRole, loading: roleLoading } = useSecurity();
 
-  // Show loading while checking authentication
+  // Show loading while checking authentication and role
   if (authLoading || roleLoading) {
     return <LoadingState message="Verifying access..." />;
   }
@@ -32,16 +32,16 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
     return <Navigate to={redirectTo} replace />;
   }
 
-  // Check role-based access if required
-  if (requiredRole && userRole !== requiredRole && userRole !== 'admin') {
-    console.log('AuthGuard: Insufficient role access, user has:', userRole, 'required:', requiredRole);
-    return <Navigate to="/" replace />;
-  }
-
-  // ADMIN BYPASS: Allow admins through regardless of profile completion
+  // ADMIN BYPASS: Allow admins through regardless of profile completion or other role requirements
   if (requireAuth && user && userRole === 'admin') {
     console.log('AuthGuard: Admin user detected, allowing access');
     return <>{children}</>;
+  }
+
+  // Check role-based access if required (non-admin users)
+  if (requiredRole && userRole !== requiredRole) {
+    console.log('AuthGuard: Insufficient role access, user has:', userRole, 'required:', requiredRole);
+    return <Navigate to="/" replace />;
   }
 
   // For non-admin users, check if they have a proper role assignment

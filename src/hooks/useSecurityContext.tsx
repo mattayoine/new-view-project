@@ -22,6 +22,7 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const fetchUserRole = async () => {
     if (!user || !session) {
+      console.log('No session, cannot fetch user role');
       setUserRole(null);
       setLoading(false);
       return;
@@ -57,12 +58,12 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   useEffect(() => {
-    if (authLoading) {
-      setLoading(true);
-      return;
+    if (!authLoading && user && session) {
+      fetchUserRole();
+    } else if (!user || !session) {
+      setUserRole(null);
+      setLoading(false);
     }
-
-    fetchUserRole();
   }, [user, session, authLoading]);
 
   const isAdmin = userRole === 'admin';
