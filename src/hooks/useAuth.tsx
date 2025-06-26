@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,40 +21,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Checking/creating user record for:', authUser.email);
       
-      // Check if user exists
-      const { data: existingUser, error: fetchError } = await supabase
+      // Use service role or a safer approach to check if user exists
+      // First try to create the user record, if it fails due to conflict, that means it exists
+      const userRole = authUser.user_metadata?.role || 'founder';
+      
+      console.log('Creating new user record with role:', userRole);
+      const { data, error: insertError } = await supabase
         .from('users')
-        .select('*')
-        .eq('auth_id', authUser.id)
+        .insert({
+          auth_id: authUser.id,
+          email: authUser.email!,
+          role: userRole,
+          status: userRole === 'admin' ? 'active' : 'pending_activation',
+          profile_completed: userRole === 'admin'
+        })
+        .select()
         .single();
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('Error checking existing user:', fetchError);
-        return;
-      }
-
-      if (!existingUser) {
-        // Check if user has a role in metadata or default to founder
-        const userRole = authUser.user_metadata?.role || 'founder';
-        
-        console.log('Creating new user record with role:', userRole);
-        const { error: insertError } = await supabase
-          .from('users')
-          .insert({
-            auth_id: authUser.id,
-            email: authUser.email!,
-            role: userRole,
-            status: userRole === 'admin' ? 'active' : 'pending_activation', // Admins are active by default
-            profile_completed: userRole === 'admin' // Admins bypass profile completion
-          });
-
-        if (insertError) {
-          console.error('Error creating user record:', insertError);
+      if (insertError) {
+        if (insertError.code === '23505') {
+          // User already exists, that's fine
+          console.log('User record already exists, fetching existing record');
+          
+          // Try to fetch the existing user record
+          const { data: existingUser, error: fetchError } = await supabase
+            .from('users')
+            .select('role, status')
+            .eq('auth_id', authUser.id)
+            .maybeSingle();
+            
+          if (!fetchError && existingUser) {
+            console.log('Found existing user record with role:', existingUser.role);
+          }
         } else {
-          console.log('Successfully created user record with role:', userRole);
+          console.error('Error creating user record:', insertError);
         }
       } else {
-        console.log('User record already exists with role:', existingUser.role);
+        console.log('Successfully created user record with role:', userRole);
       }
     } catch (error) {
       console.error('Error in createUserRecord:', error);
@@ -86,13 +88,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Create user record for approved users only
+        // Create user record for new signins
         if (event === 'SIGNED_IN' && session?.user) {
+          // Use a timeout to avoid race conditions with RLS
           setTimeout(async () => {
             if (mounted) {
               await createUserRecord(session.user);
             }
-          }, 100);
+          }, 200);
         }
         
         if (mounted) {
@@ -116,7 +119,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(session?.user ?? null);
           
           if (session?.user) {
-            await createUserRecord(session.user);
+            // Use timeout to avoid RLS issues during initial load
+            setTimeout(async () => {
+              if (mounted) {
+                await createUserRecord(session.user);
+              }
+            }, 200);
           }
           
           setLoading(false);

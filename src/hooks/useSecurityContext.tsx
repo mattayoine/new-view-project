@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,18 +30,29 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       console.log('Fetching user role for:', user.email);
       
+      // Use a more specific query to avoid RLS recursion issues
       const { data, error } = await supabase
         .from('users')
-        .select('role')
+        .select('role, status')
         .eq('auth_id', user.id)
-        .single();
+        .maybeSingle(); // Use maybeSingle to handle case where no record exists
 
       if (error) {
         console.error('Error fetching user role:', error);
-        setUserRole(null);
+        // Don't set role to null immediately on error - user might still be valid
+        // Let the auth system handle the user creation process
+        if (error.code === '42P17') {
+          console.log('RLS recursion detected, waiting for user creation...');
+          setUserRole(null);
+        } else {
+          setUserRole(null);
+        }
+      } else if (data) {
+        console.log('User role fetched:', data.role, 'status:', data.status);
+        setUserRole(data.role || null);
       } else {
-        console.log('User role fetched:', data?.role);
-        setUserRole(data?.role || null);
+        console.log('No user record found, may need to be created');
+        setUserRole(null);
       }
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
@@ -59,7 +69,11 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     if (!authLoading && user && session) {
-      fetchUserRole();
+      // Add a small delay to allow user record creation to complete
+      const timer = setTimeout(() => {
+        fetchUserRole();
+      }, 100);
+      return () => clearTimeout(timer);
     } else if (!user || !session) {
       setUserRole(null);
       setLoading(false);

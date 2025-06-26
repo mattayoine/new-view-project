@@ -45,8 +45,17 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
   }
 
   // For non-admin users, check if they have a proper role assignment
+  // Give a bit more grace period for role loading for new users
   if (requireAuth && user && !userRole) {
-    console.log('AuthGuard: User exists but no role assigned, blocking access');
+    console.log('AuthGuard: User exists but no role assigned, checking if admin bypass applies');
+    
+    // If we're still loading or it's been a very short time since login, show loading
+    // This prevents premature redirects for users whose records are still being created
+    if (roleLoading) {
+      return <LoadingState message="Setting up your account..." />;
+    }
+    
+    console.log('AuthGuard: No role found after loading, redirecting to pending approval');
     return <Navigate to="/pending-approval" replace />;
   }
 
