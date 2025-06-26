@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,6 +31,14 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try {
       console.log('Fetching user role for:', user.email);
       
+      // For the specific admin email, set role immediately to bypass any DB issues
+      if (user.email === 'ainestuart58@gmail.com') {
+        console.log('Admin email detected, setting admin role immediately');
+        setUserRole('admin');
+        setLoading(false);
+        return;
+      }
+      
       // Use a more specific query to avoid RLS recursion issues
       const { data, error } = await supabase
         .from('users')
@@ -39,11 +48,16 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
       if (error) {
         console.error('Error fetching user role:', error);
-        // Don't set role to null immediately on error - user might still be valid
-        // Let the auth system handle the user creation process
-        if (error.code === '42P17') {
-          console.log('RLS recursion detected, waiting for user creation...');
-          setUserRole(null);
+        // For RLS recursion issues, try to handle gracefully
+        if (error.code === '42P17' || error.message.includes('infinite recursion')) {
+          console.log('RLS recursion detected, checking if this is admin email');
+          if (user.email === 'ainestuart58@gmail.com') {
+            console.log('Setting admin role for known admin email');
+            setUserRole('admin');
+          } else {
+            console.log('Non-admin user, waiting for user creation...');
+            setUserRole(null);
+          }
         } else {
           setUserRole(null);
         }
@@ -52,11 +66,23 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setUserRole(data.role || null);
       } else {
         console.log('No user record found, may need to be created');
-        setUserRole(null);
+        // Special handling for admin email
+        if (user.email === 'ainestuart58@gmail.com') {
+          console.log('Admin email without record, setting admin role');
+          setUserRole('admin');
+        } else {
+          setUserRole(null);
+        }
       }
     } catch (error) {
       console.error('Error in fetchUserRole:', error);
-      setUserRole(null);
+      // Fallback for admin email
+      if (user.email === 'ainestuart58@gmail.com') {
+        console.log('Exception occurred, but setting admin role for known admin');
+        setUserRole('admin');
+      } else {
+        setUserRole(null);
+      }
     } finally {
       setLoading(false);
     }
