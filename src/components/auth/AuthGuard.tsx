@@ -38,7 +38,13 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({
     return <Navigate to="/" replace />;
   }
 
-  // Block access for users without proper roles (unapproved users)
+  // ADMIN BYPASS: Allow admins through regardless of profile completion
+  if (requireAuth && user && userRole === 'admin') {
+    console.log('AuthGuard: Admin user detected, allowing access');
+    return <>{children}</>;
+  }
+
+  // For non-admin users, check if they have a proper role assignment
   if (requireAuth && user && !userRole) {
     console.log('AuthGuard: User exists but no role assigned, blocking access');
     return <Navigate to="/pending-approval" replace />;

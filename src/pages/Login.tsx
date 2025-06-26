@@ -99,7 +99,7 @@ const Login = () => {
         // Check if user has a role in the system
         const { data: userData, error: userError } = await supabase
           .from('users')
-          .select('role, status')
+          .select('role, status, profile_completed')
           .eq('auth_id', data.user.id)
           .single();
 
@@ -109,21 +109,26 @@ const Login = () => {
           return;
         }
 
+        // ADMIN BYPASS LOGIC: If user is admin, let them in regardless of profile completion
+        if (userData.role === 'admin') {
+          console.log('Admin user detected, bypassing application flow');
+          navigate('/admin-dashboard');
+          return;
+        }
+
+        // For non-admin users, check status and profile completion
         if (userData.status !== 'active') {
           navigate('/pending-approval');
           return;
         }
 
-        // Redirect to appropriate dashboard
+        // Redirect to appropriate dashboard based on role
         switch (userData.role) {
           case 'founder':
             navigate('/founder-dashboard');
             break;
           case 'advisor':
             navigate('/advisor-dashboard');
-            break;
-          case 'admin':
-            navigate('/admin-dashboard');
             break;
           default:
             navigate('/');

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -35,29 +34,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (!existingUser) {
-        // Only create user record if they have a role in metadata
-        // This prevents auto-creation for unapproved users
-        const userRole = authUser.user_metadata?.role;
-        if (userRole && ['founder', 'advisor', 'admin'].includes(userRole)) {
-          console.log('Creating new user record with role:', userRole);
-          const { error: insertError } = await supabase
-            .from('users')
-            .insert({
-              auth_id: authUser.id,
-              email: authUser.email!,
-              role: userRole,
-              status: 'active',
-              profile_completed: false
-            });
+        // Check if user has a role in metadata or default to founder
+        const userRole = authUser.user_metadata?.role || 'founder';
+        
+        console.log('Creating new user record with role:', userRole);
+        const { error: insertError } = await supabase
+          .from('users')
+          .insert({
+            auth_id: authUser.id,
+            email: authUser.email!,
+            role: userRole,
+            status: userRole === 'admin' ? 'active' : 'pending_activation', // Admins are active by default
+            profile_completed: userRole === 'admin' // Admins bypass profile completion
+          });
 
-          if (insertError) {
-            console.error('Error creating user record:', insertError);
-          } else {
-            console.log('Successfully created user record');
-          }
+        if (insertError) {
+          console.error('Error creating user record:', insertError);
         } else {
-          console.log('User has no valid role, skipping user record creation');
+          console.log('Successfully created user record');
         }
+      } else {
+        console.log('User record already exists:', existingUser.role);
       }
     } catch (error) {
       console.error('Error in createUserRecord:', error);
