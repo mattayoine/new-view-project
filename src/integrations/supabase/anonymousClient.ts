@@ -10,6 +10,16 @@ export const anonymousSupabase = createClient<Database>(SUPABASE_URL, SUPABASE_P
   auth: {
     persistSession: false,
     autoRefreshToken: false,
-    detectSessionInUrl: false
+    detectSessionInUrl: false,
+    storage: {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {}
+    }
+  },
+  global: {
+    headers: {
+      'apikey': SUPABASE_PUBLISHABLE_KEY
+    }
   }
 });
