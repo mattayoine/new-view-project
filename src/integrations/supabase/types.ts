@@ -2329,6 +2329,8 @@ export type Database = {
     Views: {
       active_applications: {
         Row: {
+          application_data: Json | null
+          application_type: string | null
           created_at: string | null
           deleted_at: string | null
           email: string | null
@@ -2343,6 +2345,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          application_data?: Json | null
+          application_type?: string | null
           created_at?: string | null
           deleted_at?: string | null
           email?: string | null
@@ -2357,6 +2361,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          application_data?: Json | null
+          application_type?: string | null
           created_at?: string | null
           deleted_at?: string | null
           email?: string | null
@@ -2747,14 +2753,19 @@ export type Database = {
           founder_rating: number | null
           id: string | null
           is_recurring: boolean | null
+          location_details: string | null
+          location_type: string | null
           meeting_link: string | null
           notes: string | null
+          outcome_summary: string | null
           parent_series_id: string | null
+          preparation_notes: string | null
           recording_consent: Json | null
           recording_url: string | null
           recurrence_pattern: Json | null
           rescheduled_from: string | null
           scheduled_at: string | null
+          session_type: string | null
           status: string | null
           title: string | null
           transcript_url: string | null
@@ -2779,14 +2790,19 @@ export type Database = {
           founder_rating?: number | null
           id?: string | null
           is_recurring?: boolean | null
+          location_details?: string | null
+          location_type?: string | null
           meeting_link?: string | null
           notes?: string | null
+          outcome_summary?: string | null
           parent_series_id?: string | null
+          preparation_notes?: string | null
           recording_consent?: Json | null
           recording_url?: string | null
           recurrence_pattern?: Json | null
           rescheduled_from?: string | null
           scheduled_at?: string | null
+          session_type?: string | null
           status?: string | null
           title?: string | null
           transcript_url?: string | null
@@ -2811,14 +2827,19 @@ export type Database = {
           founder_rating?: number | null
           id?: string | null
           is_recurring?: boolean | null
+          location_details?: string | null
+          location_type?: string | null
           meeting_link?: string | null
           notes?: string | null
+          outcome_summary?: string | null
           parent_series_id?: string | null
+          preparation_notes?: string | null
           recording_consent?: Json | null
           recording_url?: string | null
           recurrence_pattern?: Json | null
           rescheduled_from?: string | null
           scheduled_at?: string | null
+          session_type?: string | null
           status?: string | null
           title?: string | null
           transcript_url?: string | null

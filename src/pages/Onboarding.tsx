@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -5,24 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { CheckCircle, Clock, Users, Target, Shield, Calendar } from "lucide-react";
-import FounderApplicationForm from "@/components/onboarding/FounderApplicationForm";
-import AdvisorApplicationForm from "@/components/onboarding/AdvisorApplicationForm";
 import { useAuth } from "@/hooks/useAuth";
 import { useSecurity } from "@/hooks/useSecurityContext";
 
 const Onboarding = () => {
-  const [selectedRole, setSelectedRole] = useState<'founder' | 'advisor' | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { userRole } = useSecurity();
-
-  // Handle state from login page redirect
-  useEffect(() => {
-    if (location.state?.selectedRole) {
-      setSelectedRole(location.state.selectedRole);
-    }
-  }, [location.state]);
 
   // Redirect authenticated users to their dashboard
   useEffect(() => {
@@ -40,14 +31,6 @@ const Onboarding = () => {
       }
     }
   }, [user, userRole, navigate]);
-
-  if (selectedRole === 'founder') {
-    return <FounderApplicationForm onBack={() => setSelectedRole(null)} />;
-  }
-
-  if (selectedRole === 'advisor') {
-    return <AdvisorApplicationForm onBack={() => setSelectedRole(null)} />;
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -94,7 +77,7 @@ const Onboarding = () => {
           <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">Who This Is For</h2>
           
           <div className="grid lg:grid-cols-2 gap-8">
-            <Card className="border-2 border-blue-100 hover:border-blue-300 transition-colors cursor-pointer" onClick={() => setSelectedRole('founder')}>
+            <Card className="border-2 border-blue-100">
               <CardHeader>
                 <CardTitle className="text-2xl text-blue-600 flex items-center">
                   <Users className="h-8 w-8 mr-3" />
@@ -114,13 +97,10 @@ const Onboarding = () => {
                   <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
                   <span className="text-gray-700">You need help with strategy, pricing, product, or growth</span>
                 </div>
-                <Button className="w-full mt-6 bg-blue-600 hover:bg-blue-700" onClick={() => setSelectedRole('founder')}>
-                  Apply as Founder
-                </Button>
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-green-100 hover:border-green-300 transition-colors cursor-pointer" onClick={() => setSelectedRole('advisor')}>
+            <Card className="border-2 border-green-100">
               <CardHeader>
                 <CardTitle className="text-2xl text-green-600 flex items-center">
                   <Target className="h-8 w-8 mr-3" />
@@ -140,9 +120,6 @@ const Onboarding = () => {
                   <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
                   <span className="text-gray-700">You can give 2–3 hours to directly help 1–2 founders</span>
                 </div>
-                <Button className="w-full mt-6 bg-green-600 hover:bg-green-700" onClick={() => setSelectedRole('advisor')}>
-                  Apply as Advisor
-                </Button>
               </CardContent>
             </Card>
           </div>
