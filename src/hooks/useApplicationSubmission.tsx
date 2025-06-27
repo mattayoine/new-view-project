@@ -1,6 +1,6 @@
 
 import { useMutation } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { anonymousSupabase } from '@/integrations/supabase/anonymousClient';
 import { toast } from 'sonner';
 
 interface FounderApplicationData {
@@ -35,8 +35,8 @@ export const useFounderApplicationSubmission = () => {
       console.log('Submitting founder application:', data);
       
       try {
-        // Create base application record with explicit error handling
-        const { data: baseApp, error: baseError } = await supabase
+        // Create base application record using anonymous client
+        const { data: baseApp, error: baseError } = await anonymousSupabase
           .from('base_applications')
           .insert({
             name: data.name,
@@ -65,8 +65,8 @@ export const useFounderApplicationSubmission = () => {
 
         console.log('Base application created successfully:', baseApp);
 
-        // Create founder-specific details
-        const { error: detailError } = await supabase
+        // Create founder-specific details using anonymous client
+        const { error: detailError } = await anonymousSupabase
           .from('founder_application_details')
           .insert({
             application_id: baseApp.id,
@@ -116,8 +116,8 @@ export const useAdvisorApplicationSubmission = () => {
       console.log('Submitting advisor application:', data);
       
       try {
-        // Create base application record with explicit error handling
-        const { data: baseApp, error: baseError } = await supabase
+        // Create base application record using anonymous client
+        const { data: baseApp, error: baseError } = await anonymousSupabase
           .from('base_applications')
           .insert({
             name: data.name,
@@ -146,8 +146,8 @@ export const useAdvisorApplicationSubmission = () => {
 
         console.log('Base application created successfully:', baseApp);
 
-        // Create advisor-specific details
-        const { error: detailError } = await supabase
+        // Create advisor-specific details using anonymous client
+        const { error: detailError } = await anonymousSupabase
           .from('advisor_application_details')
           .insert({
             application_id: baseApp.id,
