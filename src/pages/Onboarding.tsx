@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -231,6 +230,28 @@ const Onboarding = () => {
               </div>
             </CardContent>
           </Card>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-16 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold text-gray-900 mb-8">Ready to Join?</h2>
+          <p className="text-xl text-gray-600 mb-8">
+            Choose your role and start your application today
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-lg mx-auto">
+            <Link to="/founder-application" className="flex-1">
+              <Button size="lg" className="w-full bg-blue-600 hover:bg-blue-700">
+                Apply as Founder
+              </Button>
+            </Link>
+            <Link to="/advisor-application" className="flex-1">
+              <Button size="lg" variant="outline" className="w-full border-green-600 text-green-600 hover:bg-green-50">
+                Apply as Advisor
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 

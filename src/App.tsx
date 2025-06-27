@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,6 +8,8 @@ import { SecurityProvider } from "@/hooks/useSecurityContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import Onboarding from "./pages/Onboarding";
+import FounderApplication from "./pages/FounderApplication";
+import AdvisorApplication from "./pages/AdvisorApplication";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import PendingApproval from "./pages/PendingApproval";
@@ -37,6 +38,8 @@ const App = () => (
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Onboarding />} />
+                <Route path="/founder-application" element={<FounderApplication />} />
+                <Route path="/advisor-application" element={<AdvisorApplication />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/pending-approval" element={<PendingApproval />} />
