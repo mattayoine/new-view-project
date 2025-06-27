@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { CheckCircle, Clock, Users, Target, Shield, Calendar } from "lucide-react";
-import FounderForm from "@/components/onboarding/FounderForm";
-import AdvisorForm from "@/components/onboarding/AdvisorForm";
+import FounderApplicationForm from "@/components/onboarding/FounderApplicationForm";
+import AdvisorApplicationForm from "@/components/onboarding/AdvisorApplicationForm";
 import { useAuth } from "@/hooks/useAuth";
 import { useSecurity } from "@/hooks/useSecurityContext";
 
@@ -42,11 +42,11 @@ const Onboarding = () => {
   }, [user, userRole, navigate]);
 
   if (selectedRole === 'founder') {
-    return <FounderForm onBack={() => setSelectedRole(null)} />;
+    return <FounderApplicationForm onBack={() => setSelectedRole(null)} />;
   }
 
   if (selectedRole === 'advisor') {
-    return <AdvisorForm onBack={() => setSelectedRole(null)} />;
+    return <AdvisorApplicationForm onBack={() => setSelectedRole(null)} />;
   }
 
   return (
