@@ -10,8 +10,8 @@ export const useAdminApplications = () => {
         .from('base_applications')
         .select(`
           *,
-          founder_details:founder_application_details(*),
-          advisor_details:advisor_application_details(*)
+          founder_details:founder_application_details!founder_application_details_base_application_id_fkey(*),
+          advisor_details:advisor_application_details!advisor_application_details_base_application_id_fkey(*)
         `)
         .order('created_at', { ascending: false });
 

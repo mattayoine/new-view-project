@@ -122,6 +122,50 @@ export type Database = {
       }
       advisor_application_details: {
         Row: {
+          areas_of_expertise: string[] | null
+          base_application_id: string | null
+          challenge_preference: string | null
+          consent_public_deck: boolean | null
+          created_at: string | null
+          experience_level: string | null
+          id: string
+          linkedin_url: string
+          timezone_availability: string | null
+        }
+        Insert: {
+          areas_of_expertise?: string[] | null
+          base_application_id?: string | null
+          challenge_preference?: string | null
+          consent_public_deck?: boolean | null
+          created_at?: string | null
+          experience_level?: string | null
+          id?: string
+          linkedin_url: string
+          timezone_availability?: string | null
+        }
+        Update: {
+          areas_of_expertise?: string[] | null
+          base_application_id?: string | null
+          challenge_preference?: string | null
+          consent_public_deck?: boolean | null
+          created_at?: string | null
+          experience_level?: string | null
+          id?: string
+          linkedin_url?: string
+          timezone_availability?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advisor_application_details_base_application_id_fkey"
+            columns: ["base_application_id"]
+            isOneToOne: false
+            referencedRelation: "base_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      advisor_application_details_broken: {
+        Row: {
           application_id: string | null
           availability_schedule: Json | null
           challenge_preference: string
@@ -169,7 +213,7 @@ export type Database = {
             foreignKeyName: "advisor_application_details_application_id_fkey"
             columns: ["application_id"]
             isOneToOne: true
-            referencedRelation: "base_applications"
+            referencedRelation: "base_applications_broken"
             referencedColumns: ["id"]
           },
         ]
@@ -368,7 +412,7 @@ export type Database = {
             foreignKeyName: "application_review_logs_application_id_fkey"
             columns: ["application_id"]
             isOneToOne: false
-            referencedRelation: "base_applications"
+            referencedRelation: "base_applications_broken"
             referencedColumns: ["id"]
           },
           {
@@ -481,6 +525,39 @@ export type Database = {
       }
       base_applications: {
         Row: {
+          created_at: string | null
+          email: string
+          id: string
+          location: string | null
+          name: string
+          status: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          location?: string | null
+          name: string
+          status?: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          location?: string | null
+          name?: string
+          status?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      base_applications_broken: {
+        Row: {
           application_data: Json | null
           application_type: string | null
           created_at: string
@@ -547,6 +624,72 @@ export type Database = {
       }
       founder_application_details: {
         Row: {
+          application_id: string
+          base_application_id: string | null
+          case_study_consent: boolean
+          challenge: string | null
+          consent_case_study: boolean | null
+          created_at: string | null
+          current_challenge: string | null
+          id: string
+          sector: string | null
+          stage: string | null
+          startup_name: string
+          video_pitch_url: string | null
+          website: string | null
+          win_definition: string | null
+        }
+        Insert: {
+          application_id: string
+          base_application_id?: string | null
+          case_study_consent?: boolean
+          challenge?: string | null
+          consent_case_study?: boolean | null
+          created_at?: string | null
+          current_challenge?: string | null
+          id?: string
+          sector?: string | null
+          stage?: string | null
+          startup_name: string
+          video_pitch_url?: string | null
+          website?: string | null
+          win_definition?: string | null
+        }
+        Update: {
+          application_id?: string
+          base_application_id?: string | null
+          case_study_consent?: boolean
+          challenge?: string | null
+          consent_case_study?: boolean | null
+          created_at?: string | null
+          current_challenge?: string | null
+          id?: string
+          sector?: string | null
+          stage?: string | null
+          startup_name?: string
+          video_pitch_url?: string | null
+          website?: string | null
+          win_definition?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "founder_application_details_application_id_fkey1"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "base_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "founder_application_details_base_application_id_fkey"
+            columns: ["base_application_id"]
+            isOneToOne: false
+            referencedRelation: "base_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      founder_application_details_broken: {
+        Row: {
           application_id: string | null
           availability_schedule: Json | null
           case_study_consent: boolean | null
@@ -600,7 +743,7 @@ export type Database = {
             foreignKeyName: "founder_application_details_application_id_fkey"
             columns: ["application_id"]
             isOneToOne: true
-            referencedRelation: "base_applications"
+            referencedRelation: "base_applications_broken"
             referencedColumns: ["id"]
           },
         ]
