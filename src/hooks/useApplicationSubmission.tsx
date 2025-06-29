@@ -50,12 +50,6 @@ export const useFounderApplicationSubmission = () => {
 
         if (baseError) {
           console.error('Base application error:', baseError);
-          console.error('Base application error details:', {
-            code: baseError.code,
-            message: baseError.message,
-            details: baseError.details,
-            hint: baseError.hint
-          });
           throw new Error(`Failed to create application: ${baseError.message}`);
         }
 
@@ -69,25 +63,19 @@ export const useFounderApplicationSubmission = () => {
         const { error: detailError } = await anonymousSupabase
           .from('founder_application_details')
           .insert({
-            application_id: baseApp.id,
+            base_application_id: baseApp.id,
             startup_name: data.startup_name,
             website: data.website,
             sector: data.sector,
             stage: data.stage,
             challenge: data.challenge,
             win_definition: data.win_definition,
-            video_link: data.video_link,
+            video_pitch_url: data.video_link,
             case_study_consent: data.case_study_consent
           });
 
         if (detailError) {
           console.error('Founder details error:', detailError);
-          console.error('Founder details error details:', {
-            code: detailError.code,
-            message: detailError.message,
-            details: detailError.details,
-            hint: detailError.hint
-          });
           throw new Error(`Failed to save application details: ${detailError.message}`);
         }
 
@@ -131,12 +119,6 @@ export const useAdvisorApplicationSubmission = () => {
 
         if (baseError) {
           console.error('Base application error:', baseError);
-          console.error('Base application error details:', {
-            code: baseError.code,
-            message: baseError.message,
-            details: baseError.details,
-            hint: baseError.hint
-          });
           throw new Error(`Failed to create application: ${baseError.message}`);
         }
 
@@ -150,23 +132,17 @@ export const useAdvisorApplicationSubmission = () => {
         const { error: detailError } = await anonymousSupabase
           .from('advisor_application_details')
           .insert({
-            application_id: baseApp.id,
-            linkedin: data.linkedin,
-            expertise: data.expertise,
+            base_application_id: baseApp.id,
+            linkedin_url: data.linkedin,
+            areas_of_expertise: data.expertise,
             experience_level: data.experience_level,
-            timezone: data.timezone,
+            timezone_availability: data.timezone,
             challenge_preference: data.challenge_preference,
-            public_profile_consent: data.public_profile_consent
+            consent_public_deck: data.public_profile_consent
           });
 
         if (detailError) {
           console.error('Advisor details error:', detailError);
-          console.error('Advisor details error details:', {
-            code: detailError.code,
-            message: detailError.message,
-            details: detailError.details,
-            hint: detailError.hint
-          });
           throw new Error(`Failed to save application details: ${detailError.message}`);
         }
 

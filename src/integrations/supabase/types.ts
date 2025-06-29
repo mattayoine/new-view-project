@@ -530,6 +530,8 @@ export type Database = {
           id: string
           location: string | null
           name: string
+          rejection_reason: string | null
+          reviewed_at: string | null
           status: string
           type: string
           updated_at: string | null
@@ -540,6 +542,8 @@ export type Database = {
           id?: string
           location?: string | null
           name: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
           status?: string
           type: string
           updated_at?: string | null
@@ -550,6 +554,8 @@ export type Database = {
           id?: string
           location?: string | null
           name?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
           status?: string
           type?: string
           updated_at?: string | null
@@ -624,7 +630,6 @@ export type Database = {
       }
       founder_application_details: {
         Row: {
-          application_id: string
           base_application_id: string | null
           case_study_consent: boolean
           challenge: string | null
@@ -640,7 +645,6 @@ export type Database = {
           win_definition: string | null
         }
         Insert: {
-          application_id: string
           base_application_id?: string | null
           case_study_consent?: boolean
           challenge?: string | null
@@ -656,7 +660,6 @@ export type Database = {
           win_definition?: string | null
         }
         Update: {
-          application_id?: string
           base_application_id?: string | null
           case_study_consent?: boolean
           challenge?: string | null
@@ -672,13 +675,6 @@ export type Database = {
           win_definition?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "founder_application_details_application_id_fkey1"
-            columns: ["application_id"]
-            isOneToOne: false
-            referencedRelation: "base_applications"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "founder_application_details_base_application_id_fkey"
             columns: ["base_application_id"]
