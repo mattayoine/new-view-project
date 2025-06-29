@@ -52,8 +52,18 @@ export const useAssignments = () => {
         .from('advisor_founder_assignments')
         .select(`
           *,
-          founder:users!founder_id(id, email, auth_id),
-          advisor:users!advisor_id(id, email, auth_id),
+          founder:users!founder_id(
+            id, 
+            email, 
+            auth_id,
+            founder_profiles:user_profiles!user_id(profile_data)
+          ),
+          advisor:users!advisor_id(
+            id, 
+            email, 
+            auth_id,
+            advisor_profiles:user_profiles!user_id(profile_data)
+          ),
           assigned_by_user:users!assigned_by(id, email)
         `)
         .order('created_at', { ascending: false });

@@ -9,6 +9,8 @@ import { Award, Clock, MapPin, Target, Users, CheckCircle } from 'lucide-react';
 import { MatchCandidate } from '@/utils/matchingAlgorithm';
 import { useCreateAssignment } from '@/hooks/useAssignmentManagement';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import MatchScoreBreakdown from './MatchScoreBreakdown';
 
 interface MatchSuggestionsProps {
