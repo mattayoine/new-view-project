@@ -111,12 +111,12 @@ const MatchingDashboard = () => {
                 </div>
 
                 <div className="grid grid-cols-1 gap-2">
-                  <Select onValueChange={(value) => setFilters({ ...filters, sector: value })}>
+                  <Select onValueChange={(value) => setFilters({ ...filters, sector: value === "all" ? "" : value })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Filter by sector" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Sectors</SelectItem>
+                      <SelectItem value="all">All Sectors</SelectItem>
                       <SelectItem value="tech">Tech</SelectItem>
                       <SelectItem value="fintech">Fintech</SelectItem>
                       <SelectItem value="healthtech">Healthtech</SelectItem>
@@ -124,12 +124,12 @@ const MatchingDashboard = () => {
                     </SelectContent>
                   </Select>
 
-                  <Select onValueChange={(value) => setFilters({ ...filters, stage: value })}>
+                  <Select onValueChange={(value) => setFilters({ ...filters, stage: value === "all" ? "" : value })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Filter by stage" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Stages</SelectItem>
+                      <SelectItem value="all">All Stages</SelectItem>
                       <SelectItem value="idea">Idea</SelectItem>
                       <SelectItem value="mvp">MVP</SelectItem>
                       <SelectItem value="early_stage">Early Stage</SelectItem>
