@@ -532,6 +532,7 @@ export type Database = {
           name: string
           rejection_reason: string | null
           reviewed_at: string | null
+          reviewed_by: string | null
           status: string
           type: string
           updated_at: string | null
@@ -544,6 +545,7 @@ export type Database = {
           name: string
           rejection_reason?: string | null
           reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           type: string
           updated_at?: string | null
@@ -556,6 +558,7 @@ export type Database = {
           name?: string
           rejection_reason?: string | null
           reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           type?: string
           updated_at?: string | null

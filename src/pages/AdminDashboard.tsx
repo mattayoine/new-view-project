@@ -8,7 +8,8 @@ import AdvisorDirectory from '@/components/admin/AdvisorDirectory';
 import FounderDirectory from '@/components/admin/FounderDirectory';
 import CaseStudyLibrary from '@/components/admin/CaseStudyLibrary';
 import EnhancedApplicationReview from '@/components/admin/EnhancedApplicationReview';
-import { usePendingApplicationsCount } from '@/hooks/useApplicationActions';
+import MatchingDashboard from '@/components/admin/MatchingDashboard';
+import { usePendingApplicationsCount } from '@/hooks/useAdminApplications';
 import { Badge } from '@/components/ui/badge';
 
 const AdminDashboard = () => {
@@ -26,7 +27,7 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="applications" className="relative">
             Applications
@@ -36,6 +37,7 @@ const AdminDashboard = () => {
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="matching">Matching</TabsTrigger>
           <TabsTrigger value="sessions">Sessions</TabsTrigger>
           <TabsTrigger value="advisors">Advisors</TabsTrigger>
           <TabsTrigger value="founders">Founders</TabsTrigger>
@@ -48,6 +50,10 @@ const AdminDashboard = () => {
 
         <TabsContent value="applications">
           <EnhancedApplicationReview />
+        </TabsContent>
+
+        <TabsContent value="matching">
+          <MatchingDashboard />
         </TabsContent>
 
         <TabsContent value="sessions">
