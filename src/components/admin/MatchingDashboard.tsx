@@ -28,9 +28,8 @@ const MatchingDashboard = () => {
   console.log('MatchingDashboard data:', { founders, advisors });
 
   const filteredFounders = founders.filter(founder => {
-    // Handle both old structure (founder_profiles) and new structure (user_profiles)
-    const profile = founder.founder_profiles?.[0]?.profile_data || 
-                   founder.user_profiles?.find(p => p.profile_type === 'founder')?.profile_data;
+    // Access the founder_profiles directly since that's what the data structure provides
+    const profile = founder.founder_profiles?.[0]?.profile_data;
     
     if (!profile) {
       console.log('No founder profile found for:', founder.id);
@@ -53,9 +52,8 @@ const MatchingDashboard = () => {
   const selectedFounderData = selectedFounder ? 
     founders.find(f => f.id === selectedFounder) : null;
 
-  // Handle both old structure (founder_profiles) and new structure (user_profiles)
-  const selectedFounderProfile = selectedFounderData?.founder_profiles?.[0]?.profile_data ||
-                                selectedFounderData?.user_profiles?.find(p => p.profile_type === 'founder')?.profile_data;
+  // Access the founder_profiles directly
+  const selectedFounderProfile = selectedFounderData?.founder_profiles?.[0]?.profile_data;
 
   // Get match suggestions for selected founder
   const matchSuggestions = selectedFounderProfile ? 
@@ -142,9 +140,8 @@ const MatchingDashboard = () => {
 
                 <div className="max-h-64 overflow-y-auto space-y-2">
                   {filteredFounders.map((founder) => {
-                    // Handle both old structure (founder_profiles) and new structure (user_profiles)
-                    const profile = founder.founder_profiles?.[0]?.profile_data || 
-                                   founder.user_profiles?.find(p => p.profile_type === 'founder')?.profile_data;
+                    // Access the founder_profiles directly
+                    const profile = founder.founder_profiles?.[0]?.profile_data;
                     if (!profile) return null;
 
                     return (

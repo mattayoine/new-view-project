@@ -1,4 +1,3 @@
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -56,13 +55,13 @@ export const useAssignments = () => {
             id, 
             email, 
             auth_id,
-            user_profiles!inner(profile_data)
+            founder_profiles!inner(profile_data)
           ),
           advisor:users!advisor_id(
             id, 
             email, 
             auth_id,
-            user_profiles!inner(profile_data)
+            advisor_profiles!inner(profile_data)
           ),
           assigned_by_user:users!assigned_by(id, email)
         `)
@@ -78,11 +77,13 @@ export const useAssignments = () => {
         ...assignment,
         founder: assignment.founder ? {
           ...assignment.founder,
-          founder_profiles: assignment.founder.user_profiles?.filter(p => p.profile_data) || []
+          // Keep the founder_profiles structure since that's what the UI expects
+          founder_profiles: assignment.founder.founder_profiles || []
         } : null,
         advisor: assignment.advisor ? {
           ...assignment.advisor,
-          advisor_profiles: assignment.advisor.user_profiles?.filter(p => p.profile_data) || []
+          // Keep the advisor_profiles structure since that's what the UI expects
+          advisor_profiles: assignment.advisor.advisor_profiles || []
         } : null
       })) || [];
 
