@@ -56,20 +56,37 @@ export const useAssignments = () => {
             id, 
             email, 
             auth_id,
-            founder_profiles:user_profiles!user_id(profile_data)
+            user_profiles!inner(profile_data)
           ),
           advisor:users!advisor_id(
             id, 
             email, 
             auth_id,
-            advisor_profiles:user_profiles!user_id(profile_data)
+            user_profiles!inner(profile_data)
           ),
           assigned_by_user:users!assigned_by(id, email)
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data || [];
+      if (error) {
+        console.error('Error fetching assignments:', error);
+        throw error;
+      }
+      
+      // Transform the data to match expected structure
+      const transformedData = data?.map(assignment => ({
+        ...assignment,
+        founder: assignment.founder ? {
+          ...assignment.founder,
+          founder_profiles: assignment.founder.user_profiles?.filter(p => p.profile_data) || []
+        } : null,
+        advisor: assignment.advisor ? {
+          ...assignment.advisor,
+          advisor_profiles: assignment.advisor.user_profiles?.filter(p => p.profile_data) || []
+        } : null
+      })) || [];
+
+      return transformedData;
     }
   });
 };

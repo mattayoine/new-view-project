@@ -25,9 +25,17 @@ const MatchingDashboard = () => {
   const { data: founders = [], isLoading: foundersLoading } = useFoundersDirectory();
   const { data: advisors = [], isLoading: advisorsLoading } = useAdvisorsDirectory();
 
+  console.log('MatchingDashboard data:', { founders, advisors });
+
   const filteredFounders = founders.filter(founder => {
-    const profile = founder.founder_profiles?.[0]?.profile_data;
-    if (!profile) return false;
+    // Handle both old structure (founder_profiles) and new structure (user_profiles)
+    const profile = founder.founder_profiles?.[0]?.profile_data || 
+                   founder.user_profiles?.find(p => p.profile_type === 'founder')?.profile_data;
+    
+    if (!profile) {
+      console.log('No founder profile found for:', founder.id);
+      return false;
+    }
 
     const matchesSearch = !searchTerm || 
       profile.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -45,11 +53,15 @@ const MatchingDashboard = () => {
   const selectedFounderData = selectedFounder ? 
     founders.find(f => f.id === selectedFounder) : null;
 
-  const selectedFounderProfile = selectedFounderData?.founder_profiles?.[0]?.profile_data;
+  // Handle both old structure (founder_profiles) and new structure (user_profiles)
+  const selectedFounderProfile = selectedFounderData?.founder_profiles?.[0]?.profile_data ||
+                                selectedFounderData?.user_profiles?.find(p => p.profile_type === 'founder')?.profile_data;
 
   // Get match suggestions for selected founder
   const matchSuggestions = selectedFounderProfile ? 
     rankAdvisorsByMatch(selectedFounderProfile, advisors).slice(0, 10) : [];
+
+  console.log('Match suggestions generated:', matchSuggestions.length);
 
   if (foundersLoading || advisorsLoading) {
     return (
@@ -130,7 +142,9 @@ const MatchingDashboard = () => {
 
                 <div className="max-h-64 overflow-y-auto space-y-2">
                   {filteredFounders.map((founder) => {
-                    const profile = founder.founder_profiles?.[0]?.profile_data;
+                    // Handle both old structure (founder_profiles) and new structure (user_profiles)
+                    const profile = founder.founder_profiles?.[0]?.profile_data || 
+                                   founder.user_profiles?.find(p => p.profile_type === 'founder')?.profile_data;
                     if (!profile) return null;
 
                     return (
