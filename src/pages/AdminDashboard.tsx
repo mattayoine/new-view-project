@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,6 +13,8 @@ import FounderDirectory from '@/components/admin/FounderDirectory';
 import CaseStudyLibrary from '@/components/admin/CaseStudyLibrary';
 import EnhancedApplicationReview from '@/components/admin/EnhancedApplicationReview';
 import MatchingDashboard from '@/components/admin/MatchingDashboard';
+import SessionOverviewDashboard from '@/components/admin/SessionOverviewDashboard';
+import InterventionTools from '@/components/admin/InterventionTools';
 import { usePendingApplicationsCount } from '@/hooks/useAdminApplications';
 import { Badge } from '@/components/ui/badge';
 
@@ -32,7 +33,7 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-8">
+        <TabsList className="grid w-full grid-cols-9">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="applications" className="relative">
             Applications
@@ -44,6 +45,7 @@ const AdminDashboard = () => {
           </TabsTrigger>
           <TabsTrigger value="matching">Matching</TabsTrigger>
           <TabsTrigger value="sessions">Sessions</TabsTrigger>
+          <TabsTrigger value="monitor">Monitor</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="advisors">Advisors</TabsTrigger>
           <TabsTrigger value="founders">Founders</TabsTrigger>
@@ -99,6 +101,10 @@ const AdminDashboard = () => {
               </TabsContent>
             </Tabs>
           </div>
+        </TabsContent>
+
+        <TabsContent value="monitor">
+          <SessionOverviewDashboard />
         </TabsContent>
 
         <TabsContent value="analytics">
