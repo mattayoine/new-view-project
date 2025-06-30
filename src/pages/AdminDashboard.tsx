@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import FlightControl from '@/components/admin/FlightControl';
 import SessionTracker from '@/components/admin/SessionTracker';
+import SessionAnalyticsDashboard from '@/components/admin/SessionAnalyticsDashboard';
+import SessionQualityMonitor from '@/components/admin/SessionQualityMonitor';
 import AdvisorDirectory from '@/components/admin/AdvisorDirectory';
 import FounderDirectory from '@/components/admin/FounderDirectory';
 import CaseStudyLibrary from '@/components/admin/CaseStudyLibrary';
@@ -27,7 +29,7 @@ const AdminDashboard = () => {
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="applications" className="relative">
             Applications
@@ -39,6 +41,7 @@ const AdminDashboard = () => {
           </TabsTrigger>
           <TabsTrigger value="matching">Matching</TabsTrigger>
           <TabsTrigger value="sessions">Sessions</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="advisors">Advisors</TabsTrigger>
           <TabsTrigger value="founders">Founders</TabsTrigger>
           <TabsTrigger value="resources">Resources</TabsTrigger>
@@ -57,7 +60,31 @@ const AdminDashboard = () => {
         </TabsContent>
 
         <TabsContent value="sessions">
-          <SessionTracker />
+          <div className="space-y-6">
+            <Tabs defaultValue="tracker" className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="tracker">Session Tracker</TabsTrigger>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                <TabsTrigger value="quality">Quality Monitor</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="tracker">
+                <SessionTracker />
+              </TabsContent>
+              
+              <TabsContent value="analytics">
+                <SessionAnalyticsDashboard />
+              </TabsContent>
+              
+              <TabsContent value="quality">
+                <SessionQualityMonitor />
+              </TabsContent>
+            </Tabs>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="analytics">
+          <SessionAnalyticsDashboard />
         </TabsContent>
 
         <TabsContent value="advisors">
