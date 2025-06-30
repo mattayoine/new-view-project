@@ -15,7 +15,7 @@ import { format } from 'date-fns';
 
 const SessionQualityMonitor = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [qualityFilter, setQualityFilter] = useState<string>('');
+  const [qualityFilter, setQualityFilter] = useState<string>('all');
   
   const { data: qualityScores, isLoading, refetch } = useSessionQualityScores();
   const { data: analyticsData } = useSessionAnalytics('30d');
@@ -26,7 +26,7 @@ const SessionQualityMonitor = () => {
 
   const filteredSessions = qualityScores?.filter(session => {
     const matchesSearch = !searchTerm || session.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesQuality = !qualityFilter || 
+    const matchesQuality = qualityFilter === 'all' || 
       (qualityFilter === 'excellent' && session.qualityScore >= 80) ||
       (qualityFilter === 'good' && session.qualityScore >= 60 && session.qualityScore < 80) ||
       (qualityFilter === 'average' && session.qualityScore >= 40 && session.qualityScore < 60) ||
@@ -135,7 +135,7 @@ const SessionQualityMonitor = () => {
                 <SelectValue placeholder="Filter by quality" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Quality Levels</SelectItem>
+                <SelectItem value="all">All Quality Levels</SelectItem>
                 <SelectItem value="excellent">Excellent (80-100)</SelectItem>
                 <SelectItem value="good">Good (60-79)</SelectItem>
                 <SelectItem value="average">Average (40-59)</SelectItem>
