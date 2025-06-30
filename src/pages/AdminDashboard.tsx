@@ -6,6 +6,9 @@ import FlightControl from '@/components/admin/FlightControl';
 import SessionTracker from '@/components/admin/SessionTracker';
 import SessionAnalyticsDashboard from '@/components/admin/SessionAnalyticsDashboard';
 import SessionQualityMonitor from '@/components/admin/SessionQualityMonitor';
+import SmartSchedulingDashboard from '@/components/admin/SmartSchedulingDashboard';
+import SessionPreparationHub from '@/components/admin/SessionPreparationHub';
+import AutomatedReminderSystem from '@/components/admin/AutomatedReminderSystem';
 import AdvisorDirectory from '@/components/admin/AdvisorDirectory';
 import FounderDirectory from '@/components/admin/FounderDirectory';
 import CaseStudyLibrary from '@/components/admin/CaseStudyLibrary';
@@ -62,10 +65,13 @@ const AdminDashboard = () => {
         <TabsContent value="sessions">
           <div className="space-y-6">
             <Tabs defaultValue="tracker" className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="tracker">Session Tracker</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-6">
+                <TabsTrigger value="tracker">Tracker</TabsTrigger>
                 <TabsTrigger value="analytics">Analytics</TabsTrigger>
-                <TabsTrigger value="quality">Quality Monitor</TabsTrigger>
+                <TabsTrigger value="quality">Quality</TabsTrigger>
+                <TabsTrigger value="scheduling">Smart Scheduling</TabsTrigger>
+                <TabsTrigger value="preparation">Preparation</TabsTrigger>
+                <TabsTrigger value="reminders">Reminders</TabsTrigger>
               </TabsList>
               
               <TabsContent value="tracker">
@@ -78,6 +84,18 @@ const AdminDashboard = () => {
               
               <TabsContent value="quality">
                 <SessionQualityMonitor />
+              </TabsContent>
+
+              <TabsContent value="scheduling">
+                <SmartSchedulingDashboard />
+              </TabsContent>
+
+              <TabsContent value="preparation">
+                <SessionPreparationHub sessionId="sample-session-id" />
+              </TabsContent>
+
+              <TabsContent value="reminders">
+                <AutomatedReminderSystem />
               </TabsContent>
             </Tabs>
           </div>
