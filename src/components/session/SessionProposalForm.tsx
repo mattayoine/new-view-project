@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Calendar, Clock, Plus, Trash2 } from 'lucide-react';
 import { useCreateSessionProposal } from '@/hooks/useSessionManagement';
+import { useAutomatedSessionWorkflow } from '@/hooks/useSessionIntegrations';
 
 interface SessionProposalFormProps {
   assignmentId: string;
@@ -19,6 +19,7 @@ const SessionProposalForm: React.FC<SessionProposalFormProps> = ({ assignmentId,
   const [proposedTimes, setProposedTimes] = useState<string[]>(['']);
   
   const createProposal = useCreateSessionProposal();
+  const { executeWorkflow, isLoading: workflowLoading } = useAutomatedSessionWorkflow();
 
   const addTimeSlot = () => {
     setProposedTimes([...proposedTimes, '']);
@@ -43,18 +44,25 @@ const SessionProposalForm: React.FC<SessionProposalFormProps> = ({ assignmentId,
       return;
     }
 
-    await createProposal.mutateAsync({
-      assignment_id: assignmentId,
-      title,
-      description,
-      proposed_times: validTimes.map(time => ({ datetime: time })),
-      proposed_by: '' // Will be set by the API
-    });
+    try {
+      const proposal = await createProposal.mutateAsync({
+        assignment_id: assignmentId,
+        title,
+        description,
+        proposed_times: validTimes.map(time => ({ datetime: time })),
+        proposed_by: '' // Will be set by the API
+      });
 
-    setTitle('');
-    setDescription('');
-    setProposedTimes(['']);
-    onSuccess?.();
+      // If proposal is auto-approved (in a real scenario, this would be handled differently)
+      // For now, we'll assume it creates a session automatically
+      
+      setTitle('');
+      setDescription('');
+      setProposedTimes(['']);
+      onSuccess?.();
+    } catch (error) {
+      console.error('Failed to create session proposal:', error);
+    }
   };
 
   return (
@@ -127,10 +135,10 @@ const SessionProposalForm: React.FC<SessionProposalFormProps> = ({ assignmentId,
           <Button 
             type="submit" 
             className="w-full"
-            disabled={createProposal.isPending || !title.trim()}
+            disabled={createProposal.isPending || workflowLoading || !title.trim()}
           >
             <Clock className="w-4 h-4 mr-2" />
-            {createProposal.isPending ? 'Creating...' : 'Create Proposal'}
+            {createProposal.isPending || workflowLoading ? 'Creating...' : 'Create Proposal'}
           </Button>
         </form>
       </CardContent>

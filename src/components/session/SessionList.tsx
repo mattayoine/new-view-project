@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, MapPin, Video, Phone, Users } from 'lucide-react';
 import { useSessions, useUpdateSessionStatus } from '@/hooks/useSessionManagement';
+import { useAutomatedSessionWorkflow } from '@/hooks/useSessionIntegrations';
 import { format } from 'date-fns';
 
 interface SessionListProps {
@@ -14,6 +14,7 @@ interface SessionListProps {
 const SessionList: React.FC<SessionListProps> = ({ assignmentId }) => {
   const { data: sessions, isLoading } = useSessions(assignmentId);
   const updateStatus = useUpdateSessionStatus();
+  const { executeWorkflow, isLoading: workflowLoading } = useAutomatedSessionWorkflow();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -34,14 +35,26 @@ const SessionList: React.FC<SessionListProps> = ({ assignmentId }) => {
     }
   };
 
-  const handleStatusUpdate = async (sessionId: string, newStatus: string) => {
-    await updateStatus.mutateAsync({ 
-      sessionId, 
-      status: newStatus,
-      outcomeData: newStatus === 'completed' ? {
-        outcome_summary: 'Session completed successfully'
-      } : undefined
-    });
+  const handleStatusUpdate = async (sessionId: string, newStatus: string, session: any) => {
+    try {
+      // Update session status
+      await updateStatus.mutateAsync({ 
+        sessionId, 
+        status: newStatus,
+        outcomeData: newStatus === 'completed' ? {
+          outcome_summary: 'Session completed successfully'
+        } : undefined
+      });
+
+      // Execute automated workflow
+      if (newStatus === 'completed') {
+        await executeWorkflow(sessionId, 'complete');
+      } else if (newStatus === 'cancelled') {
+        await executeWorkflow(sessionId, 'cancel');
+      }
+    } catch (error) {
+      console.error('Failed to update session:', error);
+    }
   };
 
   if (isLoading) {
@@ -117,16 +130,16 @@ const SessionList: React.FC<SessionListProps> = ({ assignmentId }) => {
                 <>
                   <Button
                     size="sm"
-                    onClick={() => handleStatusUpdate(session.id, 'in_progress')}
-                    disabled={updateStatus.isPending}
+                    onClick={() => handleStatusUpdate(session.id, 'in_progress', session)}
+                    disabled={updateStatus.isPending || workflowLoading}
                   >
                     Start Session
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleStatusUpdate(session.id, 'cancelled')}
-                    disabled={updateStatus.isPending}
+                    onClick={() => handleStatusUpdate(session.id, 'cancelled', session)}
+                    disabled={updateStatus.isPending || workflowLoading}
                   >
                     Cancel
                   </Button>
@@ -136,8 +149,8 @@ const SessionList: React.FC<SessionListProps> = ({ assignmentId }) => {
               {session.status === 'in_progress' && (
                 <Button
                   size="sm"
-                  onClick={() => handleStatusUpdate(session.id, 'completed')}
-                  disabled={updateStatus.isPending}
+                  onClick={() => handleStatusUpdate(session.id, 'completed', session)}
+                  disabled={updateStatus.isPending || workflowLoading}
                 >
                   Complete Session
                 </Button>

@@ -1,8 +1,8 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { useAutomatedSessionWorkflow } from './useSessionIntegrations';
 
 export interface SessionProposal {
   id: string;
@@ -55,6 +55,7 @@ export const useSessionProposals = (assignmentId?: string) => {
 
 export const useCreateSessionProposal = () => {
   const queryClient = useQueryClient();
+  const { executeWorkflow } = useAutomatedSessionWorkflow();
 
   return useMutation({
     mutationFn: async (proposal: Omit<SessionProposal, 'id' | 'status'>) => {
@@ -70,9 +71,26 @@ export const useCreateSessionProposal = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
+    onSuccess: async (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['session-proposals'] });
       toast.success('Session proposal created successfully');
+      
+      // If proposal is auto-approved, trigger workflow
+      // This would be determined by business logic
+      if (data.status === 'approved') {
+        try {
+          await executeWorkflow(data.session_id, 'create', {
+            title: data.title,
+            description: data.description,
+            scheduledAt: data.selected_time,
+            duration: 60, // default duration
+            advisorEmail: '', // would be fetched from assignment
+            founderEmail: ''  // would be fetched from assignment
+          });
+        } catch (error) {
+          console.error('Failed to execute workflow:', error);
+        }
+      }
     }
   });
 };
