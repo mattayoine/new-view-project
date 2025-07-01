@@ -50,17 +50,23 @@ export interface AdvisorPerformanceMetrics {
   strengths: string[];
 }
 
+// Updated to match actual database schema
 export interface ResourceItem {
   id: string;
   title: string;
-  type: 'template' | 'guide' | 'methodology' | 'tool';
-  category: string;
-  description: string;
-  url?: string;
-  content?: string;
-  tags: string[];
-  usageCount: number;
-  rating: number;
+  type: string;
+  description: string | null;
+  access_level: string;
+  file_path: string | null;
+  file_url: string | null;
+  shared_by: string | null;
+  category_id: string | null;
+  view_count: number;
+  download_count: number;
+  is_featured: boolean;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
 }
 
 export interface AdvisorSessionHubData {
@@ -75,7 +81,7 @@ export const useAdvisorSessionHub = () => {
 
   const query = useQuery({
     queryKey: ['advisor-session-hub', user?.id],
-    queryFn: async (): Promise<AdvisorSessionHubData> => {
+    queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
 
       // Get advisor's users table ID
@@ -162,7 +168,7 @@ export const useAdvisorSessionHub = () => {
       });
 
       // Process upcoming preparations
-      const upcomingPreparations: SessionPreparation[] = (upcomingSessions || []).map(session => ({
+      const upcomingPreparations: SessionPreparation[] = (upcomingSessions || []).map((session: any) => ({
         sessionId: session.id,
         founderId: session.assignment?.founder?.id || '',
         founderName: session.assignment?.founder?.email || 'Unknown',
@@ -173,7 +179,7 @@ export const useAdvisorSessionHub = () => {
           'Discuss current challenges',
           'Set next milestones'
         ],
-        relevantGoals: session.assignment?.goals?.map(g => g.title) || [],
+        relevantGoals: session.assignment?.goals?.map((g: any) => g.title) || [],
         previousNotes: session.preparation_notes || '',
         recommendedResources: [],
         preparationStatus: 'not_started' as const
@@ -191,12 +197,14 @@ export const useAdvisorSessionHub = () => {
         strengths: ['Technical expertise', 'Problem-solving approach']
       };
 
-      return {
+      const result: AdvisorSessionHubData = {
         sessionPortfolio,
         upcomingPreparations,
         performanceMetrics,
         resourceLibrary: resources || []
       };
+
+      return result;
     },
     enabled: !!user,
     refetchInterval: 30000
@@ -233,7 +241,7 @@ export const useSessionPlanningWizard = () => {
         .from('resources')
         .select('*')
         .eq('type', 'template')
-        .eq('category', category)
+        .eq('access_level', 'advisor')
         .is('deleted_at', null);
 
       if (error) throw error;
