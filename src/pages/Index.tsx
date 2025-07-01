@@ -1,295 +1,300 @@
+
+import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { ArrowRight, CheckCircle, Users, TrendingUp, Globe, Handshake, Shield, DollarSign } from "lucide-react";
+import { CheckCircle, Clock, Users, Target, Shield, Calendar } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useSecurity } from "@/hooks/useSecurityContext";
+import FounderForm from "@/components/onboarding/FounderForm";
+import AdvisorForm from "@/components/onboarding/AdvisorForm";
 
 const Index = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { userRole } = useSecurity();
+  const [selectedRole, setSelectedRole] = useState<'founder' | 'advisor' | null>(null);
+
+  // Redirect authenticated users to their dashboard
+  useEffect(() => {
+    if (user && userRole) {
+      switch (userRole) {
+        case 'founder':
+          navigate('/founder-dashboard');
+          break;
+        case 'advisor':
+          navigate('/advisor-dashboard');
+          break;
+        case 'admin':
+          navigate('/admin-dashboard');
+          break;
+      }
+    }
+  }, [user, userRole, navigate]);
+
+  // Handle role selection from location state (from login page links)
+  useEffect(() => {
+    if (location.state?.selectedRole) {
+      setSelectedRole(location.state.selectedRole);
+    }
+  }, [location.state]);
+
+  // If a role is selected, show the appropriate form
+  if (selectedRole === 'founder') {
+    return <FounderForm onBack={() => setSelectedRole(null)} />;
+  }
+
+  if (selectedRole === 'advisor') {
+    return <AdvisorForm onBack={() => setSelectedRole(null)} />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Navigation */}
-      <nav className="bg-white/90 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
+      <nav className="bg-white/90 backdrop-blur-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
-            <Link to="/" className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-green-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-xl">C</span>
               </div>
               <span className="text-2xl font-bold text-gray-900">CoPilot</span>
-            </Link>
+            </div>
             <div className="flex items-center space-x-4">
-              <Link to="/" className="text-gray-700 hover:text-blue-600 transition-colors">Apply Now</Link>
-              <Button variant="outline" size="sm">Login</Button>
+              <Link to="/login">
+                <Button variant="outline" size="sm">Login</Button>
+              </Link>
             </div>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-16 pb-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-4xl mx-auto">
-            <Badge className="mb-6 bg-blue-100 text-blue-800 hover:bg-blue-100">
-              The Diaspora–Africa Growth Bridge
-            </Badge>
-            <h1 className="text-5xl sm:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-              Grow Bigger, Faster—With a{" "}
-              <span className="bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-                CoPilot
-              </span>{" "}
-              Who's Been There.
-            </h1>
-            <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-              We match African businesses ready to scale with proven Diaspora operators who turn 
-              a few hours a month into real revenue and impact.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/">
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-full">
-                  Apply Now
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-            </div>
-          </div>
+      <section className="pt-16 pb-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <Badge className="mb-6 bg-green-100 text-green-800 hover:bg-green-100">
+            Pilot Program Registration
+          </Badge>
+          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+            Join the 
+            <span className="bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+              CoPilot Pilot Program
+            </span>
+          </h1>
+          <p className="text-xl text-gray-600 mb-8">
+            A 6-week advisory pilot connecting African founders with Diaspora experts
+          </p>
         </div>
       </section>
 
-      {/* How CoPilot Works */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">How CoPilot Works</h2>
-            <p className="text-xl text-gray-600">3-Step Snapshot to Growth</p>
-          </div>
+      {/* Who This Is For */}
+      <section className="py-16 bg-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">Who This Is For</h2>
           
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="border-2 border-blue-100 hover:border-blue-300 transition-colors">
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Users className="h-8 w-8 text-blue-600" />
+          <div className="grid lg:grid-cols-2 gap-8">
+            <Card className="border-2 border-blue-100">
+              <CardHeader>
+                <CardTitle className="text-2xl text-blue-600 flex items-center">
+                  <Users className="h-8 w-8 mr-3" />
+                  Founders (Africa-based)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-700">You've launched your startup and are building traction</span>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">1. Smart Match</h3>
-                <p className="text-gray-600">
-                  Our algorithm pairs export-ready African SMEs with Diaspora experts two growth stages ahead.
-                </p>
+                <div className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-700">You're coachable and ready for outside perspective</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-700">You need help with strategy, pricing, product, or growth</span>
+                </div>
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-green-100 hover:border-green-300 transition-colors">
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <TrendingUp className="h-8 w-8 text-green-600" />
+            <Card className="border-2 border-green-100">
+              <CardHeader>
+                <CardTitle className="text-2xl text-green-600 flex items-center">
+                  <Target className="h-8 w-8 mr-3" />
+                  Diaspora Advisors (Worldwide)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-700">You're experienced in product, marketing, ops, finance, or growth</span>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">2. 90-Day Test Flight</h3>
-                <p className="text-gray-600">
-                  Work together free for three months, hit agreed KPIs, prove the fit.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 border-purple-100 hover:border-purple-300 transition-colors">
-              <CardContent className="p-8 text-center">
-                <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Handshake className="h-8 w-8 text-purple-600" />
+                <div className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-700">You've helped early-stage companies scale or raise</span>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4">3. Lock-In & Win</h3>
-                <p className="text-gray-600">
-                  Choose 2-5% phantom equity or 2-3% revenue share. We track, audit, and pay automatically.
-                </p>
+                <div className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-700">You can give 2–3 hours to directly help 1–2 founders</span>
+                </div>
               </CardContent>
             </Card>
           </div>
         </div>
       </section>
 
-      {/* Why It's a No-Brainer */}
-      <section className="py-20 bg-gradient-to-r from-blue-50 to-green-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Why It's a No-Brainer</h2>
-          </div>
+      {/* What You'll Get */}
+      <section className="py-16 bg-gradient-to-r from-blue-50 to-green-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">What You'll Get</h2>
           
-          <div className="grid lg:grid-cols-2 gap-12">
+          <div className="grid lg:grid-cols-2 gap-8">
             <Card className="bg-white shadow-lg">
-              <CardContent className="p-8">
-                <h3 className="text-2xl font-bold text-blue-600 mb-6">For African SMEs</h3>
-                <ul className="space-y-4">
-                  <li className="flex items-start">
-                    <CheckCircle className="h-6 w-6 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700"><strong>Plug in world-class know-how</strong> without upfront cash.</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-6 w-6 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700"><strong>Verified revenue tracking</strong> keeps everyone honest.</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-6 w-6 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700"><strong>Credibility boost</strong> when pitching buyers and lenders.</span>
-                  </li>
-                </ul>
+              <CardHeader>
+                <CardTitle className="text-2xl text-blue-600">For Founders</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-700">3 advisory sessions from curated Diaspora experts</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-700">Access to 2 micro-masterclasses</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-700">A written growth plan & feature in final case deck</span>
+                </div>
               </CardContent>
             </Card>
 
             <Card className="bg-white shadow-lg">
-              <CardContent className="p-8">
-                <h3 className="text-2xl font-bold text-green-600 mb-6">For Diaspora CoPilots</h3>
-                <ul className="space-y-4">
-                  <li className="flex items-start">
-                    <CheckCircle className="h-6 w-6 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700"><strong>Turn expertise into upside</strong>—real cash or equity.</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-6 w-6 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700"><strong>Impact without the admin</strong>—we chase KPIs and paperwork.</span>
-                  </li>
-                  <li className="flex items-start">
-                    <CheckCircle className="h-6 w-6 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700"><strong>Public scorecard & dealflow</strong> for future investments.</span>
-                  </li>
-                </ul>
+              <CardHeader>
+                <CardTitle className="text-2xl text-green-600">For Advisors</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-700">A chance to shape promising African startups</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-700">Exposure as part of a public impact pilot</span>
+                </div>
+                <div className="flex items-start">
+                  <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                  <span className="text-gray-700">Private founder briefings to prep you for each session</span>
+                </div>
               </CardContent>
             </Card>
           </div>
         </div>
       </section>
 
-      {/* Who We Serve */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Who We Serve</h2>
-          </div>
+      {/* Timeline */}
+      <section className="py-16 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">Timeline Summary</h2>
           
-          <div className="grid lg:grid-cols-2 gap-12">
-            <div>
-              <h3 className="text-2xl font-bold text-blue-600 mb-6">African SMEs</h3>
-              <div className="grid gap-4">
-                <Card className="border-l-4 border-l-blue-500">
-                  <CardContent className="p-4">
-                    <h4 className="font-semibold text-gray-900">Export Producers</h4>
-                    <p className="text-gray-600 text-sm">Coffee, cocoa, crafts already shipping abroad</p>
-                  </CardContent>
-                </Card>
-                <Card className="border-l-4 border-l-green-500">
-                  <CardContent className="p-4">
-                    <h4 className="font-semibold text-gray-900">Tech & SaaS Gazelles</h4>
-                    <p className="text-gray-600 text-sm">$100k–$1M ARR but stuck on scale playbooks</p>
-                  </CardContent>
-                </Card>
-                <Card className="border-l-4 border-l-purple-500">
-                  <CardContent className="p-4">
-                    <h4 className="font-semibold text-gray-900">Light Manufacturers</h4>
-                    <p className="text-gray-600 text-sm">Moving from workshop to factory line</p>
-                  </CardContent>
-                </Card>
-                <Card className="border-l-4 border-l-orange-500">
-                  <CardContent className="p-4">
-                    <h4 className="font-semibold text-gray-900">Service Exporters</h4>
-                    <p className="text-gray-600 text-sm">BPOs, dev shops, design studios needing Western-grade ops</p>
-                  </CardContent>
-                </Card>
-                <Card className="border-l-4 border-l-teal-500">
-                  <CardContent className="p-4">
-                    <h4 className="font-semibold text-gray-900">Climate Micro-Utilities</h4>
-                    <p className="text-gray-600 text-sm">Mini-grids & PAYG solar chasing blended finance</p>
-                  </CardContent>
-                </Card>
+          <Card>
+            <CardContent className="p-8">
+              <div className="space-y-6">
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                    <Calendar className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div className="flex-1 flex justify-between items-center">
+                    <span className="font-semibold text-gray-900">Applications Close</span>
+                    <span className="text-gray-600">[Insert Date]</span>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                    <Users className="h-4 w-4 text-green-600" />
+                  </div>
+                  <div className="flex-1 flex justify-between items-center">
+                    <span className="font-semibold text-gray-900">Matching + Orientation</span>
+                    <span className="text-gray-600">[Insert Date]</span>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+                    <Target className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <div className="flex-1 flex justify-between items-center">
+                    <span className="font-semibold text-gray-900">Advisory Begins</span>
+                    <span className="text-gray-600">[Insert Date]</span>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center mr-4">
+                    <Clock className="h-4 w-4 text-orange-600" />
+                  </div>
+                  <div className="flex-1 flex justify-between items-center">
+                    <span className="font-semibold text-gray-900">Masterclasses</span>
+                    <span className="text-gray-600">[Insert Date Range]</span>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center mr-4">
+                    <CheckCircle className="h-4 w-4 text-teal-600" />
+                  </div>
+                  <div className="flex-1 flex justify-between items-center">
+                    <span className="font-semibold text-gray-900">Case Study Launch</span>
+                    <span className="text-gray-600">[Insert Date]</span>
+                  </div>
+                </div>
               </div>
-            </div>
-
-            <div>
-              <h3 className="text-2xl font-bold text-green-600 mb-6">Ideal CoPilots</h3>
-              <div className="space-y-4">
-                <Card className="bg-green-50 border-green-200">
-                  <CardContent className="p-4">
-                    <p className="text-gray-700">Mid-career operators from Unilever, Google, high-growth startups</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-green-50 border-green-200">
-                  <CardContent className="p-4">
-                    <p className="text-gray-700">Sector geeks: ag-supply, fintech, logistics, climate</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-green-50 border-green-200">
-                  <CardContent className="p-4">
-                    <p className="text-gray-700">Diaspora angels test-driving before a cheque</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-green-50 border-green-200">
-                  <CardContent className="p-4">
-                    <p className="text-gray-700">ESG-hungry corporate execs</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-green-50 border-green-200">
-                  <CardContent className="p-4">
-                    <p className="text-gray-700">Retired founders bored of golf</p>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Trust Layer */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <Shield className="h-16 w-16 text-blue-600 mx-auto mb-4" />
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Built-In Trust Layer</h2>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="h-6 w-6 text-blue-600" />
-              </div>
-              <p className="text-gray-700">Quarterly audits by local accounting partners</p>
-            </div>
-            <div className="text-center">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="h-6 w-6 text-green-600" />
-              </div>
-              <p className="text-gray-700">Mandatory cloud bookkeeping feeds into our KPI dashboard</p>
-            </div>
-            <div className="text-center">
-              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <DollarSign className="h-6 w-6 text-purple-600" />
-              </div>
-              <p className="text-gray-700">Escrow handles every rev-share payout—no excuses, no ghosting</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Mark Cuban Promise */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-green-600">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <blockquote className="text-2xl md:text-3xl font-bold text-white mb-4">
-            "If you don't grow, you don't pay. If they don't show, they don't get paid. 
-            We put data between you and disappointment."
-          </blockquote>
-          <cite className="text-blue-100 text-lg"></cite>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-white">
+      <section className="py-16 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold text-gray-900 mb-8">Ready to Bridge the Gap?</h2>
-          <div className="flex flex-col sm:flex-row gap-6 justify-center">
-            <Link to="/">
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-4 rounded-full text-lg">
-                Get Started
-                <ArrowRight className="ml-3 h-6 w-6" />
-              </Button>
-            </Link>
+          <h2 className="text-3xl font-bold text-gray-900 mb-8">Ready to Join?</h2>
+          <p className="text-xl text-gray-600 mb-8">
+            Choose your role and start your application today
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-lg mx-auto">
+            <Button 
+              size="lg" 
+              className="flex-1 bg-blue-600 hover:bg-blue-700"
+              onClick={() => setSelectedRole('founder')}
+            >
+              Apply as Founder
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="flex-1 border-green-600 text-green-600 hover:bg-green-50"
+              onClick={() => setSelectedRole('advisor')}
+            >
+              Apply as Advisor
+            </Button>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
+      {/* Quotes */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="space-y-8">
+            <blockquote className="text-xl italic text-gray-700">
+              "We don't need more funding first—we need smarter decisions first."
+            </blockquote>
+            <blockquote className="text-xl italic text-gray-700">
+              "Diaspora wisdom, applied surgically, can unlock stuck African ventures."
+            </blockquote>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer Trust Signals */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">
@@ -299,15 +304,16 @@ const Index = () => {
               </div>
               <span className="text-2xl font-bold">CoPilot</span>
             </div>
-            <p className="text-gray-400 mb-6">The Diaspora–Africa Growth Bridge</p>
+            <div className="flex items-center justify-center mb-6">
+              <Shield className="h-5 w-5 text-gray-400 mr-2" />
+              <p className="text-gray-400">Trust Signals</p>
+            </div>
             <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-400">
-              <span>Backed by PwC-certified auditors</span>
+              <span>Confidentiality respected</span>
               <span>•</span>
-              <span>Licensed Mauritius escrow</span>
+              <span>No sales, no spam, no funding asks</span>
               <span>•</span>
-              <span>GDPR-compliant</span>
-              <span>•</span>
-              <span>ISO-27001 infra</span>
+              <span>Designed by an African founder, for African-led startups</span>
             </div>
           </div>
         </div>
