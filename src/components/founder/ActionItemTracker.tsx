@@ -21,40 +21,77 @@ interface ActionItem {
 const ActionItemTracker = () => {
   const { data: sessions } = useFounderSessions();
 
-  // Extract action items from session analysis and feedback
+  // Extract action items from session notes and AI summary
   const extractActionItems = (): ActionItem[] => {
     if (!sessions) return [];
 
     const items: ActionItem[] = [];
     
     sessions.forEach(session => {
-      // From session analysis
-      if (session.session_analysis?.action_items) {
-        session.session_analysis.action_items.forEach((item: string, index: number) => {
-          items.push({
-            id: `${session.id}-analysis-${index}`,
-            title: item,
-            priority: 'medium',
-            status: 'pending',
-            sessionTitle: session.title,
-            sessionDate: session.scheduled_at
-          });
-        });
-      }
-
-      // From session feedback
-      if (session.session_feedback?.length > 0) {
-        session.session_feedback.forEach((feedback: any) => {
-          feedback.action_items?.forEach((item: string, index: number) => {
+      // Extract from session notes
+      if (session.notes) {
+        const noteLines = session.notes.split('\n').filter(line => 
+          line.toLowerCase().includes('action') || 
+          line.toLowerCase().includes('todo') ||
+          line.toLowerCase().includes('follow up')
+        );
+        
+        noteLines.forEach((line, index) => {
+          if (line.trim()) {
             items.push({
-              id: `${session.id}-feedback-${index}`,
-              title: item,
+              id: `${session.id}-notes-${index}`,
+              title: line.trim(),
               priority: 'medium',
               status: 'pending',
               sessionTitle: session.title,
               sessionDate: session.scheduled_at
             });
-          });
+          }
+        });
+      }
+
+      // Extract from AI summary
+      if (session.ai_summary) {
+        const summaryLines = session.ai_summary.split('\n').filter(line => 
+          line.toLowerCase().includes('action') || 
+          line.toLowerCase().includes('next steps') ||
+          line.toLowerCase().includes('follow up')
+        );
+        
+        summaryLines.forEach((line, index) => {
+          if (line.trim()) {
+            items.push({
+              id: `${session.id}-summary-${index}`,
+              title: line.trim(),
+              priority: 'medium',
+              status: 'pending',
+              sessionTitle: session.title,
+              sessionDate: session.scheduled_at
+            });
+          }
+        });
+      }
+
+      // Extract from feedback text
+      if (session.founder_feedback_text || session.advisor_feedback_text) {
+        const feedbackText = `${session.founder_feedback_text || ''} ${session.advisor_feedback_text || ''}`;
+        const feedbackLines = feedbackText.split('\n').filter(line => 
+          line.toLowerCase().includes('action') || 
+          line.toLowerCase().includes('commit') ||
+          line.toLowerCase().includes('will do')
+        );
+        
+        feedbackLines.forEach((line, index) => {
+          if (line.trim()) {
+            items.push({
+              id: `${session.id}-feedback-${index}`,
+              title: line.trim(),
+              priority: 'medium',
+              status: 'pending',
+              sessionTitle: session.title,
+              sessionDate: session.scheduled_at
+            });
+          }
         });
       }
     });
