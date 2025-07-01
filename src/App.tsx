@@ -10,6 +10,7 @@ import Signup from './pages/Signup';
 import AdminDashboard from './pages/AdminDashboard';
 import AdvisorDashboard from './pages/AdvisorDashboard';
 import FounderDashboard from './pages/FounderDashboard';
+import FounderSessionHub from './pages/FounderSessionHub';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdvisorSessionHub from './pages/AdvisorSessionHub';
 import PendingApproval from './pages/PendingApproval';
@@ -55,6 +56,11 @@ function App() {
                 <Route path="/founder-dashboard" element={
                   <ProtectedRoute requiredRole="founder">
                     <FounderDashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/founder-session-hub" element={
+                  <ProtectedRoute requiredRole="founder">
+                    <FounderSessionHub />
                   </ProtectedRoute>
                 } />
                 <Route path="/advisor-hub" element={

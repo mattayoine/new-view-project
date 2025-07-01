@@ -2,8 +2,10 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Target, MessageSquare, TrendingUp, User, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar, Target, MessageSquare, TrendingUp, User, Clock, ArrowRight } from 'lucide-react';
 import { useFounderData } from '@/hooks/useFounderData';
+import { Link } from 'react-router-dom';
 import ProfileSection from '@/components/dashboard/ProfileSection';
 
 const FounderDashboard = () => {
@@ -47,9 +49,18 @@ const FounderDashboard = () => {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Founder Dashboard</h1>
-        <Badge variant="outline" className="text-lg px-3 py-1">
-          Welcome back!
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Link to="/founder-session-hub">
+            <Button className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              Session Hub
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </Link>
+          <Badge variant="outline" className="text-lg px-3 py-1">
+            Welcome back!
+          </Badge>
+        </div>
       </div>
 
       {/* Profile Section */}
@@ -100,6 +111,28 @@ const FounderDashboard = () => {
               </CardContent>
             </Card>
           </div>
+
+          {/* Quick Access to Session Hub */}
+          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-blue-900">
+                <Calendar className="w-5 h-5" />
+                Session Management Hub
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-blue-800 mb-4">
+                Access your complete session experience - manage upcoming sessions, track action items, 
+                request new sessions, and monitor your advisor relationship.
+              </p>
+              <Link to="/founder-session-hub">
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  Go to Session Hub
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
