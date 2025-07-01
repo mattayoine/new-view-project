@@ -23,7 +23,7 @@ const AISessionInsights = () => {
   const { data: intelligence } = useSessionIntelligence(activeAssignment?.id);
   const { data: interventions } = useProactiveInterventions();
   const { data: coaching } = usePersonalizedCoaching(
-    founderData?.user?.id || '', 
+    founderData?.founder?.id || '', 
     'founder'
   );
 
