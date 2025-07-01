@@ -1,144 +1,69 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useAuth } from './useAuth';
+
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './useAuth';
 
 interface SecurityContextType {
   userRole: string | null;
-  isAdmin: boolean;
-  isAdvisor: boolean;
-  isFounder: boolean;
-  canAccess: (resource: string, action: string) => boolean;
   loading: boolean;
-  refreshRole: () => Promise<void>;
 }
 
 const SecurityContext = createContext<SecurityContextType | undefined>(undefined);
 
-export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, session, loading: authLoading } = useAuth();
+interface SecurityProviderProps {
+  children: ReactNode;
+}
+
+export const SecurityProvider: React.FC<SecurityProviderProps> = ({ children }) => {
+  const { user, session } = useAuth();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchUserRole = async () => {
-    if (!user || !session) {
-      console.log('No session, cannot fetch user role');
-      setUserRole(null);
-      setLoading(false);
-      return;
-    }
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!user || !session) {
+        setUserRole(null);
+        setLoading(false);
+        return;
+      }
 
-    try {
-      console.log('Fetching user role for:', user.email);
-      
-      // Use a more specific query to avoid RLS recursion issues
-      const { data, error } = await supabase
-        .from('users')
-        .select('role, status')
-        .eq('auth_id', user.id)
-        .maybeSingle(); // Use maybeSingle to handle case where no record exists
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('role')
+          .eq('auth_id', user.id)
+          .single();
 
-      if (error) {
-        console.error('Error fetching user role:', error);
-        // Don't set role to null immediately on error - user might still be valid
-        // Let the auth system handle the user creation process
-        if (error.code === '42P17') {
-          console.log('RLS recursion detected, waiting for user creation...');
+        if (error) {
+          console.error('Error fetching user role:', error);
           setUserRole(null);
         } else {
-          setUserRole(null);
+          setUserRole(data?.role || null);
         }
-      } else if (data) {
-        console.log('User role fetched:', data.role, 'status:', data.status);
-        setUserRole(data.role || null);
-      } else {
-        console.log('No user record found, may need to be created');
+      } catch (error) {
+        console.error('Error in fetchUserRole:', error);
         setUserRole(null);
-      }
-    } catch (error) {
-      console.error('Error in fetchUserRole:', error);
-      setUserRole(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const refreshRole = async () => {
-    setLoading(true);
-    await fetchUserRole();
-  };
-
-  useEffect(() => {
-    if (!authLoading && user && session) {
-      // Add a small delay to allow user record creation to complete
-      const timer = setTimeout(() => {
-        fetchUserRole();
-      }, 100);
-      return () => clearTimeout(timer);
-    } else if (!user || !session) {
-      setUserRole(null);
-      setLoading(false);
-    }
-  }, [user, session, authLoading]);
-
-  const isAdmin = userRole === 'admin';
-  const isAdvisor = userRole === 'advisor';
-  const isFounder = userRole === 'founder';
-
-  const canAccess = (resource: string, action: string): boolean => {
-    if (!userRole) return false;
-
-    // Admin can access everything
-    if (isAdmin) return true;
-
-    // Define access rules
-    const accessRules: Record<string, Record<string, string[]>> = {
-      applications: {
-        view: ['admin'],
-        update: ['admin'],
-        create: ['admin', 'advisor', 'founder']
-      },
-      assignments: {
-        view: ['admin', 'advisor', 'founder'],
-        create: ['admin'],
-        update: ['admin']
-      },
-      sessions: {
-        view: ['admin', 'advisor', 'founder'],
-        create: ['admin', 'advisor', 'founder'],
-        update: ['admin', 'advisor', 'founder']
-      },
-      goals: {
-        view: ['admin', 'advisor', 'founder'],
-        create: ['admin', 'founder'],
-        update: ['admin', 'founder']
-      },
-      messages: {
-        view: ['admin', 'advisor', 'founder'],
-        create: ['admin', 'advisor', 'founder'],
-        update: ['admin', 'advisor', 'founder']
+      } finally {
+        setLoading(false);
       }
     };
 
-    const allowedRoles = accessRules[resource]?.[action] || [];
-    return allowedRoles.includes(userRole);
+    fetchUserRole();
+  }, [user, session]);
+
+  const value = {
+    userRole,
+    loading
   };
 
   return (
-    <SecurityContext.Provider value={{
-      userRole,
-      isAdmin,
-      isAdvisor,
-      isFounder,
-      canAccess,
-      loading,
-      refreshRole
-    }}>
+    <SecurityContext.Provider value={value}>
       {children}
     </SecurityContext.Provider>
   );
 };
 
-export const useSecurity = () => {
+export const useSecurity = (): SecurityContextType => {
   const context = useContext(SecurityContext);
   if (context === undefined) {
     throw new Error('useSecurity must be used within a SecurityProvider');
