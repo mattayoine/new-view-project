@@ -6,6 +6,7 @@ import { useAuth } from './useAuth';
 interface SecurityContextType {
   userRole: string | null;
   loading: boolean;
+  canAccess: (resource: string, action: string) => boolean;
 }
 
 const SecurityContext = createContext<SecurityContextType | undefined>(undefined);
@@ -51,9 +52,27 @@ export const SecurityProvider: React.FC<SecurityProviderProps> = ({ children }) 
     fetchUserRole();
   }, [user, session]);
 
+  const canAccess = (resource: string, action: string): boolean => {
+    if (!userRole) return false;
+    
+    // Admin has access to everything
+    if (userRole === 'admin') return true;
+    
+    // Basic resource-based access control
+    // This can be extended with more sophisticated permissions
+    const permissions: Record<string, string[]> = {
+      advisor: ['sessions', 'messages', 'goals', 'resources'],
+      founder: ['sessions', 'messages', 'goals'],
+    };
+    
+    const userPermissions = permissions[userRole] || [];
+    return userPermissions.includes(resource);
+  };
+
   const value = {
     userRole,
-    loading
+    loading,
+    canAccess
   };
 
   return (

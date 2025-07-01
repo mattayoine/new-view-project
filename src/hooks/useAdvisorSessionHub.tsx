@@ -1,13 +1,15 @@
 
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useSessionPortfolio } from './useSessionPortfolio';
+import { useSessionPreparation } from './useSessionPreparation';
+import { useAdvisorPerformance } from './useAdvisorPerformance';
 import { useRealTimeSubscription } from './useRealTimeSubscription';
-import { useSessionPortfolio, SessionPortfolioItem } from './useSessionPortfolio';
-import { useSessionPreparation, SessionPreparation } from './useSessionPreparation';
-import { useAdvisorPerformance, AdvisorPerformanceMetrics } from './useAdvisorPerformance';
+import { useAuth } from './useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 
-export { SessionPortfolioItem, SessionPreparation, AdvisorPerformanceMetrics };
+export type { SessionPortfolioItem } from './useSessionPortfolio';
+export type { SessionPreparation } from './useSessionPreparation';
+export type { AdvisorPerformanceMetrics } from './useAdvisorPerformance';
 
 export interface ResourceItem {
   id: string;
@@ -28,9 +30,9 @@ export interface ResourceItem {
 }
 
 export interface AdvisorSessionHubData {
-  sessionPortfolio: SessionPortfolioItem[];
-  upcomingPreparations: SessionPreparation[];
-  performanceMetrics: AdvisorPerformanceMetrics;
+  sessionPortfolio: import('./useSessionPortfolio').SessionPortfolioItem[];
+  upcomingPreparations: import('./useSessionPreparation').SessionPreparation[];
+  performanceMetrics: import('./useAdvisorPerformance').AdvisorPerformanceMetrics;
   resourceLibrary: ResourceItem[];
 }
 
