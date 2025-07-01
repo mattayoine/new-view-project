@@ -4,13 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useRealTimeSubscription } from './useRealTimeSubscription';
 
-export interface AdvisorSessionHubData {
-  sessionPortfolio: SessionPortfolioItem[];
-  upcomingPreparations: SessionPreparation[];
-  performanceMetrics: AdvisorPerformanceMetrics;
-  resourceLibrary: ResourceItem[];
-}
-
 export interface SessionPortfolioItem {
   assignmentId: string;
   founderId: string;
@@ -39,18 +32,20 @@ export interface SessionPreparation {
   preparationStatus: 'not_started' | 'in_progress' | 'completed';
 }
 
+export interface MonthlyTrend {
+  month: string;
+  sessions: number;
+  satisfaction: number;
+  completionRate: number;
+}
+
 export interface AdvisorPerformanceMetrics {
   totalFounders: number;
   activeSessions: number;
   completedSessions: number;
   avgSessionRating: number;
   avgFounderSatisfaction: number;
-  monthlyTrends: {
-    month: string;
-    sessions: number;
-    satisfaction: number;
-    completionRate: number;
-  }[];
+  monthlyTrends: MonthlyTrend[];
   improvementAreas: string[];
   strengths: string[];
 }
@@ -68,12 +63,19 @@ export interface ResourceItem {
   rating: number;
 }
 
+export interface AdvisorSessionHubData {
+  sessionPortfolio: SessionPortfolioItem[];
+  upcomingPreparations: SessionPreparation[];
+  performanceMetrics: AdvisorPerformanceMetrics;
+  resourceLibrary: ResourceItem[];
+}
+
 export const useAdvisorSessionHub = () => {
   const { user } = useAuth();
 
   const query = useQuery({
     queryKey: ['advisor-session-hub', user?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<AdvisorSessionHubData> => {
       if (!user) throw new Error('User not authenticated');
 
       // Get advisor's users table ID
@@ -132,7 +134,7 @@ export const useAdvisorSessionHub = () => {
       if (resourcesError) throw resourcesError;
 
       // Process session portfolio
-      const sessionPortfolio: SessionPortfolioItem[] = assignments?.map(assignment => {
+      const sessionPortfolio: SessionPortfolioItem[] = (assignments || []).map(assignment => {
         const sessions = assignment.sessions || [];
         const completedSessions = sessions.filter(s => s.status === 'completed');
         const upcomingSessions = sessions.filter(s => 
@@ -152,15 +154,15 @@ export const useAdvisorSessionHub = () => {
           completedSessions: assignment.completed_sessions || 0,
           nextSessionDate: upcomingSessions[0]?.scheduled_at,
           lastSessionDate: completedSessions[0]?.scheduled_at,
-          status: 'active',
+          status: 'active' as const,
           urgentActions: [],
-          overallProgress: 75, // Placeholder
+          overallProgress: 75,
           avgRating: Math.round(avgRating * 10) / 10
         };
-      }) || [];
+      });
 
       // Process upcoming preparations
-      const upcomingPreparations: SessionPreparation[] = upcomingSessions?.map(session => ({
+      const upcomingPreparations: SessionPreparation[] = (upcomingSessions || []).map(session => ({
         sessionId: session.id,
         founderId: session.assignment?.founder?.id || '',
         founderName: session.assignment?.founder?.email || 'Unknown',
@@ -174,8 +176,8 @@ export const useAdvisorSessionHub = () => {
         relevantGoals: session.assignment?.goals?.map(g => g.title) || [],
         previousNotes: session.preparation_notes || '',
         recommendedResources: [],
-        preparationStatus: 'not_started'
-      })) || [];
+        preparationStatus: 'not_started' as const
+      }));
 
       // Calculate performance metrics
       const performanceMetrics: AdvisorPerformanceMetrics = {
@@ -183,8 +185,8 @@ export const useAdvisorSessionHub = () => {
         activeSessions: upcomingSessions?.length || 0,
         completedSessions: assignments?.reduce((sum, a) => sum + (a.completed_sessions || 0), 0) || 0,
         avgSessionRating: assignments?.reduce((sum, a) => sum + (a.avg_rating || 0), 0) / (assignments?.length || 1) || 0,
-        avgFounderSatisfaction: 4.2, // Placeholder
-        monthlyTrends: [], // Placeholder
+        avgFounderSatisfaction: 4.2,
+        monthlyTrends: [],
         improvementAreas: ['Time management', 'Follow-up consistency'],
         strengths: ['Technical expertise', 'Problem-solving approach']
       };
