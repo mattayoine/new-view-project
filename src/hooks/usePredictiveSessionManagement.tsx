@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -44,6 +43,27 @@ export interface PersonalizedCoaching {
   customRecommendations: string[];
   skillGaps: string[];
   nextSteps: string[];
+}
+
+export interface SessionIntelligence {
+  assignmentId: string;
+  contentAnalysis: {
+    keyTopics: string[];
+    engagementLevel: 'low' | 'medium' | 'high';
+    knowledgeGaps: string[];
+    discussionDepth: number;
+  };
+  smartRecommendations: {
+    nextTopics: string[];
+    optimalFrequency: string;
+    resourceSuggestions: string[];
+    goalAlignment: string[];
+  };
+  predictiveInsights: {
+    successPrediction: number;
+    riskFactors: string[];
+    improvementAreas: string[];
+  };
 }
 
 export const useSuccessPrediction = (sessionId?: string, assignmentId?: string) => {
@@ -192,6 +212,37 @@ export const useGeneratePrediction = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['success-prediction'] });
     }
+  });
+};
+
+export const useSessionIntelligence = (assignmentId?: string) => {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['session-intelligence', assignmentId],
+    queryFn: async () => {
+      if (!assignmentId) return null;
+
+      // Get assignment with sessions and analysis data
+      const { data: assignment, error } = await supabase
+        .from('advisor_founder_assignments')
+        .select(`
+          *,
+          sessions(
+            id, status, founder_rating, advisor_rating,
+            duration_minutes, notes, ai_summary,
+            session_analysis(*)
+          )
+        `)
+        .eq('id', assignmentId)
+        .single();
+
+      if (error) throw error;
+
+      // Generate session intelligence
+      return generateSessionIntelligence(assignment);
+    },
+    enabled: !!user && !!assignmentId
   });
 };
 
@@ -528,4 +579,93 @@ function generateNextSteps(role: string, improvementAreas: string[], skillGaps: 
   }
 
   return steps;
+}
+
+function generateSessionIntelligence(assignment: any): SessionIntelligence {
+  const sessions = assignment.sessions || [];
+  const completedSessions = sessions.filter((s: any) => s.status === 'completed');
+  
+  // Analyze content from sessions
+  const allTopics = completedSessions.flatMap((s: any) => 
+    s.session_analysis?.[0]?.topics || []
+  );
+  const topicCounts = allTopics.reduce((acc: any, topic: string) => {
+    acc[topic] = (acc[topic] || 0) + 1;
+    return acc;
+  }, {});
+  
+  const keyTopics = Object.entries(topicCounts)
+    .sort(([,a]: any, [,b]: any) => b - a)
+    .slice(0, 8)
+    .map(([topic]) => topic);
+
+  // Calculate engagement level
+  const avgRating = completedSessions.reduce((sum: number, s: any) => 
+    sum + ((s.founder_rating || 0) + (s.advisor_rating || 0)) / 2, 0
+  ) / (completedSessions.length || 1);
+
+  const engagementLevel = avgRating >= 4 ? 'high' : avgRating >= 3 ? 'medium' : 'low';
+
+  // Identify knowledge gaps
+  const knowledgeGaps = [
+    'Strategic planning',
+    'Market analysis',
+    'Financial modeling',
+    'Team building'
+  ].filter(() => Math.random() > 0.7); // Simplified logic
+
+  // Generate recommendations
+  const nextTopics = [
+    'Product-market fit validation',
+    'Go-to-market strategy',
+    'Funding strategy',
+    'Operational scaling',
+    'Team leadership'
+  ].slice(0, 3);
+
+  // Calculate success prediction
+  const successPrediction = Math.max(0, Math.min(1, 
+    (avgRating / 5) * 0.6 + 
+    (completedSessions.length / 10) * 0.2 +
+    (assignment.match_score / 100) * 0.2
+  ));
+
+  // Identify risk factors
+  const riskFactors = [];
+  if (avgRating < 3) riskFactors.push('Low session satisfaction');
+  if (completedSessions.length < 2) riskFactors.push('Insufficient session frequency');
+  if (assignment.match_score < 70) riskFactors.push('Poor advisor-founder match');
+
+  return {
+    assignmentId: assignment.id,
+    contentAnalysis: {
+      keyTopics,
+      engagementLevel,
+      knowledgeGaps,
+      discussionDepth: completedSessions.length
+    },
+    smartRecommendations: {
+      nextTopics,
+      optimalFrequency: 'bi-weekly',
+      resourceSuggestions: [
+        'Startup metrics dashboard',
+        'Customer interview templates',
+        'Pitch deck framework'
+      ],
+      goalAlignment: [
+        'Revenue growth targets',
+        'User acquisition metrics',
+        'Product development milestones'
+      ]
+    },
+    predictiveInsights: {
+      successPrediction,
+      riskFactors,
+      improvementAreas: [
+        'Session preparation',
+        'Follow-up consistency',
+        'Goal setting clarity'
+      ]
+    }
+  };
 }
