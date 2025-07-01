@@ -19,7 +19,22 @@ interface ActionItem {
 }
 
 const ActionItemTracker = () => {
-  const { data: sessions } = useFounderSessions();
+  // Add error handling for when useFounderSessions fails
+  let sessions;
+  let isLoading = false;
+  let error = null;
+
+  try {
+    const { data, isLoading: loading, error: queryError } = useFounderSessions();
+    sessions = data;
+    isLoading = loading;
+    error = queryError;
+  } catch (err) {
+    console.log('Error accessing useFounderSessions:', err);
+    sessions = [];
+    isLoading = false;
+    error = err;
+  }
 
   // Extract action items from session notes and AI summary
   const extractActionItems = (): ActionItem[] => {
@@ -99,6 +114,21 @@ const ActionItemTracker = () => {
     return items;
   };
 
+  // Show error state if auth is not available
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="text-center py-8">
+          <AlertCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+          <h3 className="text-lg font-medium mb-2">Unable to Load Action Items</h3>
+          <p className="text-gray-600">
+            Please make sure you're logged in to view your action items.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const actionItems = extractActionItems();
   
   const pendingItems = actionItems.filter(item => item.status === 'pending');
@@ -127,6 +157,17 @@ const ActionItemTracker = () => {
     // In a real implementation, this would update the database
     console.log('Toggle status for item:', itemId);
   };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading action items...</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
