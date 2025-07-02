@@ -22,7 +22,6 @@ interface CalendarEventRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -50,15 +49,38 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (sessionError) throw sessionError;
 
-    const googleClientId = Deno.env.get('GOOGLE_CLIENT_ID');
-    const googleClientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET');
-    
-    if (!googleClientId || !googleClientSecret) {
-      throw new Error('Google OAuth credentials not configured');
+    // Get Google OAuth token for the session creator or admin
+    const { data: tokenData, error: tokenError } = await supabase
+      .from('user_oauth_tokens')
+      .select('access_token, refresh_token, expires_at')
+      .eq('provider', 'google')
+      .eq('user_id', session.assignment.advisor.id)
+      .single();
+
+    if (tokenError || !tokenData) {
+      throw new Error('Google Calendar integration not set up for this advisor');
     }
 
-    // Get OAuth token for the session creator (we'll use service account approach for now)
-    const accessToken = await getServiceAccountToken(googleClientId, googleClientSecret);
+    // Check if token needs refresh
+    let accessToken = tokenData.access_token;
+    if (tokenData.expires_at && Date.now() > tokenData.expires_at) {
+      const refreshResult = await refreshGoogleToken(tokenData.refresh_token);
+      if (refreshResult.success) {
+        accessToken = refreshResult.access_token;
+        
+        // Update stored token
+        await supabase
+          .from('user_oauth_tokens')
+          .update({
+            access_token: refreshResult.access_token,
+            expires_at: refreshResult.expires_at
+          })
+          .eq('provider', 'google')
+          .eq('user_id', session.assignment.advisor.id);
+      } else {
+        throw new Error('Failed to refresh Google access token');
+      }
+    }
 
     let calendarEventId: string | null = null;
     let result: any = {};
@@ -116,11 +138,37 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
-async function getServiceAccountToken(clientId: string, clientSecret: string): Promise<string> {
-  // For now, we'll use a simplified approach
-  // In production, you'd want to implement proper OAuth flow or use service account
-  // This is a placeholder that would need proper OAuth implementation
-  return 'placeholder-token';
+async function refreshGoogleToken(refreshToken: string): Promise<any> {
+  const googleClientId = Deno.env.get('GOOGLE_CLIENT_ID');
+  const googleClientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET');
+  
+  try {
+    const response = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        refresh_token: refreshToken,
+        client_id: googleClientId!,
+        client_secret: googleClientSecret!,
+        grant_type: 'refresh_token',
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Token refresh failed');
+    }
+
+    const tokens = await response.json();
+    return {
+      success: true,
+      access_token: tokens.access_token,
+      expires_at: Date.now() + (tokens.expires_in * 1000)
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
 }
 
 async function createCalendarEvent(sessionData: any, accessToken: string): Promise<any> {
@@ -156,44 +204,28 @@ async function createCalendarEvent(sessionData: any, accessToken: string): Promi
     },
   };
 
-  try {
-    const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(event),
-    });
+  const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(event),
+  });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`Google Calendar API error: ${errorData.error?.message || response.statusText}`);
-    }
-
-    const createdEvent = await response.json();
-    console.log('Created calendar event:', createdEvent.id);
-    return createdEvent;
-  } catch (error) {
-    console.error('Error creating calendar event:', error);
-    // Return mock data for now if API call fails
-    return {
-      id: `mock-event-${Date.now()}`,
-      hangoutLink: `https://meet.google.com/mock-${Date.now()}`,
-      conferenceData: {
-        entryPoints: [{
-          uri: `https://meet.google.com/mock-${Date.now()}`,
-          entryPointType: 'video'
-        }]
-      }
-    };
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`Google Calendar API error: ${errorData.error?.message || response.statusText}`);
   }
+
+  const createdEvent = await response.json();
+  console.log('Created calendar event:', createdEvent.id);
+  return createdEvent;
 }
 
 async function updateCalendarEvent(eventId: string, sessionData: any, accessToken: string): Promise<any> {
-  if (!eventId || eventId.startsWith('mock-')) {
-    console.log('Mock event ID, skipping actual update');
-    return { id: eventId, hangoutLink: `https://meet.google.com/mock-${Date.now()}` };
+  if (!eventId) {
+    throw new Error('No calendar event ID provided for update');
   }
 
   const endTime = new Date(new Date(sessionData.scheduledAt).getTime() + sessionData.duration * 60000);
@@ -215,53 +247,44 @@ async function updateCalendarEvent(eventId: string, sessionData: any, accessToke
     ],
   };
 
-  try {
-    const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(event),
-    });
+  const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(event),
+  });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`Google Calendar API error: ${errorData.error?.message || response.statusText}`);
-    }
-
-    const updatedEvent = await response.json();
-    console.log('Updated calendar event:', updatedEvent.id);
-    return updatedEvent;
-  } catch (error) {
-    console.error('Error updating calendar event:', error);
-    return { id: eventId, hangoutLink: `https://meet.google.com/mock-${Date.now()}` };
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(`Google Calendar API error: ${errorData.error?.message || response.statusText}`);
   }
+
+  const updatedEvent = await response.json();
+  console.log('Updated calendar event:', updatedEvent.id);
+  return updatedEvent;
 }
 
 async function deleteCalendarEvent(eventId: string, accessToken: string): Promise<void> {
-  if (!eventId || eventId.startsWith('mock-')) {
-    console.log('Mock event ID, skipping actual deletion');
+  if (!eventId) {
+    console.log('No calendar event ID provided for deletion');
     return;
   }
 
-  try {
-    const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    });
+  const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${eventId}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+    },
+  });
 
-    if (!response.ok && response.status !== 404) {
-      const errorData = await response.json();
-      throw new Error(`Google Calendar API error: ${errorData.error?.message || response.statusText}`);
-    }
-
-    console.log('Deleted calendar event:', eventId);
-  } catch (error) {
-    console.error('Error deleting calendar event:', error);
+  if (!response.ok && response.status !== 404) {
+    const errorData = await response.json();
+    throw new Error(`Google Calendar API error: ${errorData.error?.message || response.statusText}`);
   }
+
+  console.log('Deleted calendar event:', eventId);
 }
 
 serve(handler);
