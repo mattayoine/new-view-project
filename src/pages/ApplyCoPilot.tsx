@@ -14,9 +14,9 @@ const ApplyCoPilot = () => {
           <div className="flex justify-between h-16 items-center">
             <Link to="/" className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-green-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">C</span>
+                <span className="text-white font-bold text-xl">T</span>
               </div>
-              <span className="text-2xl font-bold text-gray-900">CoPilot</span>
+              <span className="text-2xl font-bold text-gray-900">Tseer</span>
             </Link>
             <div className="flex items-center space-x-4">
               <Link to="/" className="text-gray-700 hover:text-blue-600 transition-colors">Home</Link>
@@ -185,7 +185,7 @@ const ApplyCoPilot = () => {
         </div>
       </section>
 
-      {/* Ideal CoPilot Profiles */}
+      {/* Ideal Tseer Profiles */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">We're Looking For</h2>
@@ -265,7 +265,7 @@ const ApplyCoPilot = () => {
 
             <Card>
               <CardContent className="p-6">
-                <h3 className="font-semibold text-gray-900 mb-3">When do CoPilots get paid?</h3>
+                <h3 className="font-semibold text-gray-900 mb-3">When do Tseers get paid?</h3>
                 <p className="text-gray-600">Revenue-share hits your wallet monthly; equity cashes at first buy-back or funding event.</p>
               </CardContent>
             </Card>
@@ -280,7 +280,7 @@ const ApplyCoPilot = () => {
             <Card>
               <CardContent className="p-6">
                 <h3 className="font-semibold text-gray-900 mb-3">Can I work with multiple SMEs?</h3>
-                <p className="text-gray-600">Yes, based on your availability. Most CoPilots start with one and scale as they prove impact.</p>
+                <p className="text-gray-600">Yes, based on your availability. Most Tseers start with one and scale as they prove impact.</p>
               </CardContent>
             </Card>
           </div>
@@ -305,9 +305,9 @@ const ApplyCoPilot = () => {
           <div className="text-center mb-8">
             <Link to="/" className="flex items-center justify-center space-x-3 mb-4">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-green-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">C</span>
+                <span className="text-white font-bold text-xl">T</span>
               </div>
-              <span className="text-2xl font-bold">CoPilot</span>
+              <span className="text-2xl font-bold">Tseer</span>
             </Link>
             <p className="text-gray-400 mb-6">The Diaspora–Africa Growth Bridge</p>
             <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-400">

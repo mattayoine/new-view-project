@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,7 +68,7 @@ const Signup = () => {
         });
 
         // Redirect to application form based on user type
-        const applicationRoute = userType === 'founder' ? '/apply-copilot' : '/apply-sme';
+        const applicationRoute = userType === 'founder' ? '/apply-tseer' : '/apply-sme';
         navigate(applicationRoute);
       }
     } catch (error: any) {
@@ -167,7 +168,7 @@ const Signup = () => {
               </p>
               <p className="text-gray-600 mt-2">
                 Want to apply directly?{' '}
-                <Link to="/apply-copilot" className="text-blue-600 hover:text-blue-700 font-medium">
+                <Link to="/apply-tseer" className="text-blue-600 hover:text-blue-700 font-medium">
                   Apply as Founder
                 </Link>
                 {' or '}
