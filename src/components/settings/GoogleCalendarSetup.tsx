@@ -31,16 +31,23 @@ const GoogleCalendarSetup = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data } = await supabase
-        .from('user_oauth_tokens')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('provider', 'google')
-        .single();
+      const { data, error } = await supabase.functions.invoke('oauth-token-helpers', {
+        body: {
+          action: 'check',
+          user_id: user.id,
+          provider: 'google'
+        }
+      });
 
-      setIsConnected(!!data);
+      if (error) {
+        console.error('Error checking connection status:', error);
+        setIsConnected(false);
+      } else {
+        setIsConnected(data?.exists || false);
+      }
     } catch (error) {
       console.error('Error checking connection status:', error);
+      setIsConnected(false);
     } finally {
       setChecking(false);
     }
@@ -64,16 +71,18 @@ const GoogleCalendarSetup = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
 
-      // Store tokens in database
-      await supabase
-        .from('user_oauth_tokens')
-        .upsert({
+      const { error } = await supabase.functions.invoke('oauth-token-helpers', {
+        body: {
+          action: 'store',
           user_id: user.id,
           provider: 'google',
           access_token: tokens.access_token,
           refresh_token: tokens.refresh_token,
           expires_at: tokens.expires_at
-        });
+        }
+      });
+
+      if (error) throw error;
 
       setIsConnected(true);
       toast.success('Google Calendar connected successfully!');
@@ -95,23 +104,28 @@ const GoogleCalendarSetup = () => {
       if (!user) return;
 
       // Get current token to revoke
-      const { data: tokenData } = await supabase
-        .from('user_oauth_tokens')
-        .select('access_token')
-        .eq('user_id', user.id)
-        .eq('provider', 'google')
-        .single();
+      const { data: tokenData } = await supabase.functions.invoke('oauth-token-helpers', {
+        body: {
+          action: 'get',
+          user_id: user.id,
+          provider: 'google'
+        }
+      });
 
       if (tokenData?.access_token) {
         await GoogleAuthService.revokeTokens(tokenData.access_token);
       }
 
       // Remove from database
-      await supabase
-        .from('user_oauth_tokens')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('provider', 'google');
+      const { error } = await supabase.functions.invoke('oauth-token-helpers', {
+        body: {
+          action: 'delete',
+          user_id: user.id,
+          provider: 'google'
+        }
+      });
+
+      if (error) throw error;
 
       setIsConnected(false);
       toast.success('Google Calendar disconnected');
@@ -191,8 +205,8 @@ const GoogleCalendarSetup = () => {
             <ul className="list-disc list-inside space-y-1 mt-1">
               <li>Automatic calendar events for all sessions</li>
               <li>Google Meet links generated automatically</li>
-              <li>Email reminders to all participants</li>
               <li>Calendar updates when sessions are rescheduled</li>
+              <li>Email reminders to all participants</li>
             </ul>
           </div>
         )}
