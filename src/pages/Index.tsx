@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,12 +9,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSecurity } from "@/hooks/useSecurityContext";
 import FounderForm from "@/components/onboarding/FounderForm";
 import AdvisorForm from "@/components/onboarding/AdvisorForm";
-
 const Index = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { userRole } = useSecurity();
+  const {
+    user
+  } = useAuth();
+  const {
+    userRole
+  } = useSecurity();
   const [selectedRole, setSelectedRole] = useState<'founder' | 'advisor' | null>(null);
 
   // Redirect authenticated users to their dashboard
@@ -46,22 +48,19 @@ const Index = () => {
   if (selectedRole === 'founder') {
     return <FounderForm onBack={() => setSelectedRole(null)} />;
   }
-
   if (selectedRole === 'advisor') {
     return <AdvisorForm onBack={() => setSelectedRole(null)} />;
   }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+  return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Navigation */}
       <nav className="bg-white/90 backdrop-blur-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-green-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">C</span>
+                <span className="font-bold text-xl text-slate-50">T</span>
               </div>
-              <span className="text-2xl font-bold text-gray-900">CoPilot</span>
+              <span className="text-2xl font-bold text-gray-900">Tseer</span>
             </div>
             <div className="flex items-center space-x-4">
               <Link to="/login">
@@ -80,13 +79,9 @@ const Index = () => {
           </Badge>
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6 leading-tight">
             Join the 
-            <span className="bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-              CoPilot Pilot Program
-            </span>
+            <span className="bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent"> Tseer Pilot Program</span>
           </h1>
-          <p className="text-xl text-gray-600 mb-8">
-            A 6-week advisory pilot connecting African founders with Diaspora experts
-          </p>
+          <p className="text-xl text-gray-600 mb-8">A 3-month advisory pilot connecting African founders with Diaspora experts</p>
         </div>
       </section>
 
@@ -261,19 +256,10 @@ const Index = () => {
             Choose your role and start your application today
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-lg mx-auto">
-            <Button 
-              size="lg" 
-              className="flex-1 bg-blue-600 hover:bg-blue-700"
-              onClick={() => setSelectedRole('founder')}
-            >
+            <Button size="lg" className="flex-1 bg-blue-600 hover:bg-blue-700" onClick={() => setSelectedRole('founder')}>
               Apply as Founder
             </Button>
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="flex-1 border-green-600 text-green-600 hover:bg-green-50"
-              onClick={() => setSelectedRole('advisor')}
-            >
+            <Button size="lg" variant="outline" className="flex-1 border-green-600 text-green-600 hover:bg-green-50" onClick={() => setSelectedRole('advisor')}>
               Apply as Advisor
             </Button>
           </div>
@@ -300,9 +286,10 @@ const Index = () => {
           <div className="text-center mb-8">
             <div className="flex items-center justify-center space-x-3 mb-4">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-green-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">C</span>
+                <span className="text-white font-bold text-xl">T
+              </span>
               </div>
-              <span className="text-2xl font-bold">CoPilot</span>
+              <span className="text-2xl font-bold">Tseer</span>
             </div>
             <div className="flex items-center justify-center mb-6">
               <Shield className="h-5 w-5 text-gray-400 mr-2" />
@@ -318,8 +305,6 @@ const Index = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
