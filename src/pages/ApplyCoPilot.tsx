@@ -293,7 +293,7 @@ const ApplyCoPilot = () => {
           <h2 className="text-3xl font-bold text-white mb-6">Ready to Turn Expertise Into Impact?</h2>
           <p className="text-xl text-green-100 mb-8">Join successful professionals already making a difference</p>
           <Button size="lg" className="bg-white text-green-600 hover:bg-gray-100 px-12 py-4 rounded-full text-lg font-semibold">
-            Become a CoPilot
+            Become a Tseer
             <ArrowRight className="ml-3 h-6 w-6" />
           </Button>
         </div>
