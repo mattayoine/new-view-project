@@ -29,16 +29,32 @@ export const useCalendarSync = () => {
 
   return useMutation({
     mutationFn: async (data: CalendarSyncData) => {
+      console.log('Syncing calendar event:', data.action, data.sessionId);
+      
       const { data: result, error } = await supabase.functions.invoke('google-calendar-sync', {
         body: data
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Calendar sync error:', error);
+        throw error;
+      }
+      
+      console.log('Calendar sync result:', result);
       return result;
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
-      toast.success(`Calendar event ${variables.action}d successfully`);
+      
+      if (data.success) {
+        toast.success(`Calendar event ${variables.action}d successfully`);
+        
+        if (data.meetingLink && variables.action === 'create') {
+          toast.success('Google Meet link generated!', {
+            description: 'Meeting link has been added to the session'
+          });
+        }
+      }
     },
     onError: (error: any) => {
       console.error('Calendar sync error:', error);
@@ -50,16 +66,22 @@ export const useCalendarSync = () => {
 export const useEmailWorkflow = () => {
   return useMutation({
     mutationFn: async (data: EmailWorkflowData) => {
+      console.log('Triggering email workflow:', data.emailType, data.sessionId);
+      
       const { data: result, error } = await supabase.functions.invoke('session-email-workflows', {
         body: data
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Email workflow error:', error);
+        throw error;
+      }
+      
       return result;
     },
     onSuccess: (data) => {
       console.log('Email workflow completed:', data);
-      if (data.emailsSent > 0) {
+      if (data?.emailsSent > 0) {
         toast.success(`${data.emailsSent} email(s) sent successfully`);
       }
     },
@@ -81,13 +103,24 @@ export const useAutomatedSessionWorkflow = () => {
     customData?: Record<string, any>
   ) => {
     try {
-      // Calendar operations
+      console.log('Executing automated workflow:', action, sessionId);
+
+      // Calendar operations for scheduling/updating sessions
       if (action === 'create' || action === 'update' || action === 'reschedule') {
-        await calendarSync.mutateAsync({
+        const calendarResult = await calendarSync.mutateAsync({
           sessionId,
           action: action === 'reschedule' ? 'update' : action,
-          sessionData
+          sessionData: {
+            title: sessionData?.title || 'Advisory Session',
+            description: sessionData?.description || 'Scheduled advisory session',
+            scheduledAt: sessionData?.scheduledAt,
+            duration: sessionData?.duration || 60,
+            advisorEmail: sessionData?.advisorEmail,
+            founderEmail: sessionData?.founderEmail
+          }
         });
+
+        console.log('Calendar sync completed:', calendarResult);
       } else if (action === 'cancel') {
         await calendarSync.mutateAsync({
           sessionId,
@@ -114,12 +147,14 @@ export const useAutomatedSessionWorkflow = () => {
           return; // No email for update
       }
 
-      await emailWorkflow.mutateAsync({
+      const emailResult = await emailWorkflow.mutateAsync({
         sessionId,
         emailType,
         recipientType: 'both',
         customData
       });
+
+      console.log('Email workflow completed:', emailResult);
 
     } catch (error) {
       console.error('Automated workflow error:', error);
@@ -137,6 +172,8 @@ export const useAutomatedSessionWorkflow = () => {
 export const useScheduledReminders = () => {
   return useMutation({
     mutationFn: async () => {
+      console.log('Triggering scheduled reminders');
+      
       // This would be called by a cron job to send reminders
       const { data, error } = await supabase
         .from('sessions')
@@ -153,6 +190,8 @@ export const useScheduledReminders = () => {
 
       if (error) throw error;
 
+      console.log(`Found ${data?.length || 0} sessions needing reminders`);
+
       const reminderPromises = data.map(session => 
         supabase.functions.invoke('session-email-workflows', {
           body: {
@@ -165,6 +204,14 @@ export const useScheduledReminders = () => {
 
       await Promise.all(reminderPromises);
       return { remindersSent: data.length };
+    },
+    onSuccess: (data) => {
+      console.log('Scheduled reminders completed:', data);
+      toast.success(`${data.remindersSent} reminder(s) sent`);
+    },
+    onError: (error) => {
+      console.error('Scheduled reminders error:', error);
+      toast.error('Failed to send scheduled reminders');
     }
   });
 };
