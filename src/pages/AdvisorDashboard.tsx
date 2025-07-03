@@ -68,7 +68,7 @@ const AdvisorDashboard = () => {
     .slice(0, 2)
     .map(s => ({
       text: s.founder_feedback_text,
-      founder: s.founder?.email?.split('@')[0] || 'Founder',
+      founder: assignments?.find(a => a.sessions?.some(session => session.id === s.id))?.founder?.email?.split('@')[0] || 'Founder',
       company: 'Startup' // This would come from founder profile in real implementation
     }));
 
@@ -159,14 +159,17 @@ const AdvisorDashboard = () => {
                         </p>
                         
                         <div className="space-y-3">
-                          {upcomingSessions.slice(0, 3).map((session, index) => (
-                            <div key={session.id} className="flex items-center gap-3">
-                              <Calendar className="w-4 h-4 text-blue-600" />
-                              <span className="text-sm">
-                                Next session with {session.assignment?.founder?.email?.split('@')[0] || 'Founder'} - {format(new Date(session.scheduled_at), 'MMM dd, h:mm a')}
-                              </span>
-                            </div>
-                          ))}
+                          {upcomingSessions.slice(0, 3).map((session, index) => {
+                            const assignment = assignments?.find(a => a.sessions?.some(s => s.id === session.id));
+                            return (
+                              <div key={session.id} className="flex items-center gap-3">
+                                <Calendar className="w-4 h-4 text-blue-600" />
+                                <span className="text-sm">
+                                  Next session with {assignment?.founder?.email?.split('@')[0] || 'Founder'} - {format(new Date(session.scheduled_at), 'MMM dd, h:mm a')}
+                                </span>
+                              </div>
+                            );
+                          })}
                           <div className="flex items-center gap-3">
                             <MessageSquare className="w-4 h-4 text-green-600" />
                             <span className="text-sm">Masterclass prep: "Scaling in Emerging Markets"</span>

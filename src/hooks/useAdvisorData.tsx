@@ -23,13 +23,29 @@ export const useAdvisorData = (advisorId?: string) => {
       
       if (advisorError) throw advisorError;
       
-      // Get assignments with founder details using the users table ID
+      // Get assignments with founder details and complete session data using the users table ID
       const { data: assignments, error: assignmentsError } = await supabase
         .from('advisor_founder_assignments')
         .select(`
           *,
           founder:users!founder_id(id, email),
-          sessions(id, status, scheduled_at, title, description, founder_rating, advisor_rating)
+          sessions(
+            id, 
+            status, 
+            scheduled_at, 
+            title, 
+            description, 
+            founder_rating, 
+            advisor_rating,
+            founder_feedback_text,
+            advisor_feedback_text,
+            duration_minutes,
+            meeting_link,
+            notes,
+            what_went_well,
+            what_could_improve,
+            assignment_id
+          )
         `)
         .eq('advisor_id', advisor.id)
         .eq('status', 'active');
