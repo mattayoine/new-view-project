@@ -1,19 +1,21 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Target, MessageSquare, TrendingUp, User, Clock, ArrowRight } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, Target, User, CheckCircle, FileText, Clock, ArrowLeft, BookOpen } from 'lucide-react';
 import { useFounderData } from '@/hooks/useFounderData';
 import { Link } from 'react-router-dom';
-import ProfileSection from '@/components/dashboard/ProfileSection';
+import { format } from 'date-fns';
 
 const FounderDashboard = () => {
   const { data, isLoading, error } = useFounderData();
+  const [activeTab, setActiveTab] = useState('overview');
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="min-h-screen bg-gray-50 p-6">
         <div className="animate-pulse space-y-6">
           <div className="h-8 bg-gray-200 rounded w-1/3"></div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -28,7 +30,7 @@ const FounderDashboard = () => {
 
   if (error) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="min-h-screen bg-gray-50 p-6">
         <div className="text-center">
           <p className="text-red-600">Error loading dashboard data</p>
         </div>
@@ -45,189 +47,357 @@ const FounderDashboard = () => {
     session => session.status === 'completed'
   ) || [];
 
+  // Mock data for the journey progress (in real app, this would come from the backend)
+  const journeyProgress = 33; // Month 2 of 6
+  const currentMonth = 2;
+  const totalMonths = 6;
+
+  const milestones = [
+    { month: 1, label: 'Setup', completed: true },
+    { month: 3, label: 'Masterclass', completed: false },
+    { month: 6, label: 'Case Study', completed: false }
+  ];
+
+  const upcomingTasks = [
+    { 
+      icon: CheckCircle, 
+      text: 'Complete your second advisory session with Sarah Chen',
+      completed: false 
+    },
+    { 
+      icon: FileText, 
+      text: 'Submit your monthly reflection form',
+      completed: false 
+    },
+    { 
+      icon: BookOpen, 
+      text: 'Prepare for Masterclass #1 next month',
+      completed: false 
+    }
+  ];
+
+  const toolkitItems = [
+    {
+      title: 'Pricing Strategy Framework',
+      author: 'By Sarah Chen',
+      usage: 'Used by 50+ founders'
+    },
+    {
+      title: 'Pitch Deck Template',
+      author: 'Proven template for African startups',
+      usage: ''
+    },
+    {
+      title: 'Export Readiness Checklist',
+      author: 'Essential steps for international expansion',
+      usage: ''
+    },
+    {
+      title: 'Financial Model Template',
+      author: 'Excel template for revenue projections',
+      usage: ''
+    }
+  ];
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Founder Dashboard</h1>
-        <div className="flex items-center gap-3">
-          <Link to="/founder-session-hub">
-            <Button className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Session Hub
-              <ArrowRight className="w-4 h-4" />
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto p-6 space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="w-5 h-5" />
             </Button>
-          </Link>
-          <Badge variant="outline" className="text-lg px-3 py-1">
-            Welcome back!
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Founder Dashboard</h1>
+              <p className="text-gray-600">Month {currentMonth} of {totalMonths} • Welcome to CoPilot</p>
+            </div>
+          </div>
+          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+            Active Pilot
           </Badge>
         </div>
-      </div>
 
-      {/* Profile Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1">
-          <ProfileSection />
-        </div>
-        
-        <div className="lg:col-span-2 space-y-6">
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Goals</CardTitle>
-                <Target className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{goals?.length || 0}</div>
-                <p className="text-xs text-muted-foreground">
-                  Keep pushing forward
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Sessions Complete</CardTitle>
-                <Calendar className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{completedSessions.length}</div>
-                <p className="text-xs text-muted-foreground">
-                  Total mentoring sessions
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Upcoming Sessions</CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{upcomingSessions.length}</div>
-                <p className="text-xs text-muted-foreground">
-                  Sessions scheduled
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Quick Access to Session Hub */}
-          <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-blue-900">
-                <Calendar className="w-5 h-5" />
-                Session Management Hub
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-blue-800 mb-4">
-                Access your complete session experience - manage upcoming sessions, track action items, 
-                request new sessions, and monitor your advisor relationship.
-              </p>
-              <Link to="/founder-session-hub">
-                <Button className="bg-blue-600 hover:bg-blue-700">
-                  Go to Session Hub
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Current Assignment */}
-        {activeAssignment && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="w-5 h-5" />
-                Your Advisor
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <h3 className="font-semibold">{activeAssignment.advisor?.email}</h3>
-                <p className="text-sm text-gray-600">
-                  Match Score: {activeAssignment.match_score}%
-                </p>
-              </div>
-              
-              {activeAssignment.sessions && activeAssignment.sessions.length > 0 && (
-                <div>
-                  <h4 className="font-medium mb-2">Recent Sessions</h4>
-                  <div className="space-y-2">
-                    {activeAssignment.sessions.slice(0, 3).map((session: any) => (
-                      <div key={session.id} className="flex justify-between items-center py-2 border-b">
-                        <div>
-                          <p className="font-medium text-sm">{session.title}</p>
-                          <p className="text-xs text-gray-500">
-                            {new Date(session.scheduled_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <Badge variant={session.status === 'completed' ? 'default' : 'outline'}>
-                          {session.status}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Active Goals */}
-        <Card>
+        {/* Journey Progress */}
+        <Card className="bg-white">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Target className="w-5 h-5" />
-              Active Goals
+              <Target className="w-5 h-5 text-blue-600" />
+              Your 6-Month Journey
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {goals && goals.length > 0 ? (
-              <div className="space-y-4">
-                {goals.slice(0, 3).map((goal: any) => (
-                  <div key={goal.id} className="space-y-2">
-                    <div className="flex justify-between items-start">
-                      <h4 className="font-medium">{goal.title}</h4>
-                      <Badge variant="outline" className="capitalize">
-                        {goal.priority}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-gray-600">{goal.description}</p>
-                    <div className="flex justify-between text-xs text-gray-500">
-                      <span>Progress: {goal.progress_percentage}%</span>
-                      {goal.target_date && (
-                        <span>Due: {new Date(goal.target_date).toLocaleDateString()}</span>
-                      )}
-                    </div>
+            <div className="space-y-4">
+              {/* Progress Bar */}
+              <div className="relative">
+                <div className="w-full h-2 bg-gray-200 rounded-full">
+                  <div 
+                    className="h-2 bg-gray-900 rounded-full transition-all duration-500"
+                    style={{ width: `${journeyProgress}%` }}
+                  />
+                </div>
+              </div>
+              
+              {/* Milestones */}
+              <div className="flex justify-between text-sm text-gray-600">
+                {milestones.map((milestone) => (
+                  <div key={milestone.month} className="text-center">
+                    <div className="font-medium">Month {milestone.month}: {milestone.label}</div>
                   </div>
                 ))}
               </div>
-            ) : (
-              <p className="text-gray-500 text-center py-4">
-                No active goals yet. Work with your advisor to set some!
-              </p>
-            )}
+            </div>
           </CardContent>
         </Card>
-      </div>
 
-      {!activeAssignment && (
-        <Card>
-          <CardContent className="text-center py-8">
-            <MessageSquare className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium mb-2">No Active Assignment</h3>
-            <p className="text-gray-600">
-              You haven't been matched with an advisor yet. Our team is working on finding the perfect match for you!
-            </p>
-          </CardContent>
-        </Card>
-      )}
+        {/* Tab Navigation */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4 bg-white border">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-gray-100">
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="advisors" className="data-[state=active]:bg-gray-100">
+              My Advisors
+            </TabsTrigger>
+            <TabsTrigger value="sessions" className="data-[state=active]:bg-gray-100">
+              Sessions
+            </TabsTrigger>
+            <TabsTrigger value="toolkit" className="data-[state=active]:bg-gray-100">
+              Toolkit
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Welcome Section */}
+              <div className="lg:col-span-2">
+                <Card>
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">👋</span>
+                      <div className="space-y-4">
+                        <h2 className="text-xl font-semibold">Welcome Back!</h2>
+                        <p className="text-gray-600">
+                          You're making great progress in your CoPilot journey. Here's what's coming up this month:
+                        </p>
+                        
+                        <div className="space-y-3">
+                          {upcomingTasks.map((task, index) => (
+                            <div key={index} className="flex items-center gap-3">
+                              <task.icon className={`w-5 h-5 ${task.completed ? 'text-green-600' : 'text-blue-600'}`} />
+                              <span className={task.completed ? 'line-through text-gray-500' : 'text-gray-700'}>
+                                {task.text}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* This Week's Reflection */}
+                <Card className="mt-6">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">💭</span>
+                      <div className="space-y-4 flex-1">
+                        <h2 className="text-xl font-semibold">This Week's Reflection</h2>
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                          <p className="text-blue-900 italic">"What's 1 small win this week?"</p>
+                        </div>
+                        <Button className="bg-gray-900 hover:bg-gray-800 text-white">
+                          Share Your Win
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Quick Stats */}
+              <div className="space-y-4">
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <div className="text-3xl font-bold text-blue-600 mb-2">3</div>
+                    <div className="text-gray-600">Sessions Completed</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <div className="text-3xl font-bold text-green-600 mb-2">2</div>
+                    <div className="text-gray-600">Active Advisors</div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <div className="text-3xl font-bold text-purple-600 mb-2">85%</div>
+                    <div className="text-gray-600">Goal Progress</div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* My Advisors Tab */}
+          <TabsContent value="advisors" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                      <User className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div className="flex-1 space-y-4">
+                      <div>
+                        <h3 className="font-semibold text-lg">Sarah Chen</h3>
+                        <Badge className="bg-blue-100 text-blue-800">Marketing Expert</Badge>
+                      </div>
+                      
+                      <p className="text-gray-600 text-sm">
+                        Former Head of Growth at TechStars. 8+ years scaling African startups. Expert in 
+                        customer acquisition and pricing strategies.
+                      </p>
+                      
+                      <div className="space-y-2">
+                        <div className="text-sm">
+                          <span className="font-medium">Next Session:</span>
+                          <br />
+                          <span className="text-gray-600">March 15, 2025 • 3:00 PM EAT</span>
+                        </div>
+                      </div>
+                      
+                      <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white">
+                        Schedule Next Session
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                      <User className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div className="flex-1 space-y-4">
+                      <div>
+                        <h3 className="font-semibold text-lg">Michael Adebayo</h3>
+                        <Badge className="bg-green-100 text-green-800">Operations Expert</Badge>
+                      </div>
+                      
+                      <p className="text-gray-600 text-sm">
+                        COO at three successful startups. Specialist in operational efficiency and team scaling. 
+                        Based in London, Nigerian roots.
+                      </p>
+                      
+                      <div className="space-y-2">
+                        <div className="text-sm">
+                          <span className="font-medium">Last Session:</span>
+                          <br />
+                          <span className="text-gray-600">February 28, 2025</span>
+                        </div>
+                      </div>
+                      
+                      <Button variant="outline" className="w-full">
+                        View Session Notes
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Sessions Tab */}
+          <TabsContent value="sessions" className="space-y-6">
+            {/* Upcoming Sessions */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Upcoming Sessions</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h4 className="font-medium">Growth Strategy Session with Sarah</h4>
+                    <p className="text-sm text-gray-600">March 15, 2025 • 3:00 PM EAT</p>
+                  </div>
+                  <Button className="bg-gray-900 hover:bg-gray-800 text-white">
+                    Join Call
+                  </Button>
+                </div>
+                
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h4 className="font-medium">Operations Review with Michael</h4>
+                    <p className="text-sm text-gray-600">March 22, 2025 • 2:00 PM EAT</p>
+                  </div>
+                  <Button variant="outline">
+                    Reschedule
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Session History */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Session History</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h4 className="font-medium">Pricing Strategy Deep Dive</h4>
+                    <p className="text-sm text-gray-600">Feb 28 with Sarah • 60 min</p>
+                  </div>
+                  <Button variant="outline">
+                    View Notes
+                  </Button>
+                </div>
+                
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div>
+                    <h4 className="font-medium">Initial Assessment</h4>
+                    <p className="text-sm text-gray-600">Feb 15 with Michael • 45 min</p>
+                  </div>
+                  <Button variant="outline">
+                    View Notes
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Toolkit Tab */}
+          <TabsContent value="toolkit" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-5 h-5" />
+                  <CardTitle>Founder Toolkit</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {toolkitItems.map((item, index) => (
+                    <div key={index} className="p-4 border rounded-lg hover:shadow-md transition-shadow cursor-pointer">
+                      <h4 className="font-medium mb-2">{item.title}</h4>
+                      <p className="text-sm text-gray-600 mb-1">{item.author}</p>
+                      {item.usage && (
+                        <p className="text-xs text-gray-500">{item.usage}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };
