@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,10 +16,12 @@ import {
   ArrowDown,
   Home,
   UserCheck,
-  BookOpen
+  BookOpen,
+  LogOut
 } from 'lucide-react';
 import { useAdminStats } from '@/hooks/useAdminData';
 import { usePendingApplicationsCount } from '@/hooks/useAdminApplications';
+import { useAuth } from '@/hooks/useAuth';
 import FlightControl from '@/components/admin/FlightControl';
 import SessionTracker from '@/components/admin/SessionTracker';
 import SessionAnalyticsDashboard from '@/components/admin/SessionAnalyticsDashboard';
@@ -39,6 +40,15 @@ import InterventionTools from '@/components/admin/InterventionTools';
 const AdminDashboard = () => {
   const { data: stats, isLoading } = useAdminStats();
   const { data: pendingCount = 0 } = usePendingApplicationsCount();
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   const quickActions = [
     { 
@@ -96,6 +106,15 @@ const AdminDashboard = () => {
             <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
               <Settings className="w-3 h-3 mr-1" />
               Settings
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-7 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={handleLogout}
+            >
+              <LogOut className="w-3 h-3 mr-1" />
+              Logout
             </Button>
           </div>
         </div>

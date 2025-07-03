@@ -1,12 +1,14 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Target, User, CheckCircle, FileText, Clock, ArrowLeft, BookOpen, Video } from 'lucide-react';
+import { Calendar, Target, User, CheckCircle, FileText, Clock, ArrowLeft, BookOpen, Video, LogOut } from 'lucide-react';
 import { useFounderData } from '@/hooks/useFounderData';
 import { useFounderSessionStats } from '@/hooks/useFounderSessionExperience';
 import { useFounderSessions } from '@/hooks/useFounderData';
+import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 
@@ -14,7 +16,16 @@ const FounderDashboard = () => {
   const { data, isLoading, error } = useFounderData();
   const { data: sessionStats } = useFounderSessionStats();
   const { data: sessions } = useFounderSessions();
+  const { signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -133,9 +144,20 @@ const FounderDashboard = () => {
               <p className="text-sm text-gray-600">Month {currentMonth} of {totalMonths} • Welcome to CoPilot</p>
             </div>
           </div>
-          <Badge className="bg-green-100 text-green-800 hover:bg-green-100 text-xs px-2 py-1">
-            {activeAssignment?.status === 'active' ? 'Active Pilot' : 'Inactive'}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge className="bg-green-100 text-green-800 hover:bg-green-100 text-xs px-2 py-1">
+              {activeAssignment?.status === 'active' ? 'Active Pilot' : 'Inactive'}
+            </Badge>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-7 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={handleLogout}
+            >
+              <LogOut className="w-3 h-3 mr-1" />
+              Logout
+            </Button>
+          </div>
         </div>
 
         {/* Journey Progress */}

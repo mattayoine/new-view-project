@@ -1,18 +1,29 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Users, Star, MessageSquare, User, Clock, ArrowLeft, Target, Award, Trophy } from 'lucide-react';
+import { Calendar, Users, Star, MessageSquare, User, Clock, ArrowLeft, Target, Award, Trophy, LogOut } from 'lucide-react';
 import { useAdvisorData } from '@/hooks/useAdvisorData';
 import { useAdvisorSessionHub } from '@/hooks/useAdvisorSessionHub';
+import { useAuth } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 
 const AdvisorDashboard = () => {
   const { data, isLoading, error } = useAdvisorData();
   const { data: sessionHubData } = useAdvisorSessionHub();
+  const { signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -87,10 +98,21 @@ const AdvisorDashboard = () => {
               <p className="text-sm text-gray-600">Month {monthInQuarter} of {quarter} • Making Impact</p>
             </div>
           </div>
-          <Badge className="bg-green-100 text-green-800 hover:bg-green-100 flex items-center gap-1 text-xs px-2 py-1">
-            <Trophy className="w-3 h-3" />
-            Top Advisor
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge className="bg-green-100 text-green-800 hover:bg-green-100 flex items-center gap-1 text-xs px-2 py-1">
+              <Trophy className="w-3 h-3" />
+              Top Advisor
+            </Badge>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-7 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={handleLogout}
+            >
+              <LogOut className="w-3 h-3 mr-1" />
+              Logout
+            </Button>
+          </div>
         </div>
 
         {/* Impact Metrics */}
