@@ -2,10 +2,14 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, MapPin, Video, Phone, Users } from 'lucide-react';
+import { Calendar, Clock, MapPin, Video, Phone, Users, MessageSquare, Star } from 'lucide-react';
 import { useSessions, useUpdateSessionStatus } from '@/hooks/useSessionManagement';
 import { useAutomatedSessionWorkflow } from '@/hooks/useSessionIntegrations';
+import { useMeetingIntegration } from '@/hooks/useMeetingIntegration';
+import SessionActionsPanel from './SessionActionsPanel';
+import SessionFeedbackForm from './SessionFeedbackForm';
 import { format } from 'date-fns';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 interface SessionListProps {
   assignmentId?: string;
@@ -15,6 +19,7 @@ const SessionList: React.FC<SessionListProps> = ({ assignmentId }) => {
   const { data: sessions, isLoading } = useSessions(assignmentId);
   const updateStatus = useUpdateSessionStatus();
   const { executeWorkflow, isLoading: workflowLoading } = useAutomatedSessionWorkflow();
+  const generateMeetingLink = useMeetingIntegration();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -55,6 +60,10 @@ const SessionList: React.FC<SessionListProps> = ({ assignmentId }) => {
     } catch (error) {
       console.error('Failed to update session:', error);
     }
+  };
+
+  const handleGenerateMeetingLink = async (sessionId: string) => {
+    await generateMeetingLink.mutateAsync({ sessionId, platform: 'google-meet' });
   };
 
   if (isLoading) {
@@ -112,8 +121,8 @@ const SessionList: React.FC<SessionListProps> = ({ assignmentId }) => {
               </div>
             )}
 
-            {session.meeting_link && (
-              <div className="mb-4">
+            <div className="flex flex-wrap gap-2 mb-4">
+              {session.meeting_link ? (
                 <Button 
                   variant="outline" 
                   size="sm"
@@ -122,10 +131,18 @@ const SessionList: React.FC<SessionListProps> = ({ assignmentId }) => {
                   <Video className="w-4 h-4 mr-2" />
                   Join Meeting
                 </Button>
-              </div>
-            )}
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleGenerateMeetingLink(session.id)}
+                  disabled={generateMeetingLink.isPending}
+                >
+                  <Video className="w-4 h-4 mr-2" />
+                  {generateMeetingLink.isPending ? 'Generating...' : 'Generate Meeting Link'}
+                </Button>
+              )}
 
-            <div className="flex gap-2">
               {session.status === 'scheduled' && (
                 <>
                   <Button
@@ -134,14 +151,6 @@ const SessionList: React.FC<SessionListProps> = ({ assignmentId }) => {
                     disabled={updateStatus.isPending || workflowLoading}
                   >
                     Start Session
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleStatusUpdate(session.id, 'cancelled', session)}
-                    disabled={updateStatus.isPending || workflowLoading}
-                  >
-                    Cancel
                   </Button>
                 </>
               )}
@@ -155,7 +164,28 @@ const SessionList: React.FC<SessionListProps> = ({ assignmentId }) => {
                   Complete Session
                 </Button>
               )}
+
+              {session.status === 'completed' && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button size="sm" variant="outline">
+                      <MessageSquare className="w-4 h-4 mr-2" />
+                      Leave Feedback
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Session Feedback</DialogTitle>
+                    </DialogHeader>
+                    <SessionFeedbackForm sessionId={session.id} />
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
+
+            {(session.status === 'scheduled' || session.status === 'in_progress') && (
+              <SessionActionsPanel session={session} />
+            )}
           </CardContent>
         </Card>
       ))}

@@ -151,10 +151,36 @@ export const useAutomatedSessionWorkflow = () => {
         sessionId,
         emailType,
         recipientType: 'both',
-        customData
+        customData: {
+          ...customData,
+          rescheduleReason: sessionData?.rescheduleReason,
+          cancellationReason: sessionData?.cancellationReason
+        }
       });
 
       console.log('Email workflow completed:', emailResult);
+
+      // Auto-schedule reminders for new sessions
+      if (action === 'create' || action === 'reschedule') {
+        // Schedule 24h and 1h reminders
+        setTimeout(async () => {
+          try {
+            await fetch(`${window.location.origin}/api/schedule-session-reminder`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sessionId, reminderTime: '24h' })
+            });
+            
+            await fetch(`${window.location.origin}/api/schedule-session-reminder`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sessionId, reminderTime: '1h' })
+            });
+          } catch (error) {
+            console.error('Failed to schedule reminders:', error);
+          }
+        }, 1000);
+      }
 
     } catch (error) {
       console.error('Automated workflow error:', error);

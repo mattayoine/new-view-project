@@ -5,270 +5,230 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Star, Send } from 'lucide-react';
-import { useSubmitSessionFeedback } from '@/hooks/useSessionFeedback';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import { toast } from 'sonner';
+import { Star, Plus, Trash2 } from 'lucide-react';
+import { useSubmitSessionFeedback } from '@/hooks/useEnhancedSessionFeedback';
 
 interface SessionFeedbackFormProps {
   sessionId: string;
-  onSuccess?: () => void;
+  onComplete?: () => void;
 }
 
-const SessionFeedbackForm: React.FC<SessionFeedbackFormProps> = ({ sessionId, onSuccess }) => {
-  const [ratings, setRatings] = useState({
-    overall: 0,
-    preparation: 0,
-    communication: 0,
-    value: 0
-  });
-  const [feedback, setFeedback] = useState({
-    wentWell: '',
-    couldImprove: '',
+const SessionFeedbackForm: React.FC<SessionFeedbackFormProps> = ({ sessionId, onComplete }) => {
+  const [formData, setFormData] = useState({
+    overallRating: 0,
+    preparationRating: 0,
+    communicationRating: 0,
+    valueRating: 0,
+    whatWentWell: '',
+    whatCouldImprove: '',
+    actionItems: [''],
     additionalComments: '',
     wouldRecommend: false,
     isAnonymous: false
   });
-  const [actionItems, setActionItems] = useState<string[]>(['']);
 
   const submitFeedback = useSubmitSessionFeedback();
 
-  const setRating = (category: keyof typeof ratings, rating: number) => {
-    setRatings(prev => ({ ...prev, [category]: rating }));
-  };
+  const StarRating = ({ value, onChange, label }: { 
+    value: number; 
+    onChange: (rating: number) => void; 
+    label: string; 
+  }) => (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <div className="flex gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => onChange(star)}
+            className="p-1"
+          >
+            <Star
+              className={`w-5 h-5 ${
+                star <= value ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'
+              }`}
+            />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   const addActionItem = () => {
-    setActionItems(prev => [...prev, '']);
+    setFormData(prev => ({
+      ...prev,
+      actionItems: [...prev.actionItems, '']
+    }));
   };
 
   const updateActionItem = (index: number, value: string) => {
-    setActionItems(prev => prev.map((item, i) => i === index ? value : item));
+    setFormData(prev => ({
+      ...prev,
+      actionItems: prev.actionItems.map((item, i) => i === index ? value : item)
+    }));
   };
 
   const removeActionItem = (index: number) => {
-    setActionItems(prev => prev.filter((_, i) => i !== index));
+    if (formData.actionItems.length > 1) {
+      setFormData(prev => ({
+        ...prev,
+        actionItems: prev.actionItems.filter((_, i) => i !== index)
+      }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (ratings.overall === 0) {
-      toast.error('Please provide an overall rating');
+    if (formData.overallRating === 0) {
       return;
     }
 
-    try {
-      await submitFeedback.mutateAsync({
-        session_id: sessionId,
-        feedback_by: '', // Will be set by the API
-        overall_rating: ratings.overall,
-        preparation_rating: ratings.preparation,
-        communication_rating: ratings.communication,
-        value_rating: ratings.value,
-        what_went_well: feedback.wentWell || undefined,
-        what_could_improve: feedback.couldImprove || undefined,
-        additional_comments: feedback.additionalComments || undefined,
-        action_items: actionItems.filter(item => item.trim() !== ''),
-        would_recommend: feedback.wouldRecommend,
-        is_anonymous: feedback.isAnonymous
-      });
+    const validActionItems = formData.actionItems.filter(item => item.trim() !== '');
 
-      onSuccess?.();
-    } catch (error) {
-      toast.error('Failed to submit feedback');
-    }
+    await submitFeedback.mutateAsync({
+      sessionId,
+      ...formData,
+      actionItems: validActionItems
+    });
+
+    onComplete?.();
   };
-
-  const RatingStars = ({ 
-    category, 
-    value, 
-    onChange 
-  }: { 
-    category: string; 
-    value: number; 
-    onChange: (rating: number) => void; 
-  }) => (
-    <div className="flex items-center gap-1">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <button
-          key={star}
-          type="button"
-          onClick={() => onChange(star)}
-          className="hover:scale-110 transition-transform"
-        >
-          <Star
-            className={`w-5 h-5 ${
-              star <= value 
-                ? 'fill-yellow-400 text-yellow-400' 
-                : 'text-gray-300'
-            }`}
-          />
-        </button>
-      ))}
-      <span className="ml-2 text-sm text-muted-foreground">
-        {value > 0 ? `${value}/5` : 'Not rated'}
-      </span>
-    </div>
-  );
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Star className="w-5 h-5" />
-          Session Feedback
-        </CardTitle>
+        <CardTitle>Session Feedback</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Ratings */}
-          <div className="space-y-4">
-            <h3 className="font-medium">Rate this session</h3>
-            
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="overall">Overall Experience *</Label>
-                <RatingStars
-                  category="overall"
-                  value={ratings.overall}
-                  onChange={(rating) => setRating('overall', rating)}
-                />
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <StarRating
+              value={formData.overallRating}
+              onChange={(rating) => setFormData(prev => ({ ...prev, overallRating: rating }))}
+              label="Overall Session Rating *"
+            />
+            <StarRating
+              value={formData.preparationRating}
+              onChange={(rating) => setFormData(prev => ({ ...prev, preparationRating: rating }))}
+              label="Preparation Quality"
+            />
+            <StarRating
+              value={formData.communicationRating}
+              onChange={(rating) => setFormData(prev => ({ ...prev, communicationRating: rating }))}
+              label="Communication Effectiveness"
+            />
+            <StarRating
+              value={formData.valueRating}
+              onChange={(rating) => setFormData(prev => ({ ...prev, valueRating: rating }))}
+              label="Value Provided"
+            />
+          </div>
 
-              <div>
-                <Label htmlFor="preparation">Preparation</Label>
-                <RatingStars
-                  category="preparation"
-                  value={ratings.preparation}
-                  onChange={(rating) => setRating('preparation', rating)}
-                />
-              </div>
+          <div>
+            <Label htmlFor="what-went-well">What went well in this session?</Label>
+            <Textarea
+              id="what-went-well"
+              value={formData.whatWentWell}
+              onChange={(e) => setFormData(prev => ({ ...prev, whatWentWell: e.target.value }))}
+              placeholder="Share what you found most valuable..."
+              rows={3}
+            />
+          </div>
 
-              <div>
-                <Label htmlFor="communication">Communication</Label>
-                <RatingStars
-                  category="communication"
-                  value={ratings.communication}
-                  onChange={(rating) => setRating('communication', rating)}
-                />
-              </div>
+          <div>
+            <Label htmlFor="what-could-improve">What could be improved?</Label>
+            <Textarea
+              id="what-could-improve"
+              value={formData.whatCouldImprove}
+              onChange={(e) => setFormData(prev => ({ ...prev, whatCouldImprove: e.target.value }))}
+              placeholder="Suggestions for future sessions..."
+              rows={3}
+            />
+          </div>
 
-              <div>
-                <Label htmlFor="value">Value Provided</Label>
-                <RatingStars
-                  category="value"
-                  value={ratings.value}
-                  onChange={(rating) => setRating('value', rating)}
-                />
-              </div>
+          <div>
+            <Label>Action Items</Label>
+            <div className="space-y-2">
+              {formData.actionItems.map((item, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Input
+                    value={item}
+                    onChange={(e) => updateActionItem(index, e.target.value)}
+                    placeholder="Action item or next step..."
+                    className="flex-1"
+                  />
+                  {formData.actionItems.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => removeActionItem(index)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addActionItem}
+                className="w-full"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Action Item
+              </Button>
             </div>
           </div>
 
-          {/* Feedback Text */}
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="wentWell">What went well?</Label>
-              <Textarea
-                id="wentWell"
-                value={feedback.wentWell}
-                onChange={(e) => setFeedback(prev => ({ ...prev, wentWell: e.target.value }))}
-                placeholder="Share what you found valuable about this session..."
-                rows={3}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="couldImprove">What could be improved?</Label>
-              <Textarea
-                id="couldImprove"
-                value={feedback.couldImprove}
-                onChange={(e) => setFeedback(prev => ({ ...prev, couldImprove: e.target.value }))}
-                placeholder="Share suggestions for improvement..."
-                rows={3}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="additionalComments">Additional Comments</Label>
-              <Textarea
-                id="additionalComments"
-                value={feedback.additionalComments}
-                onChange={(e) => setFeedback(prev => ({ ...prev, additionalComments: e.target.value }))}
-                placeholder="Any other feedback you'd like to share..."
-                rows={3}
-              />
-            </div>
+          <div>
+            <Label htmlFor="additional-comments">Additional Comments</Label>
+            <Textarea
+              id="additional-comments"
+              value={formData.additionalComments}
+              onChange={(e) => setFormData(prev => ({ ...prev, additionalComments: e.target.value }))}
+              placeholder="Any other feedback or suggestions..."
+              rows={2}
+            />
           </div>
 
-          {/* Action Items */}
           <div className="space-y-4">
-            <Label>Action Items (Optional)</Label>
-            {actionItems.map((item, index) => (
-              <div key={index} className="flex gap-2">
-                <Input
-                  value={item}
-                  onChange={(e) => updateActionItem(index, e.target.value)}
-                  placeholder="Enter an action item..."
-                  className="flex-1"
-                />
-                {actionItems.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => removeActionItem(index)}
-                    size="sm"
-                  >
-                    Remove
-                  </Button>
-                )}
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={addActionItem}
-              size="sm"
-            >
-              Add Action Item
-            </Button>
-          </div>
-
-          {/* Checkboxes */}
-          <div className="space-y-3">
             <div className="flex items-center space-x-2">
               <Checkbox
-                id="recommend"
-                checked={feedback.wouldRecommend}
+                id="would-recommend"
+                checked={formData.wouldRecommend}
                 onCheckedChange={(checked) => 
-                  setFeedback(prev => ({ ...prev, wouldRecommend: !!checked }))
+                  setFormData(prev => ({ ...prev, wouldRecommend: checked as boolean }))
                 }
               />
-              <Label htmlFor="recommend">I would recommend this advisor to others</Label>
+              <Label htmlFor="would-recommend">
+                I would recommend this advisor to other founders
+              </Label>
             </div>
 
             <div className="flex items-center space-x-2">
               <Checkbox
-                id="anonymous"
-                checked={feedback.isAnonymous}
+                id="is-anonymous"
+                checked={formData.isAnonymous}
                 onCheckedChange={(checked) => 
-                  setFeedback(prev => ({ ...prev, isAnonymous: !!checked }))
+                  setFormData(prev => ({ ...prev, isAnonymous: checked as boolean }))
                 }
               />
-              <Label htmlFor="anonymous">Submit feedback anonymously</Label>
+              <Label htmlFor="is-anonymous">
+                Submit feedback anonymously
+              </Label>
             </div>
           </div>
 
           <Button 
             type="submit" 
             className="w-full"
-            disabled={submitFeedback.isPending || ratings.overall === 0}
+            disabled={submitFeedback.isPending || formData.overallRating === 0}
           >
-            {submitFeedback.isPending ? (
-              <LoadingSpinner size="sm" className="mr-2" />
-            ) : (
-              <Send className="w-4 h-4 mr-2" />
-            )}
             {submitFeedback.isPending ? 'Submitting...' : 'Submit Feedback'}
           </Button>
         </form>
