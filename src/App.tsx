@@ -7,6 +7,9 @@ import { SecurityProvider } from './hooks/useSecurityContext';
 import Index from './pages/Index';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import PendingVerification from './pages/PendingVerification';
 import AdminDashboard from './pages/AdminDashboard';
 import AdvisorDashboard from './pages/AdvisorDashboard';
 import FounderDashboard from './pages/FounderDashboard';
@@ -38,6 +41,9 @@ function App() {
                 <Route path="/" element={<Index />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/pending-verification" element={<PendingVerification />} />
                 <Route path="/apply-copilot" element={<ApplyCoPilot />} />
                 <Route path="/apply-sme" element={<ApplySME />} />
                 <Route path="/pending-approval" element={<PendingApproval />} />

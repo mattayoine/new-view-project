@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +7,7 @@ import { ArrowLeft, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+
 const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -18,6 +18,7 @@ const Signup = () => {
   const {
     toast
   } = useToast();
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
@@ -48,7 +49,7 @@ const Signup = () => {
         scope: 'global'
       });
 
-      // Create auth user without role metadata (prevents auto-access)
+      // Create auth user with email verification
       const {
         data,
         error
@@ -56,20 +57,39 @@ const Signup = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/pending-approval`
-          // Deliberately NOT setting role metadata to prevent auto-access
+          emailRedirectTo: `${window.location.origin}/login`,
+          data: {
+            user_type: userType
+          }
         }
       });
+      
       if (error) throw error;
+      
       if (data.user) {
-        toast({
-          title: "Registration Successful!",
-          description: "Please check your email to verify your account, then complete your application."
-        });
-
-        // Redirect to application form based on user type
-        const applicationRoute = userType === 'founder' ? '/apply-tseer' : '/apply-sme';
-        navigate(applicationRoute);
+        if (data.user.email_confirmed_at) {
+          // Email already confirmed, proceed to application
+          toast({
+            title: "Registration Successful!",
+            description: "Please complete your application."
+          });
+          const applicationRoute = userType === 'founder' ? '/apply-tseer' : '/apply-sme';
+          navigate(applicationRoute);
+        } else {
+          // Email verification required
+          toast({
+            title: "Registration Successful!",
+            description: "Please check your email to verify your account before proceeding.",
+            duration: 8000
+          });
+          navigate('/pending-verification', { 
+            state: { 
+              email, 
+              userType,
+              message: 'Please verify your email address to continue with your application.' 
+            }
+          });
+        }
       }
     } catch (error: any) {
       console.error('Signup error:', error);
@@ -90,6 +110,7 @@ const Signup = () => {
       setLoading(false);
     }
   };
+
   return <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
         {/* Header */}
@@ -113,7 +134,7 @@ const Signup = () => {
             <Alert className="mb-6">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                After registration, you'll need to complete an application and await approval before accessing the platform.
+                After registration, you'll need to verify your email and complete an application before accessing the platform.
               </AlertDescription>
             </Alert>
 
@@ -182,4 +203,5 @@ const Signup = () => {
       </div>
     </div>;
 };
+
 export default Signup;

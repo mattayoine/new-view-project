@@ -223,7 +223,11 @@ const Login = () => {
             </form>
             
             <div className="mt-6 text-center text-sm">
-              <p className="text-gray-600 mb-4">
+              <Link to="/forgot-password" className="text-blue-600 hover:text-blue-700 font-medium">
+                Forgot your password?
+              </Link>
+              
+              <p className="text-gray-600 mb-4 mt-4">
                 Don't have an account?{' '}
                 <Link to="/signup" className="text-blue-600 hover:text-blue-700 font-medium">
                   Sign up here
