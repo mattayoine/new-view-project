@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from '@/components/ui/textarea';
 import { Users, Calendar, Award, MessageSquare, Edit3 } from 'lucide-react';
 import { useAssignments, useUpdateAssignmentStatus } from '@/hooks/useAssignmentManagement';
+import AssignmentTermination from './AssignmentTermination';
 import { format } from 'date-fns';
 
 const AssignmentsList = () => {
@@ -31,6 +32,8 @@ const AssignmentsList = () => {
         return 'bg-blue-100 text-blue-800';
       case 'completed':
         return 'bg-gray-100 text-gray-800';
+      case 'terminated':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -84,6 +87,7 @@ const AssignmentsList = () => {
             <span>Total: {assignments.length}</span>
             <span>Pending: {assignments.filter(a => a.status === 'pending').length}</span>
             <span>Active: {assignments.filter(a => a.status === 'active').length}</span>
+            <span>Terminated: {assignments.filter(a => a.status === 'terminated').length}</span>
           </div>
         </CardHeader>
         <CardContent>
@@ -179,61 +183,65 @@ const AssignmentsList = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedAssignment(assignment);
-                                setNewStatus(assignment.status);
-                                setStatusNotes(assignment.notes || '');
-                              }}
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Update Assignment Status</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              <div>
-                                <label className="text-sm font-medium mb-2 block">Status</label>
-                                <Select value={newStatus} onValueChange={setNewStatus}>
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                    <SelectItem value="accepted">Accepted</SelectItem>
-                                    <SelectItem value="declined">Declined</SelectItem>
-                                    <SelectItem value="active">Active</SelectItem>
-                                    <SelectItem value="completed">Completed</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              
-                              <div>
-                                <label className="text-sm font-medium mb-2 block">Notes</label>
-                                <Textarea
-                                  value={statusNotes}
-                                  onChange={(e) => setStatusNotes(e.target.value)}
-                                  placeholder="Add notes about this status change..."
-                                  rows={3}
-                                />
-                              </div>
-                              
+                        <div className="flex gap-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
                               <Button
-                                onClick={handleStatusUpdate}
-                                disabled={updateStatus.isPending}
-                                className="w-full"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedAssignment(assignment);
+                                  setNewStatus(assignment.status);
+                                  setStatusNotes(assignment.notes || '');
+                                }}
                               >
-                                {updateStatus.isPending ? 'Updating...' : 'Update Status'}
+                                <Edit3 className="w-4 h-4" />
                               </Button>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>Update Assignment Status</DialogTitle>
+                              </DialogHeader>
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="text-sm font-medium mb-2 block">Status</label>
+                                  <Select value={newStatus} onValueChange={setNewStatus}>
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="pending">Pending</SelectItem>
+                                      <SelectItem value="accepted">Accepted</SelectItem>
+                                      <SelectItem value="declined">Declined</SelectItem>
+                                      <SelectItem value="active">Active</SelectItem>
+                                      <SelectItem value="completed">Completed</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                
+                                <div>
+                                  <label className="text-sm font-medium mb-2 block">Notes</label>
+                                  <Textarea
+                                    value={statusNotes}
+                                    onChange={(e) => setStatusNotes(e.target.value)}
+                                    placeholder="Add notes about this status change..."
+                                    rows={3}
+                                  />
+                                </div>
+                                
+                                <Button
+                                  onClick={handleStatusUpdate}
+                                  disabled={updateStatus.isPending}
+                                  className="w-full"
+                                >
+                                  {updateStatus.isPending ? 'Updating...' : 'Update Status'}
+                                </Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                          
+                          <AssignmentTermination assignment={assignment} />
+                        </div>
                       </TableCell>
                     </TableRow>
                   );

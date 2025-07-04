@@ -12,6 +12,7 @@ import { calculateMatchScore, rankAdvisorsByMatch } from '@/utils/matchingAlgori
 import MatchSuggestions from './MatchSuggestions';
 import ManualAssignment from './ManualAssignment';
 import AssignmentsList from './AssignmentsList';
+import BulkAssignmentTool from './BulkAssignmentTool';
 
 const MatchingDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -85,6 +86,7 @@ const MatchingDashboard = () => {
       <Tabs defaultValue="suggestions" className="space-y-6">
         <TabsList>
           <TabsTrigger value="suggestions">Match Suggestions</TabsTrigger>
+          <TabsTrigger value="bulk">Bulk Assignment</TabsTrigger>
           <TabsTrigger value="manual">Manual Assignment</TabsTrigger>
           <TabsTrigger value="assignments">Active Assignments</TabsTrigger>
         </TabsList>
@@ -191,6 +193,10 @@ const MatchingDashboard = () => {
               )}
             </div>
           </div>
+        </TabsContent>
+
+        <TabsContent value="bulk">
+          <BulkAssignmentTool />
         </TabsContent>
 
         <TabsContent value="manual">
