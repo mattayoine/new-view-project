@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, MapPin, Video, Phone, Users, MessageSquare, Star } from 'lucide-react';
 import { useSessions, useUpdateSessionStatus } from '@/hooks/useSessionManagement';
 import { useAutomatedSessionWorkflow } from '@/hooks/useSessionIntegrations';
-import { useMeetingIntegration } from '@/hooks/useMeetingIntegration';
+import { useGenerateMeetingLink } from '@/hooks/useMeetingIntegration';
 import SessionActionsPanel from './SessionActionsPanel';
 import SessionFeedbackForm from './SessionFeedbackForm';
 import { format } from 'date-fns';
@@ -19,7 +19,7 @@ const SessionList: React.FC<SessionListProps> = ({ assignmentId }) => {
   const { data: sessions, isLoading } = useSessions(assignmentId);
   const updateStatus = useUpdateSessionStatus();
   const { executeWorkflow, isLoading: workflowLoading } = useAutomatedSessionWorkflow();
-  const generateMeetingLink = useMeetingIntegration();
+  const generateMeetingLink = useGenerateMeetingLink();
 
   const getStatusColor = (status: string) => {
     switch (status) {
