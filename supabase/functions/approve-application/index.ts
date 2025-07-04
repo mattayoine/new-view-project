@@ -245,6 +245,26 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`Failed to update application: ${updateError.message}`);
     }
 
+    // Send welcome email notification
+    try {
+      const { error: emailError } = await supabaseAdmin.functions.invoke('send-application-notification', {
+        body: {
+          applicationId,
+          status: 'approved'
+        }
+      });
+
+      if (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+        // Don't fail the entire process for email issues
+      } else {
+        console.log('Welcome email sent successfully');
+      }
+    } catch (emailError) {
+      console.error('Email sending error:', emailError);
+      // Continue without failing
+    }
+
     console.log('Application approved successfully');
 
     return new Response(

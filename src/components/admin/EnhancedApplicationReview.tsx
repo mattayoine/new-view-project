@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAdminApplications } from '@/hooks/useAdminApplications';
 import { useEnhancedApplicationActions } from '@/hooks/useEnhancedApplicationActions';
