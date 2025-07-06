@@ -8,14 +8,25 @@ export const useRecalculateAssignmentMetrics = () => {
 
   return useMutation({
     mutationFn: async (assignmentId?: string) => {
-      // Recalculate metrics for a specific assignment or all assignments
-      const query = assignmentId 
-        ? supabase.rpc('recalculate_assignment_metrics', { assignment_id: assignmentId })
-        : supabase.rpc('recalculate_all_assignment_metrics');
-
-      const { data, error } = await query;
-      if (error) throw error;
-      return data;
+      // Since the database has triggers that automatically update metrics,
+      // we just need to trigger a small update to force the trigger to run
+      if (assignmentId) {
+        const { data, error } = await supabase
+          .from('advisor_founder_assignments')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', assignmentId)
+          .select();
+        if (error) throw error;
+        return data;
+      } else {
+        // For all assignments, we'll update all of them to trigger the metrics recalculation
+        const { data, error } = await supabase
+          .from('advisor_founder_assignments')
+          .update({ updated_at: new Date().toISOString() })
+          .neq('id', '00000000-0000-0000-0000-000000000000'); // Update all assignments
+        if (error) throw error;
+        return data;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assignments'] });
