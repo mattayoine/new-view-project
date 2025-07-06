@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Bell, X } from 'lucide-react';
+import { Bell, X, AlertTriangle, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +29,16 @@ export const RealTimeNotifications: React.FC = () => {
     event: '*'
   });
 
+  // Subscribe to real-time message updates
+  useRealTimeSubscription({
+    table: 'messages',
+    queryKey: ['messages'],
+    filter: `to_user_id=eq.${user?.id}`,
+    event: 'INSERT'
+  });
+
   const unreadCount = notifications?.filter(n => !n.is_read).length || 0;
+  const urgentCount = notifications?.filter(n => !n.is_read && (n.priority === 'urgent' || n.type === 'escalation')).length || 0;
 
   const markAsRead = async (notificationId: string) => {
     try {
@@ -59,6 +68,53 @@ export const RealTimeNotifications: React.FC = () => {
     }
   };
 
+  const getNotificationIcon = (type: string, priority: string) => {
+    if (type === 'escalation' || priority === 'urgent') {
+      return <AlertTriangle className="w-4 h-4 text-red-500" />;
+    }
+    if (type === 'message') {
+      return <MessageCircle className="w-4 h-4 text-blue-500" />;
+    }
+    return <Bell className="w-4 h-4 text-gray-500" />;
+  };
+
+  const getPriorityColor = (priority: string, type: string) => {
+    if (type === 'escalation' || priority === 'urgent') {
+      return 'bg-red-50 border-l-red-500';
+    }
+    if (priority === 'high') {
+      return 'bg-orange-50 border-l-orange-500';
+    }
+    return 'bg-blue-50 border-l-blue-500';
+  };
+
+  // Auto-refresh notifications every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetch();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [refetch]);
+
+  // Show toast for urgent notifications
+  useEffect(() => {
+    if (notifications) {
+      const newUrgentNotifications = notifications.filter(
+        n => !n.is_read && 
+        (n.type === 'escalation' || n.priority === 'urgent') &&
+        new Date(n.created_at).getTime() > Date.now() - 5000 // Last 5 seconds
+      );
+
+      newUrgentNotifications.forEach(notification => {
+        toast.error(`🚨 ${notification.title}`, {
+          description: notification.message,
+          duration: 10000,
+        });
+      });
+    }
+  }, [notifications]);
+
   if (!user) return null;
 
   return (
@@ -72,8 +128,10 @@ export const RealTimeNotifications: React.FC = () => {
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
           <Badge 
-            variant="destructive" 
-            className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+            variant={urgentCount > 0 ? "destructive" : "default"}
+            className={`absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs ${
+              urgentCount > 0 ? 'animate-pulse' : ''
+            }`}
           >
             {unreadCount > 99 ? '99+' : unreadCount}
           </Badge>
@@ -81,10 +139,17 @@ export const RealTimeNotifications: React.FC = () => {
       </Button>
 
       {isOpen && (
-        <Card className="absolute right-0 top-full mt-2 w-80 max-h-96 z-50 shadow-lg">
+        <Card className="absolute right-0 top-full mt-2 w-96 max-h-96 z-50 shadow-lg">
           <CardContent className="p-0">
             <div className="flex items-center justify-between p-3 border-b">
-              <h3 className="font-semibold">Notifications</h3>
+              <h3 className="font-semibold">
+                Notifications
+                {urgentCount > 0 && (
+                  <Badge variant="destructive" className="ml-2">
+                    {urgentCount} Urgent
+                  </Badge>
+                )}
+              </h3>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
                   <Button
@@ -119,25 +184,37 @@ export const RealTimeNotifications: React.FC = () => {
                 notifications?.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-3 border-b cursor-pointer hover:bg-muted/50 ${
-                      !notification.is_read ? 'bg-blue-50' : ''
+                    className={`p-3 border-b cursor-pointer hover:bg-muted/50 border-l-4 ${
+                      !notification.is_read ? getPriorityColor(notification.priority, notification.type) : 'border-l-gray-200'
                     }`}
                     onClick={() => markAsRead(notification.id)}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">
-                          {notification.title}
-                        </p>
+                        <div className="flex items-center gap-2 mb-1">
+                          {getNotificationIcon(notification.type, notification.priority)}
+                          <p className="font-medium text-sm truncate">
+                            {notification.title}
+                          </p>
+                          {(notification.type === 'escalation' || notification.priority === 'urgent') && (
+                            <Badge variant="destructive" className="text-xs">
+                              URGENT
+                            </Badge>
+                          )}
+                        </div>
                         <p className="text-sm text-muted-foreground mt-1">
                           {notification.message}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(notification.created_at).toLocaleDateString()}
+                          {new Date(notification.created_at).toLocaleDateString()} at{' '}
+                          {new Date(notification.created_at).toLocaleTimeString()}
                         </p>
                       </div>
                       {!notification.is_read && (
-                        <div className="w-2 h-2 bg-blue-500 rounded-full ml-2 mt-1 flex-shrink-0" />
+                        <div className={`w-2 h-2 rounded-full ml-2 mt-1 flex-shrink-0 ${
+                          notification.type === 'escalation' || notification.priority === 'urgent' 
+                            ? 'bg-red-500' : 'bg-blue-500'
+                        }`} />
                       )}
                     </div>
                   </div>
