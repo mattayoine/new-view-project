@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,9 +28,8 @@ const ManualAssignment: React.FC<ManualAssignmentProps> = ({ founders, advisors 
   const [advisorSearch, setAdvisorSearch] = useState<string>('');
 
   const filteredFounders = founders.filter(founder => {
-    // Handle both old structure (founder_profiles) and new structure (user_profiles)
-    const profile = founder.founder_profiles?.[0]?.profile_data || 
-                   founder.user_profiles?.find(p => p.profile_type === 'founder')?.profile_data;
+    // Use the new user_profiles structure
+    const profile = founder.user_profiles?.[0]?.profile_data;
     if (!profile) return false;
     
     const searchLower = founderSearch.toLowerCase();
@@ -40,9 +40,8 @@ const ManualAssignment: React.FC<ManualAssignmentProps> = ({ founders, advisors 
   });
 
   const filteredAdvisors = advisors.filter(advisor => {
-    // Handle both old structure (advisor_profiles) and new structure (user_profiles)
-    const profile = advisor.advisor_profiles?.[0]?.profile_data || 
-                   advisor.user_profiles?.find(p => p.profile_type === 'advisor')?.profile_data;
+    // Use the new user_profiles structure
+    const profile = advisor.user_profiles?.[0]?.profile_data;
     if (!profile) return false;
     
     const searchLower = advisorSearch.toLowerCase();
@@ -98,11 +97,9 @@ const ManualAssignment: React.FC<ManualAssignmentProps> = ({ founders, advisors 
   const selectedFounderData = founders.find(f => f.id === selectedFounder);
   const selectedAdvisorData = advisors.find(a => a.id === selectedAdvisor);
   
-  // Handle both old structure and new structure for profiles
-  const selectedFounderProfile = selectedFounderData?.founder_profiles?.[0]?.profile_data ||
-                                selectedFounderData?.user_profiles?.find(p => p.profile_type === 'founder')?.profile_data;
-  const selectedAdvisorProfile = selectedAdvisorData?.advisor_profiles?.[0]?.profile_data ||
-                                selectedAdvisorData?.user_profiles?.find(p => p.profile_type === 'advisor')?.profile_data;
+  // Use the new user_profiles structure
+  const selectedFounderProfile = selectedFounderData?.user_profiles?.[0]?.profile_data;
+  const selectedAdvisorProfile = selectedAdvisorData?.user_profiles?.[0]?.profile_data;
 
   return (
     <div className="space-y-6">
@@ -134,9 +131,7 @@ const ManualAssignment: React.FC<ManualAssignmentProps> = ({ founders, advisors 
                   </SelectTrigger>
                   <SelectContent>
                     {filteredFounders.map((founder) => {
-                      // Handle both old structure and new structure for profiles
-                      const profile = founder.founder_profiles?.[0]?.profile_data ||
-                                     founder.user_profiles?.find(p => p.profile_type === 'founder')?.profile_data;
+                      const profile = founder.user_profiles?.[0]?.profile_data;
                       if (!profile) return null;
                       
                       return (
@@ -190,9 +185,7 @@ const ManualAssignment: React.FC<ManualAssignmentProps> = ({ founders, advisors 
                   </SelectTrigger>
                   <SelectContent>
                     {filteredAdvisors.map((advisor) => {
-                      // Handle both old structure and new structure for profiles
-                      const profile = advisor.advisor_profiles?.[0]?.profile_data ||
-                                     advisor.user_profiles?.find(p => p.profile_type === 'advisor')?.profile_data;
+                      const profile = advisor.user_profiles?.[0]?.profile_data;
                       if (!profile) return null;
                       
                       return (

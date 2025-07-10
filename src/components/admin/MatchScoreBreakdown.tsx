@@ -17,8 +17,9 @@ const MatchScoreBreakdown: React.FC<MatchScoreBreakdownProps> = ({
   advisor,
   matchScore
 }) => {
-  const founderProfile = founder.founder_profiles?.[0]?.profile_data;
-  const advisorProfile = advisor.advisor_profiles?.[0]?.profile_data;
+  // Use the new user_profiles structure
+  const founderProfile = founder.user_profiles?.[0]?.profile_data;
+  const advisorProfile = advisor.user_profiles?.[0]?.profile_data;
 
   const scoreItems = [
     {

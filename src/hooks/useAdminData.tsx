@@ -64,19 +64,30 @@ export const useFoundersDirectory = () => {
         .from('users')
         .select(`
           *,
-          founder_profiles:user_profiles!inner(profile_data),
-          assignments:advisor_founder_assignments(
-            advisor:users!advisor_id(email),
-            status,
-            total_sessions
+          user_profiles!inner(
+            id,
+            profile_data,
+            profile_type
           ),
-          goals(status)
+          assignments:advisor_founder_assignments(
+            id,
+            advisor_id,
+            status,
+            total_sessions,
+            match_score,
+            assigned_at
+          )
         `)
         .eq('role', 'founder')
         .eq('user_profiles.profile_type', 'founder')
         .is('deleted_at', null);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching founders:', error);
+        throw error;
+      }
+      
+      console.log('Founders data:', founders);
       return founders || [];
     }
   });
@@ -90,20 +101,30 @@ export const useAdvisorsDirectory = () => {
         .from('users')
         .select(`
           *,
-          advisor_profiles:user_profiles!inner(profile_data),
+          user_profiles!inner(
+            id,
+            profile_data,
+            profile_type
+          ),
           assignments:advisor_founder_assignments(
-            founder:users!founder_id(email),
+            id,
+            founder_id,
+            status,
             total_sessions,
             avg_rating,
-            status
-          ),
-          testimonials_received:testimonials!to_user_id(rating, content)
+            assigned_at
+          )
         `)
         .eq('role', 'advisor')
         .eq('user_profiles.profile_type', 'advisor')
         .is('deleted_at', null);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching advisors:', error);
+        throw error;
+      }
+      
+      console.log('Advisors data:', advisors);
       return advisors || [];
     }
   });

@@ -92,7 +92,8 @@ const MatchSuggestions: React.FC<MatchSuggestionsProps> = ({
         ) : (
           <div className="space-y-4">
             {suggestions.map((suggestion, index) => {
-              const advisorProfile = suggestion.advisor.advisor_profiles?.[0]?.profile_data;
+              // Use the new user_profiles structure
+              const advisorProfile = suggestion.advisor.user_profiles?.[0]?.profile_data;
               if (!advisorProfile) return null;
 
               return (
