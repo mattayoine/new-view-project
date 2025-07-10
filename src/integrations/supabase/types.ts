@@ -371,6 +371,53 @@ export type Database = {
           },
         ]
       }
+      advisor_profiles: {
+        Row: {
+          areas_of_expertise: string[] | null
+          challenge_preference: string | null
+          consent_public_deck: boolean | null
+          created_at: string
+          experience_level: string | null
+          id: string
+          linkedin_url: string | null
+          timezone_availability: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          areas_of_expertise?: string[] | null
+          challenge_preference?: string | null
+          consent_public_deck?: boolean | null
+          created_at?: string
+          experience_level?: string | null
+          id?: string
+          linkedin_url?: string | null
+          timezone_availability?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          areas_of_expertise?: string[] | null
+          challenge_preference?: string | null
+          consent_public_deck?: boolean | null
+          created_at?: string
+          experience_level?: string | null
+          id?: string
+          linkedin_url?: string | null
+          timezone_availability?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "advisor_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       application_review_logs: {
         Row: {
           action: string
@@ -748,6 +795,59 @@ export type Database = {
             columns: ["application_id"]
             isOneToOne: true
             referencedRelation: "base_applications_broken"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      founder_profiles: {
+        Row: {
+          case_study_consent: boolean | null
+          created_at: string
+          current_challenge: string | null
+          id: string
+          sector: string | null
+          stage: string | null
+          startup_name: string
+          updated_at: string
+          user_id: string
+          video_pitch_url: string | null
+          website: string | null
+          win_definition: string | null
+        }
+        Insert: {
+          case_study_consent?: boolean | null
+          created_at?: string
+          current_challenge?: string | null
+          id?: string
+          sector?: string | null
+          stage?: string | null
+          startup_name: string
+          updated_at?: string
+          user_id: string
+          video_pitch_url?: string | null
+          website?: string | null
+          win_definition?: string | null
+        }
+        Update: {
+          case_study_consent?: boolean | null
+          created_at?: string
+          current_challenge?: string | null
+          id?: string
+          sector?: string | null
+          stage?: string | null
+          startup_name?: string
+          updated_at?: string
+          user_id?: string
+          video_pitch_url?: string | null
+          website?: string | null
+          win_definition?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "founder_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1905,6 +2005,71 @@ export type Database = {
           },
         ]
       }
+      session_reminders: {
+        Row: {
+          created_at: string
+          id: string
+          reminder_type: string
+          scheduled_at: string
+          sent_at: string | null
+          session_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reminder_type: string
+          scheduled_at: string
+          sent_at?: string | null
+          session_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reminder_type?: string
+          scheduled_at?: string
+          sent_at?: string | null
+          session_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_reminders_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "active_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_reminders_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_reminders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "active_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_reminders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sessions: {
         Row: {
           advisor_feedback_text: string | null
@@ -2442,6 +2607,7 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          auth_id: string | null
           created_at: string
           deleted_at: string | null
           id: string
@@ -2451,6 +2617,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          auth_id?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
@@ -2460,6 +2627,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          auth_id?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
