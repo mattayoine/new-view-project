@@ -111,8 +111,8 @@ const AssignmentsList = () => {
               </TableHeader>
               <TableBody>
                 {assignments.map((assignment) => {
-                  const founderProfile = assignment.founder?.founder_profiles?.[0]?.profile_data;
-                  const advisorProfile = assignment.advisor?.advisor_profiles?.[0]?.profile_data;
+                  const founderProfile = { name: assignment.founder?.email || 'Unknown Founder' };
+                  const advisorProfile = { name: assignment.advisor?.email || 'Unknown Advisor' };
                   
                   return (
                     <TableRow key={assignment.id}>
@@ -124,11 +124,6 @@ const AssignmentsList = () => {
                           <div className="text-sm text-gray-600">
                             {assignment.founder?.email}
                           </div>
-                          {founderProfile?.startup_name && (
-                            <div className="text-xs text-gray-500">
-                              {founderProfile.startup_name}
-                            </div>
-                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -139,11 +134,6 @@ const AssignmentsList = () => {
                           <div className="text-sm text-gray-600">
                             {assignment.advisor?.email}
                           </div>
-                          {advisorProfile?.experience_level && (
-                            <div className="text-xs text-gray-500">
-                              {advisorProfile.experience_level}
-                            </div>
-                          )}
                         </div>
                       </TableCell>
                       <TableCell>

@@ -9,6 +9,7 @@ import { useUserDocuments } from '@/hooks/useUserDocuments';
 import { useFileUpload } from '@/hooks/useFileUpload';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/integrations/supabase/client';
 
 const DocumentManager: React.FC = () => {
   const { documents, isLoading, addDocument, deleteDocument } = useUserDocuments();

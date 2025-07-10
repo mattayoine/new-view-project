@@ -138,11 +138,19 @@ export const useResources = (categoryId?: string, accessLevel?: string) => {
 
   const incrementDownloadCount = useMutation({
     mutationFn: async (resourceId: string) => {
-      const { error } = await supabase.rpc('increment', {
-        table_name: 'resources',
-        row_id: resourceId,
-        column_name: 'download_count'
-      });
+      // First get current count, then increment
+      const { data: resource, error: fetchError } = await supabase
+        .from('resources')
+        .select('download_count')
+        .eq('id', resourceId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      const { error } = await supabase
+        .from('resources')
+        .update({ download_count: (resource.download_count || 0) + 1 })
+        .eq('id', resourceId);
 
       if (error) throw error;
     }

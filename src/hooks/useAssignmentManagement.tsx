@@ -54,14 +54,12 @@ export const useAssignments = () => {
           founder:users!founder_id(
             id, 
             email, 
-            auth_id,
-            founder_profiles!inner(profile_data)
+            auth_id
           ),
           advisor:users!advisor_id(
             id, 
             email, 
-            auth_id,
-            advisor_profiles!inner(profile_data)
+            auth_id
           ),
           assigned_by_user:users!assigned_by(id, email)
         `)
@@ -72,22 +70,8 @@ export const useAssignments = () => {
         throw error;
       }
       
-      // Transform the data to match expected structure
-      const transformedData = data?.map(assignment => ({
-        ...assignment,
-        founder: assignment.founder ? {
-          ...assignment.founder,
-          // Keep the founder_profiles structure since that's what the UI expects
-          founder_profiles: assignment.founder.founder_profiles || []
-        } : null,
-        advisor: assignment.advisor ? {
-          ...assignment.advisor,
-          // Keep the advisor_profiles structure since that's what the UI expects
-          advisor_profiles: assignment.advisor.advisor_profiles || []
-        } : null
-      })) || [];
-
-      return transformedData;
+      // Return data as-is since we simplified the query
+      return data || [];
     }
   });
 };
