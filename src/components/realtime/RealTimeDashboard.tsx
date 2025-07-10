@@ -182,16 +182,16 @@ export const RealTimeDashboard: React.FC = () => {
         />
         
         <MetricCard
-          title="Total Assignments"
-          value={metrics.totalAssignments}
+          title="Total Users"
+          value={metrics.totalUsers}
           icon={<Activity className="w-4 h-4" />}
           trend="+8%"
           isPositive={true}
         />
         
         <MetricCard
-          title="Unread Notifications"
-          value={metrics.unreadNotifications}
+          title="Completed Sessions"
+          value={metrics.completedSessions}
           icon={<Activity className="w-4 h-4" />}
           trend="0%"
           isPositive={null}

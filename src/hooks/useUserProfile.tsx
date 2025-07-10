@@ -10,7 +10,6 @@ interface UserProfileData {
   auth_id: string;
   profile_type: string;
   profile_data: any;
-  is_profile_complete: boolean;
   created_at: string;
   updated_at: string;
   deleted_at?: string;
@@ -47,10 +46,7 @@ export const useUserProfile = () => {
         return null;
       }
 
-      return data ? {
-        ...data,
-        is_profile_complete: data.is_profile_complete || false
-      } as UserProfileData : null;
+      return data;
     },
     enabled: !!user,
   });
@@ -80,16 +76,20 @@ export const useUserProfile = () => {
   });
 
   const updateProfileData = useMutation({
-    mutationFn: async (updates: Partial<UserProfileData>) => {
+    mutationFn: async (updates: Partial<Omit<UserProfileData, 'id' | 'created_at' | 'updated_at'>>) => {
       if (!user) throw new Error('No user logged in');
+
+      const profileDataToInsert = {
+        auth_id: user.id,
+        user_id: userProfile?.id || '',
+        profile_type: updates.profile_type || 'founder',
+        profile_data: updates.profile_data || {},
+        ...updates,
+      };
 
       const { data, error } = await supabase
         .from('user_profiles')
-        .upsert({
-          auth_id: user.id,
-          user_id: userProfile?.id,
-          ...updates,
-        })
+        .upsert(profileDataToInsert)
         .select()
         .single();
 
@@ -106,9 +106,17 @@ export const useUserProfile = () => {
     },
   });
 
+  // Check if profile is complete based on profile_data
+  const isProfileComplete = profileData?.profile_data && 
+    Object.keys(profileData.profile_data).length > 0 &&
+    profileData.profile_data.name;
+
   return {
     userProfile,
-    profileData,
+    profileData: profileData ? {
+      ...profileData,
+      is_profile_complete: isProfileComplete,
+    } : null,
     isLoading,
     updateProfile,
     updateProfileData,

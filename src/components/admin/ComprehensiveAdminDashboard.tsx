@@ -307,7 +307,7 @@ export const ComprehensiveAdminDashboard: React.FC = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold">{users.length}</p>
+                <p className="text-2xl font-bold">{metrics.totalUsers}</p>
               </div>
             </div>
           </CardContent>
