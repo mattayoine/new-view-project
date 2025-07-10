@@ -23,7 +23,7 @@ import {
 import { 
   TrendingUp, 
   Users, 
-  Calendar, 
+  Calendar as CalendarIcon, 
   Activity, 
   Download, 
   FileText,
