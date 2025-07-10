@@ -1,6 +1,7 @@
+
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
 
 interface UserProfile {
@@ -16,6 +17,7 @@ interface UserProfile {
 
 interface AuthState {
   user: User | null;
+  session: Session | null;
   userProfile: UserProfile | null;
   loading: boolean;
   isAuthenticated: boolean;
@@ -24,6 +26,7 @@ interface AuthState {
 export const useAuth = () => {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
+    session: null,
     userProfile: null,
     loading: true,
     isAuthenticated: false,
@@ -61,10 +64,11 @@ export const useAuth = () => {
 
       if (error) throw error;
 
-      if (data.user) {
+      if (data.user && data.session) {
         const profile = await fetchUserProfile(data.user);
         setAuthState({
           user: data.user,
+          session: data.session,
           userProfile: profile,
           loading: false,
           isAuthenticated: true,
@@ -89,7 +93,8 @@ export const useAuth = () => {
         email,
         password,
         options: {
-          data: userData || {}
+          data: userData || {},
+          emailRedirectTo: `${window.location.origin}/`
         }
       });
 
@@ -111,6 +116,7 @@ export const useAuth = () => {
 
       setAuthState({
         user: null,
+        session: null,
         userProfile: null,
         loading: false,
         isAuthenticated: false,
@@ -123,6 +129,29 @@ export const useAuth = () => {
     } catch (error: any) {
       console.error('Sign out error:', error);
       toast.error('Failed to sign out');
+    }
+  };
+
+  const resendVerification = async () => {
+    try {
+      if (!authState.user?.email) {
+        throw new Error('No user email found');
+      }
+
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: authState.user.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) throw error;
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Resend verification error:', error);
+      return { success: false, error: error.message };
     }
   };
 
@@ -142,6 +171,7 @@ export const useAuth = () => {
           const profile = await fetchUserProfile(session.user);
           setAuthState({
             user: session.user,
+            session: session,
             userProfile: profile,
             loading: false,
             isAuthenticated: true,
@@ -149,6 +179,7 @@ export const useAuth = () => {
         } else {
           setAuthState({
             user: null,
+            session: null,
             userProfile: null,
             loading: false,
             isAuthenticated: false,
@@ -158,6 +189,7 @@ export const useAuth = () => {
         console.error('Error in getInitialSession:', error);
         setAuthState({
           user: null,
+          session: null,
           userProfile: null,
           loading: false,
           isAuthenticated: false,
@@ -178,6 +210,7 @@ export const useAuth = () => {
             const profile = await fetchUserProfile(session.user);
             setAuthState({
               user: session.user,
+              session: session,
               userProfile: profile,
               loading: false,
               isAuthenticated: true,
@@ -186,6 +219,7 @@ export const useAuth = () => {
         } else if (event === 'SIGNED_OUT') {
           setAuthState({
             user: null,
+            session: null,
             userProfile: null,
             loading: false,
             isAuthenticated: false,
@@ -195,6 +229,7 @@ export const useAuth = () => {
           setAuthState(prev => ({
             ...prev,
             user: session.user,
+            session: session,
             isAuthenticated: true,
           }));
         }
@@ -209,6 +244,7 @@ export const useAuth = () => {
     signIn,
     signUp,
     signOut,
+    resendVerification,
     refreshProfile: async () => {
       if (authState.user) {
         const profile = await fetchUserProfile(authState.user);

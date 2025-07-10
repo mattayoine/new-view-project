@@ -4,18 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 
-interface UserWithProfile {
-  id: string;
-  auth_id: string;
-  email: string;
-  role: string;
-  status: string;
-  profile_completed: boolean;
-  avatar_url?: string;
-  created_at: string;
-  updated_at: string;
-}
-
 interface UserProfileData {
   id: string;
   user_id: string;
@@ -25,36 +13,51 @@ interface UserProfileData {
   is_profile_complete: boolean;
   created_at: string;
   updated_at: string;
+  deleted_at?: string;
+}
+
+interface UserProfile {
+  id: string;
+  auth_id: string;
+  email: string;
+  role: string;
+  status: string;
+  profile_completed: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export const useUserProfile = () => {
   const { user, userProfile } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: profileData, isLoading: profileLoading } = useQuery({
-    queryKey: ['user-profile-data', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return null;
+  const { data: profileData, isLoading } = useQuery({
+    queryKey: ['userProfile', user?.id],
+    queryFn: async (): Promise<UserProfileData | null> => {
+      if (!user) return null;
 
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
         .eq('auth_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching profile data:', error);
-        throw error;
+      if (error) {
+        console.error('Error fetching user profile data:', error);
+        return null;
       }
 
-      return data as UserProfileData | null;
+      return data ? {
+        ...data,
+        is_profile_complete: data.is_profile_complete || false
+      } as UserProfileData : null;
     },
-    enabled: !!user?.id
+    enabled: !!user,
   });
 
   const updateProfile = useMutation({
-    mutationFn: async (updates: Partial<UserWithProfile>) => {
-      if (!user?.id) throw new Error('User not authenticated');
+    mutationFn: async (updates: Partial<UserProfile>) => {
+      if (!user) throw new Error('No user logged in');
 
       const { data, error } = await supabase
         .from('users')
@@ -67,66 +70,47 @@ export const useUserProfile = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-profile-data'] });
-      queryClient.invalidateQueries({ queryKey: ['user-with-profile'] });
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       toast.success('Profile updated successfully');
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to update profile');
-    }
+      console.error('Profile update error:', error);
+      toast.error('Failed to update profile');
+    },
   });
 
   const updateProfileData = useMutation({
-    mutationFn: async (updates: { profile_data?: any; profile_type?: string }) => {
-      if (!user?.id) throw new Error('User not authenticated');
+    mutationFn: async (updates: Partial<UserProfileData>) => {
+      if (!user) throw new Error('No user logged in');
 
-      // Check if profile exists
-      if (profileData) {
-        // Update existing profile
-        const { data, error } = await supabase
-          .from('user_profiles')
-          .update({
-            ...updates,
-            updated_at: new Date().toISOString()
-          })
-          .eq('auth_id', user.id)
-          .select()
-          .single();
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .upsert({
+          auth_id: user.id,
+          user_id: userProfile?.id,
+          ...updates,
+        })
+        .select()
+        .single();
 
-        if (error) throw error;
-        return data;
-      } else {
-        // Create new profile
-        const { data, error } = await supabase
-          .from('user_profiles')
-          .insert({
-            auth_id: user.id,
-            user_id: userProfile?.id,
-            profile_type: updates.profile_type || 'user',
-            profile_data: updates.profile_data || {},
-            is_profile_complete: true
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-        return data;
-      }
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-profile-data'] });
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       toast.success('Profile data updated successfully');
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Failed to update profile data');
-    }
+      console.error('Profile data update error:', error);
+      toast.error('Failed to update profile data');
+    },
   });
 
   return {
-    userProfile: userProfile,
+    userProfile,
     profileData,
-    isLoading: profileLoading,
+    isLoading,
     updateProfile,
-    updateProfileData
+    updateProfileData,
   };
 };

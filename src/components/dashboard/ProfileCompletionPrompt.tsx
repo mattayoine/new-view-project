@@ -2,46 +2,36 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, CheckCircle } from 'lucide-react';
-import { useProfileCompletion } from '@/hooks/useProfileCompletion';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useNavigate } from 'react-router-dom';
+import { AlertCircle } from 'lucide-react';
 
 const ProfileCompletionPrompt = () => {
-  const { profileCompleted, updateProfileCompletion } = useProfileCompletion();
-  const { data: profile } = useUserProfile();
+  const { profileData, isLoading } = useUserProfile();
+  const navigate = useNavigate();
 
-  if (profileCompleted || !profile) {
-    return null;
-  }
-
-  const handleMarkComplete = async () => {
-    await updateProfileCompletion.mutateAsync(true);
-  };
+  if (isLoading) return null;
+  
+  if (profileData?.is_profile_complete) return null;
 
   return (
-    <Card className="border-yellow-200 bg-yellow-50">
+    <Card className="border-orange-200 bg-orange-50">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-yellow-800">
-          <AlertCircle className="w-5 h-5" />
+        <CardTitle className="flex items-center gap-2 text-orange-700">
+          <AlertCircle className="h-5 w-5" />
           Complete Your Profile
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-yellow-700">
-          Your profile was created from your application, but you may want to review and update it.
+      <CardContent>
+        <p className="text-orange-600 mb-4">
+          Please complete your profile to access all features and get matched with the right advisors or founders.
         </p>
-        
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={handleMarkComplete}
-            disabled={updateProfileCompletion.isPending}
-          >
-            <CheckCircle className="w-4 h-4 mr-2" />
-            Mark as Complete
-          </Button>
-        </div>
+        <Button 
+          onClick={() => navigate('/onboarding')}
+          className="bg-orange-600 hover:bg-orange-700"
+        >
+          Complete Profile
+        </Button>
       </CardContent>
     </Card>
   );

@@ -1,93 +1,32 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
-import { useRealTimeSubscription } from './useRealTimeSubscription';
 
 interface DashboardMetric {
-  metric_type: string;
-  count: number;
-  user_id?: string;
+  metric_name: string;
+  metric_value: number;
+  last_updated: string;
 }
 
 export const useDashboardMetrics = () => {
-  const { user } = useAuth();
-
-  const query = useQuery({
-    queryKey: ['dashboard-metrics', user?.id],
-    queryFn: async () => {
-      if (!user) throw new Error('User not authenticated');
-
-      // Get the user's internal ID first
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('auth_id', user.id)
-        .single();
-
-      if (userError) throw userError;
-
+  return useQuery({
+    queryKey: ['dashboard-metrics'],
+    queryFn: async (): Promise<DashboardMetric[]> => {
       const { data, error } = await supabase
         .from('dashboard_metrics')
         .select('*');
-      
-      if (error) throw error;
-      return data as DashboardMetric[];
+
+      if (error) {
+        console.error('Error fetching dashboard metrics:', error);
+        throw error;
+      }
+
+      return data.map(item => ({
+        metric_name: item.metric_name,
+        metric_value: Number(item.metric_value),
+        last_updated: item.last_updated
+      }));
     },
-    enabled: !!user,
-    refetchInterval: 30000 // Refresh every 30 seconds
+    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
   });
-
-  // Subscribe to real-time updates for key tables that affect metrics
-  useRealTimeSubscription({
-    table: 'sessions',
-    queryKey: ['dashboard-metrics', user?.id],
-    event: '*'
-  });
-
-  useRealTimeSubscription({
-    table: 'advisor_founder_assignments',
-    queryKey: ['dashboard-metrics', user?.id],
-    event: '*'
-  });
-
-  useRealTimeSubscription({
-    table: 'base_applications',
-    queryKey: ['dashboard-metrics', user?.id],
-    event: '*'
-  });
-
-  const refreshMetrics = async () => {
-    if (!user) return;
-    
-    try {
-      await supabase.rpc('refresh_dashboard_metrics');
-      query.refetch();
-    } catch (error) {
-      console.error('Failed to refresh metrics:', error);
-    }
-  };
-
-  const getMetricValue = (metricType: string, userId?: string) => {
-    const metric = query.data?.find(m => 
-      m.metric_type === metricType && 
-      (userId ? m.user_id === userId : !m.user_id)
-    );
-    return metric?.count || 0;
-  };
-
-  // Transform array data into structured metrics object
-  const metrics = {
-    activeSessions: getMetricValue('active_sessions'),
-    pendingApplications: getMetricValue('pending_applications'),
-    totalAssignments: getMetricValue('total_assignments'),
-    unreadNotifications: getMetricValue('unread_notifications', user?.id)
-  };
-
-  return {
-    ...query,
-    refreshMetrics,
-    getMetricValue,
-    metrics
-  };
 };
