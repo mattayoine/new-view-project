@@ -14,8 +14,8 @@ const FounderDirectory = () => {
 
   const filteredFounders = founders?.filter(founder =>
     founder.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    founder.founder_profiles?.[0]?.profile_data?.startup_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    founder.founder_profiles?.[0]?.profile_data?.sector?.toLowerCase().includes(searchTerm.toLowerCase())
+    founder.user_profiles?.[0]?.profile_data?.startup_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    founder.user_profiles?.[0]?.profile_data?.sector?.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
   const getStageColor = (stage: string) => {
@@ -97,7 +97,7 @@ const FounderDirectory = () => {
             </TableHeader>
             <TableBody>
               {filteredFounders.map((founder, index) => {
-                const profile = founder.founder_profiles?.[0]?.profile_data;
+                const profile = founder.user_profiles?.[0]?.profile_data;
                 const activeGoals = founder.goals?.filter(g => g.status === 'active').length || 0;
                 const completedGoals = founder.goals?.filter(g => g.status === 'completed').length || 0;
                 

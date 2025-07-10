@@ -75,7 +75,14 @@ export const useFoundersDirectory = () => {
             status,
             total_sessions,
             match_score,
-            assigned_at
+            assigned_at,
+            advisor:users!advisor_id(email)
+          ),
+          goals(
+            id,
+            title,
+            status,
+            created_at
           )
         `)
         .eq('role', 'founder')
@@ -112,7 +119,8 @@ export const useAdvisorsDirectory = () => {
             status,
             total_sessions,
             avg_rating,
-            assigned_at
+            assigned_at,
+            founder:users!founder_id(email)
           )
         `)
         .eq('role', 'advisor')

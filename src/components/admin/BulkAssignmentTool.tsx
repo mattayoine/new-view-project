@@ -38,7 +38,7 @@ const BulkAssignmentTool = () => {
 
     for (const founderId of selectedFounders) {
       const founder = founders.find(f => f.id === founderId);
-      const founderProfile = founder?.founder_profiles?.[0]?.profile_data;
+      const founderProfile = founder?.user_profiles?.[0]?.profile_data;
       
       if (!founderProfile) continue;
 
@@ -49,7 +49,7 @@ const BulkAssignmentTool = () => {
       let bestScore = 0;
 
       for (const advisor of advisors) {
-        const advisorProfile = advisor.advisor_profiles?.[0]?.profile_data;
+        const advisorProfile = advisor.user_profiles?.[0]?.profile_data;
         if (!advisorProfile) continue;
 
         const matchScore = calculateMatchScore(founderProfile, advisorProfile);
@@ -134,7 +134,7 @@ const BulkAssignmentTool = () => {
           <Label>Select Founders for Bulk Assignment:</Label>
           <div className="max-h-64 overflow-y-auto border rounded-lg p-4 space-y-3">
             {unassignedFounders.map((founder) => {
-              const profile = founder.founder_profiles?.[0]?.profile_data;
+              const profile = founder.user_profiles?.[0]?.profile_data;
               return (
                 <div key={founder.id} className="flex items-center space-x-3">
                   <Checkbox

@@ -14,7 +14,7 @@ const AdvisorDirectory = () => {
 
   const filteredAdvisors = advisors?.filter(advisor =>
     advisor.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    advisor.advisor_profiles?.[0]?.profile_data?.expertise?.some((exp: string) => 
+    advisor.user_profiles?.[0]?.profile_data?.expertise?.some((exp: string) => 
       exp.toLowerCase().includes(searchTerm.toLowerCase())
     )
   ) || [];
@@ -124,7 +124,7 @@ const AdvisorDirectory = () => {
             </TableHeader>
             <TableBody>
               {filteredAdvisors.map((advisor, index) => {
-                const profile = advisor.advisor_profiles?.[0]?.profile_data;
+                const profile = advisor.user_profiles?.[0]?.profile_data;
                 const totalAdvisorSessions = advisor.assignments?.reduce((sum, assignment) => sum + (assignment.total_sessions || 0), 0) || 0;
                 const advisorAvgRating = advisor.assignments?.reduce((sum, assignment) => sum + (assignment.avg_rating || 0), 0) / (advisor.assignments?.length || 1) || 0;
                 const badgeLevel = totalAdvisorSessions > 50 ? "diamond" : totalAdvisorSessions > 25 ? "platinum" : totalAdvisorSessions > 10 ? "gold" : "silver";
