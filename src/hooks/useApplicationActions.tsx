@@ -1,57 +1,74 @@
-import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
 
 export const useApplicationActions = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { userProfile } = useAuth();
 
   const approveApplication = useMutation({
-    mutationFn: async ({ applicationId, reviewerId }: { applicationId: string, reviewerId: string }) => {
-      // First, update the application status
-      const { error: updateError } = await supabase
-        .from('base_applications')
-        .update({
-          status: 'approved',
-          reviewed_by: reviewerId,
-          reviewed_at: new Date().toISOString()
-        })
-        .eq('id', applicationId);
+    mutationFn: async ({ applicationId }: { applicationId: string }) => {
+      if (!userProfile?.id) {
+        throw new Error('User not authenticated or profile not loaded');
+      }
 
-      if (updateError) throw updateError;
+      console.log('Starting approval process for application:', applicationId);
+      
+      try {
+        // Call the edge function to handle the complete approval process
+        const { data, error } = await supabase.functions.invoke('approve-application', {
+          body: {
+            applicationId,
+            reviewerId: userProfile.id
+          }
+        });
 
-      // The database trigger will handle creating the user and profile
-      // Just return success
-      return { success: true };
+        if (error) {
+          console.error('Edge function error:', error);
+          throw new Error(error.message || 'Approval process failed');
+        }
+
+        if (!data?.success) {
+          console.error('Approval failed:', data?.error);
+          throw new Error(data?.error || 'Approval process failed');
+        }
+
+        console.log('Application approved successfully:', data);
+        return data;
+      } catch (error: any) {
+        console.error('Error in approval process:', error);
+        throw error;
+      }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-applications'] });
-      toast.success('Application approved successfully! User account has been created.');
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+      
+      toast.success(
+        `Application approved successfully! ${data.tempPassword ? `Temporary password: ${data.tempPassword}` : ''}`
+      );
     },
-    onError: (error) => {
-      console.error('Error approving application:', error);
-      toast.error('Failed to approve application');
+    onError: (error: any) => {
+      console.error('Application approval failed:', error);
+      toast.error(error.message || 'Failed to approve application');
     }
   });
 
   const rejectApplication = useMutation({
-    mutationFn: async ({ 
-      applicationId, 
-      reviewerId, 
-      reason 
-    }: { 
-      applicationId: string, 
-      reviewerId: string, 
-      reason: string 
-    }) => {
+    mutationFn: async ({ applicationId, reason }: { applicationId: string, reason: string }) => {
+      if (!userProfile?.id) {
+        throw new Error('User not authenticated');
+      }
+
       const { error } = await supabase
         .from('base_applications')
         .update({
           status: 'rejected',
-          reviewed_by: reviewerId,
-          reviewed_at: new Date().toISOString(),
-          rejection_reason: reason
+          rejection_reason: reason,
+          reviewed_by: userProfile.id,
+          reviewed_at: new Date().toISOString()
         })
         .eq('id', applicationId);
 
@@ -59,30 +76,17 @@ export const useApplicationActions = () => {
       return { success: true };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-applications'] });
-      toast.success('Application rejected successfully.');
+      queryClient.invalidateQueries({ queryKey: ['applications'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+      toast.success('Application rejected');
     },
-    onError: (error) => {
-      console.error('Error rejecting application:', error);
-      toast.error('Failed to reject application');
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to reject application');
     }
   });
 
-  return { approveApplication, rejectApplication };
-};
-
-export const usePendingApplicationsCount = () => {
-  return useQuery({
-    queryKey: ['pending-applications-count'],
-    queryFn: async () => {
-      const { count, error } = await supabase
-        .from('base_applications')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending');
-
-      if (error) throw error;
-      return count || 0;
-    },
-    refetchInterval: 30000 // Refetch every 30 seconds
-  });
+  return {
+    approveApplication,
+    rejectApplication
+  };
 };

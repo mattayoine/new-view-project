@@ -1,258 +1,219 @@
-
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { User } from '@supabase/supabase-js';
+import { toast } from 'sonner';
 
-interface AuthContextType {
+interface UserProfile {
+  id: string;
+  auth_id: string;
+  email: string;
+  role: string;
+  status: string;
+  profile_completed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface AuthState {
   user: User | null;
-  session: Session | null;
+  userProfile: UserProfile | null;
   loading: boolean;
-  signOut: () => Promise<void>;
-  refreshSession: () => Promise<void>;
-  isEmailVerified: boolean;
-  resendVerification: () => Promise<{ error: Error | null }>;
+  isAuthenticated: boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const useAuth = () => {
+  const [authState, setAuthState] = useState<AuthState>({
+    user: null,
+    userProfile: null,
+    loading: true,
+    isAuthenticated: false,
+  });
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-// Session timeout after 24 hours of inactivity
-const SESSION_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-const ACTIVITY_CHECK_INTERVAL = 5 * 60 * 1000; // Check every 5 minutes
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [lastActivity, setLastActivity] = useState<number>(Date.now());
-
-  // Track user activity
-  useEffect(() => {
-    const updateActivity = () => {
-      setLastActivity(Date.now());
-    };
-
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
-    events.forEach(event => {
-      document.addEventListener(event, updateActivity, true);
-    });
-
-    return () => {
-      events.forEach(event => {
-        document.removeEventListener(event, updateActivity, true);
-      });
-    };
-  }, []);
-
-  // Session timeout check
-  useEffect(() => {
-    if (!session) return;
-
-    const checkSessionTimeout = () => {
-      const now = Date.now();
-      const timeSinceLastActivity = now - lastActivity;
-
-      if (timeSinceLastActivity >= SESSION_TIMEOUT) {
-        console.log('Session timeout due to inactivity');
-        signOut();
-      }
-    };
-
-    const interval = setInterval(checkSessionTimeout, ACTIVITY_CHECK_INTERVAL);
-
-    return () => clearInterval(interval);
-  }, [session, lastActivity]);
-
-  // Token refresh logic
-  const refreshSession = async () => {
+  const fetchUserProfile = async (user: User) => {
     try {
-      const { data, error } = await supabase.auth.refreshSession();
+      const { data: userProfile, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('auth_id', user.id)
+        .single();
+
       if (error) {
-        console.error('Session refresh failed:', error);
-        await signOut();
-        return;
+        console.error('Error fetching user profile:', error);
+        return null;
       }
-      
-      if (data.session) {
-        setSession(data.session);
-        setUser(data.session.user);
-        console.log('Session refreshed successfully');
-      }
+
+      return userProfile as UserProfile;
     } catch (error) {
-      console.error('Error refreshing session:', error);
-      await signOut();
+      console.error('Error in fetchUserProfile:', error);
+      return null;
     }
   };
 
-  // Automatic token refresh before expiration
-  useEffect(() => {
-    if (!session) return;
+  const signIn = async (email: string, password: string) => {
+    try {
+      // Clean up any existing auth state first
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    const tokenExpiresAt = session.expires_at ? session.expires_at * 1000 : 0;
-    const now = Date.now();
-    const timeUntilExpiry = tokenExpiresAt - now;
-    
-    // Refresh 5 minutes before expiry
-    const refreshTime = Math.max(0, timeUntilExpiry - (5 * 60 * 1000));
+      if (error) throw error;
 
-    if (refreshTime > 0) {
-      const timeout = setTimeout(() => {
-        console.log('Auto-refreshing session before expiry');
-        refreshSession();
-      }, refreshTime);
-
-      return () => clearTimeout(timeout);
+      if (data.user) {
+        const profile = await fetchUserProfile(data.user);
+        setAuthState({
+          user: data.user,
+          userProfile: profile,
+          loading: false,
+          isAuthenticated: true,
+        });
+        
+        toast.success('Signed in successfully');
+        return { success: true, user: data.user, profile };
+      }
+    } catch (error: any) {
+      console.error('Sign in error:', error);
+      toast.error(error.message || 'Failed to sign in');
+      return { success: false, error: error.message };
     }
-  }, [session]);
+  };
 
-  useEffect(() => {
-    let mounted = true;
-
-    // Clean up any existing auth state first
-    const cleanupAuthState = () => {
-      Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-          localStorage.removeItem(key);
+  const signUp = async (email: string, password: string, userData?: any) => {
+    try {
+      // Clean up any existing auth state first
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: userData || {}
         }
       });
+
+      if (error) throw error;
+
+      toast.success('Account created successfully. Please check your email for verification.');
+      return { success: true, user: data.user };
+    } catch (error: any) {
+      console.error('Sign up error:', error);
+      toast.error(error.message || 'Failed to create account');
+      return { success: false, error: error.message };
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      if (error) throw error;
+
+      setAuthState({
+        user: null,
+        userProfile: null,
+        loading: false,
+        isAuthenticated: false,
+      });
+
+      toast.success('Signed out successfully');
+      
+      // Force page reload to ensure clean state
+      window.location.href = '/';
+    } catch (error: any) {
+      console.error('Sign out error:', error);
+      toast.error('Failed to sign out');
+    }
+  };
+
+  useEffect(() => {
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          setAuthState(prev => ({ ...prev, loading: false }));
+          return;
+        }
+
+        if (session?.user) {
+          const profile = await fetchUserProfile(session.user);
+          setAuthState({
+            user: session.user,
+            userProfile: profile,
+            loading: false,
+            isAuthenticated: true,
+          });
+        } else {
+          setAuthState({
+            user: null,
+            userProfile: null,
+            loading: false,
+            isAuthenticated: false,
+          });
+        }
+      } catch (error) {
+        console.error('Error in getInitialSession:', error);
+        setAuthState({
+          user: null,
+          userProfile: null,
+          loading: false,
+          isAuthenticated: false,
+        });
+      }
     };
 
-    // Set up auth state listener FIRST
+    getInitialSession();
+
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (!mounted) return;
-
         console.log('Auth state changed:', event, session?.user?.email);
-        
-        // Handle different auth events
-        switch (event) {
-          case 'SIGNED_IN':
-            setSession(session);
-            setUser(session?.user ?? null);
-            setLastActivity(Date.now());
-            break;
-            
-          case 'SIGNED_OUT':
-            cleanupAuthState();
-            setSession(null);
-            setUser(null);
-            break;
-            
-          case 'TOKEN_REFRESHED':
-            setSession(session);
-            setUser(session?.user ?? null);
-            setLastActivity(Date.now());
-            break;
-            
-          case 'USER_UPDATED':
-            setSession(session);
-            setUser(session?.user ?? null);
-            break;
-            
-          default:
-            setSession(session);
-            setUser(session?.user ?? null);
-        }
-        
-        if (mounted) {
-          setLoading(false);
+
+        if (event === 'SIGNED_IN' && session?.user) {
+          // Defer profile fetching to avoid potential deadlocks
+          setTimeout(async () => {
+            const profile = await fetchUserProfile(session.user);
+            setAuthState({
+              user: session.user,
+              userProfile: profile,
+              loading: false,
+              isAuthenticated: true,
+            });
+          }, 0);
+        } else if (event === 'SIGNED_OUT') {
+          setAuthState({
+            user: null,
+            userProfile: null,
+            loading: false,
+            isAuthenticated: false,
+          });
+        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          // Update user but keep existing profile if available
+          setAuthState(prev => ({
+            ...prev,
+            user: session.user,
+            isAuthenticated: true,
+          }));
         }
       }
     );
 
-    // THEN get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (mounted) {
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session) {
-          setLastActivity(Date.now());
-        }
-        setLoading(false);
-      }
-    });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
-  const signOut = async () => {
-    try {
-      setLoading(true);
-      
-      // Clean up auth state first
-      Object.keys(localStorage).forEach((key) => {
-        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-          localStorage.removeItem(key);
-        }
-      });
-      
-      await supabase.auth.signOut({ scope: 'global' });
-      
-      setUser(null);
-      setSession(null);
-      
-      // Full page refresh to ensure clean state
-      window.location.href = '/';
-    } catch (error) {
-      console.error('Error signing out:', error);
-      // Force cleanup even if signOut fails
-      setUser(null);
-      setSession(null);
-      window.location.href = '/';
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resendVerification = async () => {
-    if (!user?.email) {
-      return { error: new Error('No user email available') };
-    }
-
-    try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: user.email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/login`
-        }
-      });
-
-      return { error };
-    } catch (error) {
-      return { error: error as Error };
-    }
-  };
-
-  const isEmailVerified = user?.email_confirmed_at != null;
-
-  const value = {
-    user,
-    session,
-    loading,
+  return {
+    ...authState,
+    signIn,
+    signUp,
     signOut,
-    refreshSession,
-    isEmailVerified,
-    resendVerification
+    refreshProfile: async () => {
+      if (authState.user) {
+        const profile = await fetchUserProfile(authState.user);
+        setAuthState(prev => ({ ...prev, userProfile: profile }));
+      }
+    }
   };
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
-
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 };

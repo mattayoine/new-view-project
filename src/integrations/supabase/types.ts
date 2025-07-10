@@ -169,60 +169,6 @@ export type Database = {
           },
         ]
       }
-      advisor_application_details_broken: {
-        Row: {
-          application_id: string | null
-          availability_schedule: Json | null
-          challenge_preference: string
-          created_at: string
-          experience_level: string
-          expertise: string[]
-          id: string
-          linkedin: string
-          public_profile_consent: boolean | null
-          timezone: string
-        }
-        Insert: {
-          application_id?: string | null
-          availability_schedule?: Json | null
-          challenge_preference: string
-          created_at?: string
-          experience_level: string
-          expertise: string[]
-          id?: string
-          linkedin: string
-          public_profile_consent?: boolean | null
-          timezone: string
-        }
-        Update: {
-          application_id?: string | null
-          availability_schedule?: Json | null
-          challenge_preference?: string
-          created_at?: string
-          experience_level?: string
-          expertise?: string[]
-          id?: string
-          linkedin?: string
-          public_profile_consent?: boolean | null
-          timezone?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "advisor_application_details_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: true
-            referencedRelation: "active_applications"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "advisor_application_details_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: true
-            referencedRelation: "base_applications_broken"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       advisor_availability: {
         Row: {
           advisor_id: string | null
@@ -454,20 +400,6 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "application_review_logs_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: false
-            referencedRelation: "active_applications"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "application_review_logs_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: false
-            referencedRelation: "base_applications_broken"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "application_review_logs_reviewer_id_fkey"
             columns: ["reviewer_id"]
             isOneToOne: false
@@ -617,72 +549,6 @@ export type Database = {
         }
         Relationships: []
       }
-      base_applications_broken: {
-        Row: {
-          application_data: Json | null
-          application_type: string | null
-          created_at: string
-          deleted_at: string | null
-          email: string
-          id: string
-          location: string
-          name: string
-          rejection_reason: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          status: string
-          type: string
-          updated_at: string
-        }
-        Insert: {
-          application_data?: Json | null
-          application_type?: string | null
-          created_at?: string
-          deleted_at?: string | null
-          email: string
-          id?: string
-          location: string
-          name: string
-          rejection_reason?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          type: string
-          updated_at?: string
-        }
-        Update: {
-          application_data?: Json | null
-          application_type?: string | null
-          created_at?: string
-          deleted_at?: string | null
-          email?: string
-          id?: string
-          location?: string
-          name?: string
-          rejection_reason?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string
-          type?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "base_applications_reviewed_by_fkey"
-            columns: ["reviewed_by"]
-            isOneToOne: false
-            referencedRelation: "active_users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "base_applications_reviewed_by_fkey"
-            columns: ["reviewed_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       founder_application_details: {
         Row: {
           base_application_id: string | null
@@ -735,66 +601,6 @@ export type Database = {
             columns: ["base_application_id"]
             isOneToOne: false
             referencedRelation: "base_applications"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      founder_application_details_broken: {
-        Row: {
-          application_id: string | null
-          availability_schedule: Json | null
-          case_study_consent: boolean | null
-          challenge: string
-          created_at: string
-          id: string
-          sector: string
-          stage: string
-          startup_name: string
-          video_link: string | null
-          website: string | null
-          win_definition: string
-        }
-        Insert: {
-          application_id?: string | null
-          availability_schedule?: Json | null
-          case_study_consent?: boolean | null
-          challenge: string
-          created_at?: string
-          id?: string
-          sector: string
-          stage: string
-          startup_name: string
-          video_link?: string | null
-          website?: string | null
-          win_definition: string
-        }
-        Update: {
-          application_id?: string | null
-          availability_schedule?: Json | null
-          case_study_consent?: boolean | null
-          challenge?: string
-          created_at?: string
-          id?: string
-          sector?: string
-          stage?: string
-          startup_name?: string
-          video_link?: string | null
-          website?: string | null
-          win_definition?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "founder_application_details_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: true
-            referencedRelation: "active_applications"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "founder_application_details_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: true
-            referencedRelation: "base_applications_broken"
             referencedColumns: ["id"]
           },
         ]
@@ -2762,72 +2568,6 @@ export type Database = {
       }
     }
     Views: {
-      active_applications: {
-        Row: {
-          application_data: Json | null
-          application_type: string | null
-          created_at: string | null
-          deleted_at: string | null
-          email: string | null
-          id: string | null
-          location: string | null
-          name: string | null
-          rejection_reason: string | null
-          reviewed_at: string | null
-          reviewed_by: string | null
-          status: string | null
-          type: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          application_data?: Json | null
-          application_type?: string | null
-          created_at?: string | null
-          deleted_at?: string | null
-          email?: string | null
-          id?: string | null
-          location?: string | null
-          name?: string | null
-          rejection_reason?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string | null
-          type?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          application_data?: Json | null
-          application_type?: string | null
-          created_at?: string | null
-          deleted_at?: string | null
-          email?: string | null
-          id?: string | null
-          location?: string | null
-          name?: string | null
-          rejection_reason?: string | null
-          reviewed_at?: string | null
-          reviewed_by?: string | null
-          status?: string | null
-          type?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "base_applications_reviewed_by_fkey"
-            columns: ["reviewed_by"]
-            isOneToOne: false
-            referencedRelation: "active_users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "base_applications_reviewed_by_fkey"
-            columns: ["reviewed_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       active_assignments: {
         Row: {
           advisor_id: string | null
@@ -3379,14 +3119,18 @@ export type Database = {
       }
       dashboard_metrics: {
         Row: {
-          count: number | null
-          metric_type: string | null
-          user_id: string | null
+          last_updated: string | null
+          metric_name: string | null
+          metric_value: number | null
         }
         Relationships: []
       }
     }
     Functions: {
+      approve_application_atomic: {
+        Args: { p_application_id: string; p_reviewer_id: string }
+        Returns: Json
+      }
       calculate_match_score: {
         Args: { p_advisor_id: string; p_founder_id: string }
         Returns: number
