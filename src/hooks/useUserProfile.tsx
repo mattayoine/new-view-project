@@ -1,84 +1,67 @@
-
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { UserProfile, FounderProfileData, AdvisorProfileData, ProfileData } from '@/types/profile';
+import { toast } from 'sonner';
 
-export const useUserProfile = (userId?: string) => {
+interface UserWithProfile {
+  id: string;
+  email: string;
+  role: string;
+  status: string;
+  profile_completed: boolean;
+  avatar_url?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export const useUserProfile = () => {
   const { user } = useAuth();
-  
-  return useQuery({
-    queryKey: ['user-profile', userId || user?.id],
+  const queryClient = useQueryClient();
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['user-with-profile', user?.id],
     queryFn: async () => {
-      if (!user) throw new Error('User not authenticated');
-      
-      const targetUserId = userId || user.id;
-      
-      // First get the user's internal ID from auth_id
-      const { data: userData, error: userError } = await supabase
+      if (!user) return null;
+
+      const { data: userData, error } = await supabase
         .from('users')
-        .select('id')
-        .eq('auth_id', targetUserId)
-        .single();
-
-      if (userError) throw userError;
-
-      const { data: profile, error } = await supabase
-        .from('user_profiles')
         .select('*')
-        .eq('user_id', userData.id)
+        .eq('auth_id', user.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "not found"
-      
-      if (!profile) return null;
-
-      // Cast the profile_data from Json to our typed ProfileData
-      return {
-        ...profile,
-        profile_data: profile.profile_data as unknown as ProfileData
-      } as UserProfile;
+      if (error) throw error;
+      return userData as UserWithProfile;
     },
     enabled: !!user
   });
-};
 
-export const useUserWithProfile = (userId?: string) => {
-  const { user } = useAuth();
-  
-  return useQuery({
-    queryKey: ['user-with-profile', userId || user?.id],
-    queryFn: async () => {
+  const updateProfile = useMutation({
+    mutationFn: async (updates: Partial<UserWithProfile>) => {
       if (!user) throw new Error('User not authenticated');
-      
-      const targetUserId = userId || user.id;
 
-      const { data: userData, error: userError } = await supabase
+      const { data, error } = await supabase
         .from('users')
-        .select(`
-          *,
-          profile:user_profiles(*)
-        `)
-        .eq('auth_id', targetUserId)
+        .update(updates)
+        .eq('auth_id', user.id)
+        .select()
         .single();
 
-      if (userError) throw userError;
-      
-      if (!userData) return null;
-
-      // Cast the profile_data if profile exists - handle single profile object
-      if (userData.profile) {
-        const profileData = Array.isArray(userData.profile) ? userData.profile[0] : userData.profile;
-        if (profileData) {
-          userData.profile = {
-            ...profileData,
-            profile_data: profileData.profile_data as unknown as ProfileData
-          };
-        }
-      }
-      
-      return userData;
+      if (error) throw error;
+      return data;
     },
-    enabled: !!user
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-with-profile'] });
+      toast.success('Profile updated successfully');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to update profile');
+    }
   });
+
+  return {
+    data,
+    userProfile: data,
+    isLoading,
+    updateProfile
+  };
 };

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useUserWithProfile } from '@/hooks/useUserProfile';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { User, MapPin, Building, Globe, Briefcase } from 'lucide-react';
@@ -11,7 +11,7 @@ interface ProfileSectionProps {
 }
 
 const ProfileSection: React.FC<ProfileSectionProps> = ({ userId }) => {
-  const { data: userWithProfile, isLoading } = useUserWithProfile(userId);
+  const { data: userWithProfile, isLoading } = useUserProfile();
 
   if (isLoading) {
     return (
@@ -27,7 +27,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ userId }) => {
     );
   }
 
-  if (!userWithProfile?.profile) {
+  if (!userWithProfile) {
     return (
       <Card>
         <CardContent className="p-6 text-center">
@@ -36,10 +36,6 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ userId }) => {
       </Card>
     );
   }
-
-  const profile = userWithProfile.profile;
-  // Fix the type casting by first converting to unknown, then to our expected type
-  const profileData = profile.profile_data as unknown as FounderProfileData | AdvisorProfileData;
 
   return (
     <Card>
@@ -51,90 +47,36 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ userId }) => {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">{profileData.name}</h3>
+          <h3 className="text-lg font-semibold">{userWithProfile.email}</h3>
           <Badge variant="outline" className="capitalize">
             {userWithProfile.role}
           </Badge>
         </div>
         
-        <div className="flex items-center text-gray-600">
-          <MapPin className="w-4 h-4 mr-2" />
-          {profileData.location}
+        <div className="space-y-4">
+          <div className="flex items-center text-gray-600">
+            <User className="w-4 h-4 mr-2" />
+            <span>Email: {userWithProfile.email}</span>
+          </div>
+          
+          <div className="flex items-center text-gray-600">
+            <span className="text-sm">Status: </span>
+            <Badge variant={userWithProfile.status === 'active' ? 'default' : 'secondary'} className="ml-2">
+              {userWithProfile.status}
+            </Badge>
+          </div>
+          
+          <div className="flex items-center text-gray-600">
+            <span className="text-sm">Profile Completed: </span>
+            <Badge variant={userWithProfile.profile_completed ? 'default' : 'destructive'} className="ml-2">
+              {userWithProfile.profile_completed ? 'Yes' : 'No'}
+            </Badge>
+          </div>
+          
+          <div className="text-sm text-gray-500">
+            <p>Member since: {new Date(userWithProfile.created_at).toLocaleDateString()}</p>
+          </div>
         </div>
-
-        {profile.profile_type === 'founder' && (
-          <div className="space-y-3">
-            <div className="flex items-center">
-              <Building className="w-4 h-4 mr-2" />
-              <span className="font-medium">{(profileData as FounderProfileData).startup_name}</span>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="font-medium">Sector:</span> {(profileData as FounderProfileData).sector}
-              </div>
-              <div>
-                <span className="font-medium">Stage:</span> {(profileData as FounderProfileData).stage}
-              </div>
-            </div>
-
-            {(profileData as FounderProfileData).website && (
-              <div className="flex items-center">
-                <Globe className="w-4 h-4 mr-2" />
-                <a 
-                  href={(profileData as FounderProfileData).website} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline"
-                >
-                  {(profileData as FounderProfileData).website}
-                </a>
-              </div>
-            )}
-
-            <div className="bg-gray-50 p-3 rounded">
-              <p className="text-sm font-medium mb-1">Current Challenge:</p>
-              <p className="text-sm text-gray-700">{(profileData as FounderProfileData).challenge}</p>
-            </div>
-          </div>
-        )}
-
-        {profile.profile_type === 'advisor' && (
-          <div className="space-y-3">
-            <div className="flex items-center">
-              <Briefcase className="w-4 h-4 mr-2" />
-              <span className="text-sm">{(profileData as AdvisorProfileData).experience_level}</span>
-            </div>
-
-            <div>
-              <span className="font-medium text-sm">Expertise:</span>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {(profileData as AdvisorProfileData).expertise?.map((skill: string, index: number) => (
-                  <Badge key={index} variant="secondary" className="text-xs">
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-
-            <div className="text-sm">
-              <span className="font-medium">Timezone:</span> {(profileData as AdvisorProfileData).timezone}
-            </div>
-
-            {(profileData as AdvisorProfileData).linkedin && (
-              <div>
-                <a 
-                  href={(profileData as AdvisorProfileData).linkedin} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline text-sm"
-                >
-                  View LinkedIn Profile
-                </a>
-              </div>
-            )}
-          </div>
-        )}
       </CardContent>
     </Card>
   );
