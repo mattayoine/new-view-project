@@ -28,10 +28,10 @@ const FounderDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 px-8 py-6">
-        <div className="animate-pulse space-y-8 max-w-7xl mx-auto">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-pulse space-y-8 max-w-4xl mx-auto w-full px-6">
           <div className="h-8 bg-gray-200 rounded w-1/4"></div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[1, 2, 3].map(i => (
               <div key={i} className="h-32 bg-gray-200 rounded"></div>
             ))}
@@ -43,8 +43,8 @@ const FounderDashboard = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 px-8 py-6">
-        <div className="text-center max-w-7xl mx-auto">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-4xl mx-auto px-6">
           <p className="text-red-600 text-lg">Error loading dashboard data</p>
         </div>
       </div>
@@ -138,7 +138,7 @@ const FounderDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-8 py-6 space-y-8">
+      <div className="max-w-5xl mx-auto px-6 py-8 space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -221,7 +221,7 @@ const FounderDashboard = () => {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Welcome Section */}
               <div className="lg:col-span-2">
                 <Card className="shadow-sm">
@@ -302,7 +302,7 @@ const FounderDashboard = () => {
 
           {/* My Advisors Tab */}
           <TabsContent value="advisors" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {assignments?.map((assignment) => (
                 <Card key={assignment.id} className="shadow-sm">
                   <CardContent className="p-8">
