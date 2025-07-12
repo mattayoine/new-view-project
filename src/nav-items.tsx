@@ -1,6 +1,8 @@
+
 import Index from "@/pages/Index";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
+import Dashboard from "@/pages/Dashboard";
 import AdminDashboard from "@/pages/AdminDashboard";
 import AdvisorDashboard from "@/pages/AdvisorDashboard";
 import FounderDashboard from "@/pages/FounderDashboard";
@@ -21,6 +23,11 @@ export const navItems = [
     to: "/signup",
     page: <Signup />,
     title: "Sign Up"
+  },
+  {
+    to: "/dashboard",
+    page: <Dashboard />,
+    title: "Dashboard"
   },
   {
     to: "/admin-dashboard",

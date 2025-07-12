@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
@@ -64,19 +63,8 @@ export const useAuth = () => {
 
       if (error) throw error;
 
-      if (data.user && data.session) {
-        const profile = await fetchUserProfile(data.user);
-        setAuthState({
-          user: data.user,
-          session: data.session,
-          userProfile: profile,
-          loading: false,
-          isAuthenticated: true,
-        });
-        
-        toast.success('Signed in successfully');
-        return { success: true, user: data.user, profile };
-      }
+      toast.success('Signed in successfully');
+      return { success: true, user: data.user };
     } catch (error: any) {
       console.error('Sign in error:', error);
       toast.error(error.message || 'Failed to sign in');
@@ -156,7 +144,44 @@ export const useAuth = () => {
   };
 
   useEffect(() => {
-    // Get initial session
+    // Set up auth state listener first
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+
+        if (event === 'SIGNED_IN' && session?.user) {
+          // Defer profile fetching to avoid potential deadlocks
+          setTimeout(async () => {
+            const profile = await fetchUserProfile(session.user);
+            setAuthState({
+              user: session.user,
+              session: session,
+              userProfile: profile,
+              loading: false,
+              isAuthenticated: true,
+            });
+          }, 0);
+        } else if (event === 'SIGNED_OUT') {
+          setAuthState({
+            user: null,
+            session: null,
+            userProfile: null,
+            loading: false,
+            isAuthenticated: false,
+          });
+        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          // Update user but keep existing profile if available
+          setAuthState(prev => ({
+            ...prev,
+            user: session.user,
+            session: session,
+            isAuthenticated: true,
+          }));
+        }
+      }
+    );
+
+    // Then get initial session
     const getInitialSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -198,43 +223,6 @@ export const useAuth = () => {
     };
 
     getInitialSession();
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
-
-        if (event === 'SIGNED_IN' && session?.user) {
-          // Defer profile fetching to avoid potential deadlocks
-          setTimeout(async () => {
-            const profile = await fetchUserProfile(session.user);
-            setAuthState({
-              user: session.user,
-              session: session,
-              userProfile: profile,
-              loading: false,
-              isAuthenticated: true,
-            });
-          }, 0);
-        } else if (event === 'SIGNED_OUT') {
-          setAuthState({
-            user: null,
-            session: null,
-            userProfile: null,
-            loading: false,
-            isAuthenticated: false,
-          });
-        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-          // Update user but keep existing profile if available
-          setAuthState(prev => ({
-            ...prev,
-            user: session.user,
-            session: session,
-            isAuthenticated: true,
-          }));
-        }
-      }
-    );
 
     return () => subscription.unsubscribe();
   }, []);

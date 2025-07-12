@@ -146,7 +146,7 @@ export const useSessionsTracker = () => {
         .from('sessions')
         .select(`
           *,
-          assignment:assignment_id(
+          assignment:advisor_founder_assignments!assignment_id(
             founder:users!founder_id(email),
             advisor:users!advisor_id(email)
           )

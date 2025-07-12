@@ -16,9 +16,17 @@ export const useFounderData = (founderId?: string) => {
       // Get founder profile using auth_id
       const { data: founder, error: founderError } = await supabase
         .from('users')
-        .select('*')
+        .select(`
+          *,
+          user_profiles!inner(
+            id,
+            profile_data,
+            profile_type
+          )
+        `)
         .eq('auth_id', targetFounderId)
         .eq('role', 'founder')
+        .eq('user_profiles.profile_type', 'founder')
         .single();
       
       if (founderError) throw founderError;
