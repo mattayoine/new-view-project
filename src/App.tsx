@@ -24,6 +24,7 @@ import FounderSessionHub from "./pages/FounderSessionHub";
 import ResourceCenter from "./pages/ResourceCenter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { AuthProvider } from "./components/auth/AuthProvider";
+import { SecurityProvider } from "./hooks/useSecurityContext";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,31 +40,33 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <ErrorBoundary>
-            <Toaster />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/signup" element={<Signup />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/founder-dashboard" element={<FounderDashboard />} />
-                <Route path="/advisor-dashboard" element={<AdvisorDashboard />} />
-                <Route path="/admin-dashboard" element={<AdminDashboard />} />
-                <Route path="/apply-founder" element={<FounderApplication />} />
-                <Route path="/apply-advisor" element={<AdvisorApplication />} />
-                <Route path="/onboarding" element={<Onboarding />} />
-                <Route path="/pending-verification" element={<PendingVerification />} />
-                <Route path="/pending-approval" element={<PendingApproval />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/advisor-session-hub" element={<AdvisorSessionHub />} />
-                <Route path="/founder-session-hub" element={<FounderSessionHub />} />
-                <Route path="/resource-center" element={<ResourceCenter />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </ErrorBoundary>
+          <SecurityProvider>
+            <ErrorBoundary>
+              <Toaster />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/signup" element={<Signup />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/founder-dashboard" element={<FounderDashboard />} />
+                  <Route path="/advisor-dashboard" element={<AdvisorDashboard />} />
+                  <Route path="/admin-dashboard" element={<AdminDashboard />} />
+                  <Route path="/apply-founder" element={<FounderApplication />} />
+                  <Route path="/apply-advisor" element={<AdvisorApplication />} />
+                  <Route path="/onboarding" element={<Onboarding />} />
+                  <Route path="/pending-verification" element={<PendingVerification />} />
+                  <Route path="/pending-approval" element={<PendingApproval />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/advisor-session-hub" element={<AdvisorSessionHub />} />
+                  <Route path="/founder-session-hub" element={<FounderSessionHub />} />
+                  <Route path="/resource-center" element={<ResourceCenter />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </ErrorBoundary>
+          </SecurityProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
