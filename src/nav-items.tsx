@@ -1,52 +1,38 @@
 
-import Index from "@/pages/Index";
-import Login from "@/pages/Login";
-import Signup from "@/pages/Signup";
-import Dashboard from "@/pages/Dashboard";
-import AdminDashboard from "@/pages/AdminDashboard";
-import AdvisorDashboard from "@/pages/AdvisorDashboard";
-import FounderDashboard from "@/pages/FounderDashboard";
-import ResourceCenter from "@/pages/ResourceCenter";
+import { HomeIcon, UserGroupIcon, CalendarIcon, BookOpenIcon, CogIcon, UserIcon } from "lucide-react";
 
+/**
+ * Central place for defining the navigation items. Used for navigation components and routing.
+ */
 export const navItems = [
   {
+    title: "Home",
     to: "/",
-    page: <Index />,
-    title: "Home"
+    icon: HomeIcon,
   },
   {
-    to: "/login",
-    page: <Login />,
-    title: "Login"
-  },
-  {
-    to: "/signup",
-    page: <Signup />,
-    title: "Sign Up"
-  },
-  {
+    title: "Dashboard",
     to: "/dashboard",
-    page: <Dashboard />,
-    title: "Dashboard"
+    icon: HomeIcon,
   },
   {
-    to: "/admin-dashboard",
-    page: <AdminDashboard />,
-    title: "Admin Dashboard"
+    title: "Apply as Founder",
+    to: "/apply-founder",
+    icon: UserIcon,
   },
   {
-    to: "/advisor-dashboard", 
-    page: <AdvisorDashboard />,
-    title: "Advisor Dashboard"
+    title: "Apply as Advisor",
+    to: "/apply-advisor",
+    icon: UserGroupIcon,
   },
   {
-    to: "/founder-dashboard",
-    page: <FounderDashboard />,
-    title: "Founder Dashboard"
+    title: "Login",
+    to: "/login",
+    icon: UserIcon,
   },
   {
-    to: "/resources",
-    page: <ResourceCenter />,
-    title: "Resources"
-  }
+    title: "Sign Up",
+    to: "/signup",
+    icon: UserIcon,
+  },
 ];
