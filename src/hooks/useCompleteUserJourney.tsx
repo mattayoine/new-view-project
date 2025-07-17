@@ -1,7 +1,9 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { FounderProfileData, AdvisorProfileData } from '@/types/profile';
 
 export interface UserJourneyStep {
   step: string;
@@ -262,10 +264,11 @@ export const useCreateAssignmentFromApproval = () => {
 
       let matchScore = 0;
       if (founderProfile && advisorProfile) {
-        const score = calculateMatchScore(
-          founderProfile.profile_data,
-          advisorProfile.profile_data
-        );
+        // Safely type cast the Json data to the expected types
+        const founderData = founderProfile.profile_data as FounderProfileData;
+        const advisorData = advisorProfile.profile_data as AdvisorProfileData;
+        
+        const score = calculateMatchScore(founderData, advisorData);
         matchScore = score.overall;
       }
 

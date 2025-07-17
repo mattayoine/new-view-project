@@ -1,5 +1,5 @@
 
-import { HomeIcon, UserGroupIcon, CalendarIcon, BookOpenIcon, CogIcon, UserIcon } from "lucide-react";
+import { HomeIcon, Users, CalendarIcon, BookOpenIcon, CogIcon, UserIcon } from "lucide-react";
 
 /**
  * Central place for defining the navigation items. Used for navigation components and routing.
@@ -23,7 +23,7 @@ export const navItems = [
   {
     title: "Apply as Advisor",
     to: "/apply-advisor",
-    icon: UserGroupIcon,
+    icon: Users,
   },
   {
     title: "Login",
