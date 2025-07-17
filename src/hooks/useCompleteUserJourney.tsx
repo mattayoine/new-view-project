@@ -265,8 +265,8 @@ export const useCreateAssignmentFromApproval = () => {
       let matchScore = 0;
       if (founderProfile && advisorProfile) {
         // Safely type cast the Json data to the expected types
-        const founderData = founderProfile.profile_data as FounderProfileData;
-        const advisorData = advisorProfile.profile_data as AdvisorProfileData;
+        const founderData = founderProfile.profile_data as unknown as FounderProfileData;
+        const advisorData = advisorProfile.profile_data as unknown as AdvisorProfileData;
         
         const score = calculateMatchScore(founderData, advisorData);
         matchScore = score.overall;
