@@ -31,7 +31,7 @@ export const useUserProfile = () => {
       return {
         ...data,
         profile_type: data.profile_type as 'founder' | 'advisor',
-        profile_data: data.profile_data as ProfileData
+        profile_data: data.profile_data as unknown as ProfileData
       } as UserProfileData;
     },
     enabled: !!user,
