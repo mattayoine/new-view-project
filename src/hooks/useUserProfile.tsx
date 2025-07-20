@@ -30,10 +30,10 @@ export const useUserProfile = () => {
       // Safely transform the data with proper type casting
       // Calculate is_profile_complete based on profile_data content
       const profileDataObj = data.profile_data as unknown as ProfileData;
-      const isComplete = profileDataObj && 
+      const isComplete = Boolean(profileDataObj && 
         Object.keys(profileDataObj).length > 0 &&
         'name' in profileDataObj &&
-        profileDataObj.name;
+        profileDataObj.name);
 
       return {
         id: data.id,
@@ -44,7 +44,7 @@ export const useUserProfile = () => {
         created_at: data.created_at,
         updated_at: data.updated_at,
         deleted_at: data.deleted_at,
-        is_profile_complete: isComplete || false
+        is_profile_complete: isComplete
       };
     },
     enabled: !!user,
