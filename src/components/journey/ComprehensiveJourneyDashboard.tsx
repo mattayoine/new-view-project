@@ -1,14 +1,32 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { EnhancedJourneyStatusCard } from './EnhancedJourneyStatusCard';
 import { RealTimeDashboard } from '@/components/realtime/RealTimeDashboard';
 import { useAuth } from '@/hooks/useAuth';
+import { useEnhancedJourneyFlow } from '@/hooks/useEnhancedJourneyFlow';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { UserCheck, Settings, Bell } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
+import { 
+  UserCheck, 
+  Settings, 
+  Bell, 
+  Calendar, 
+  Users, 
+  FileText, 
+  TrendingUp,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  ArrowRight
+} from 'lucide-react';
 
 export const ComprehensiveJourneyDashboard: React.FC = () => {
   const { userProfile } = useAuth();
+  const { data: journeyFlow } = useEnhancedJourneyFlow();
+  const navigate = useNavigate();
 
   if (!userProfile) {
     return (
@@ -19,6 +37,71 @@ export const ComprehensiveJourneyDashboard: React.FC = () => {
       </Card>
     );
   }
+
+  const handleQuickAction = (action: string) => {
+    switch (action) {
+      case 'profile':
+        navigate('/onboarding');
+        break;
+      case 'session':
+        if (userProfile.role === 'founder') {
+          navigate('/founder-session-hub');
+        } else if (userProfile.role === 'advisor') {
+          navigate('/advisor-session-hub');
+        }
+        break;
+      case 'notifications':
+        // Toggle notification preferences or show notification center
+        break;
+      case 'application':
+        if (userProfile.role === 'founder') {
+          navigate('/apply-founder');
+        } else if (userProfile.role === 'advisor') {
+          navigate('/apply-advisor');
+        }
+        break;
+      default:
+        break;
+    }
+  };
+
+  const getNextAction = () => {
+    if (!journeyFlow) return null;
+
+    const pendingStep = journeyFlow.steps.find(step => step.status === 'pending');
+    if (!pendingStep) return null;
+
+    switch (pendingStep.id) {
+      case 'application':
+        return {
+          title: 'Complete Application',
+          description: 'Submit your application to continue',
+          action: 'application',
+          icon: FileText,
+          priority: 'high'
+        };
+      case 'profile':
+        return {
+          title: 'Complete Profile',
+          description: 'Finish setting up your profile',
+          action: 'profile',
+          icon: UserCheck,
+          priority: 'high'
+        };
+      case 'first_session':
+        return {
+          title: 'Schedule First Session',
+          description: 'Book your first advisory session',
+          action: 'session',
+          icon: Calendar,
+          priority: 'medium'
+        };
+      default:
+        return null;
+    }
+  };
+
+  const nextAction = getNextAction();
 
   return (
     <div className="container mx-auto p-6 space-y-8">
@@ -40,8 +123,42 @@ export const ComprehensiveJourneyDashboard: React.FC = () => {
               Profile Complete
             </Badge>
           )}
+
+          {journeyFlow && (
+            <Badge variant="secondary">
+              {journeyFlow.healthScore}% Health Score
+            </Badge>
+          )}
         </div>
       </div>
+
+      {/* Next Action Alert */}
+      {nextAction && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-full ${
+                  nextAction.priority === 'high' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'
+                }`}>
+                  <nextAction.icon className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-blue-900">{nextAction.title}</h4>
+                  <p className="text-blue-700 text-sm">{nextAction.description}</p>
+                </div>
+              </div>
+              <Button 
+                onClick={() => handleQuickAction(nextAction.action)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Take Action
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Journey Status */}
       <EnhancedJourneyStatusCard />
@@ -62,26 +179,79 @@ export const ComprehensiveJourneyDashboard: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-              <h4 className="font-medium mb-2">Update Profile</h4>
+            <button
+              onClick={() => handleQuickAction('profile')}
+              className="p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer text-left"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <UserCheck className="w-4 h-4" />
+                <h4 className="font-medium">Update Profile</h4>
+              </div>
               <p className="text-sm text-muted-foreground">Keep your information current</p>
-            </div>
+            </button>
             
-            <div className="p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-              <h4 className="font-medium mb-2">Schedule Session</h4>
+            <button
+              onClick={() => handleQuickAction('session')}
+              className="p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer text-left"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Calendar className="w-4 h-4" />
+                <h4 className="font-medium">Schedule Session</h4>
+              </div>
               <p className="text-sm text-muted-foreground">Book your next advisory meeting</p>
-            </div>
+            </button>
             
-            <div className="p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer">
-              <h4 className="font-medium mb-2 flex items-center gap-2">
+            <button
+              onClick={() => handleQuickAction('notifications')}
+              className="p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer text-left"
+            >
+              <div className="flex items-center gap-2 mb-2">
                 <Bell className="w-4 h-4" />
-                Notifications
-              </h4>
+                <h4 className="font-medium">Notifications</h4>
+              </div>
               <p className="text-sm text-muted-foreground">Manage your preferences</p>
-            </div>
+            </button>
           </div>
         </CardContent>
       </Card>
+
+      {/* Journey Health Insights */}
+      {journeyFlow && journeyFlow.healthScore < 80 && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-yellow-800">
+              <AlertCircle className="w-5 h-5" />
+              Journey Health Insights
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-yellow-700">Health Score</span>
+                <div className="flex items-center gap-2">
+                  <Progress value={journeyFlow.healthScore} className="w-24" />
+                  <span className="text-yellow-800 font-medium">{journeyFlow.healthScore}%</span>
+                </div>
+              </div>
+              
+              {journeyFlow.healthScore < 60 && (
+                <div className="p-3 bg-yellow-100 rounded-lg">
+                  <p className="text-yellow-800 text-sm">
+                    <strong>Recommendation:</strong> Your journey health could be improved. 
+                    Consider completing pending steps or reaching out for support.
+                  </p>
+                </div>
+              )}
+              
+              {journeyFlow.estimatedCompletion && (
+                <p className="text-yellow-700 text-sm">
+                  Estimated completion: {journeyFlow.estimatedCompletion}
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
