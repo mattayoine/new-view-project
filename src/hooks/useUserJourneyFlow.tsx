@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -181,6 +180,9 @@ export const useUserJourneyFlow = () => {
     refetchInterval: 30000 // Refresh every 30 seconds
   });
 };
+
+// Enhanced version that leverages the new framework
+export { useEnhancedJourneyFlow as useUserJourneyFlow } from './useEnhancedJourneyFlow';
 
 export const useCompleteJourneyStep = () => {
   const queryClient = useQueryClient();

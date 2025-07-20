@@ -1,6 +1,9 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useRetryWithBackoff } from './useRetryWithBackoff';
+import { useOfflineSupport } from './useOfflineSupport';
 import { toast } from 'sonner';
 
 export interface SessionFlowData {
@@ -18,10 +21,12 @@ export interface SessionFlowData {
 
 export const useSessionFlow = () => {
   const { userProfile } = useAuth();
+  const { executeWithRetry } = useRetryWithBackoff();
+  const { executeOperation } = useOfflineSupport();
 
   return useQuery({
     queryKey: ['session-flow', userProfile?.id],
-    queryFn: async (): Promise<SessionFlowData> => {
+    queryFn: () => executeWithRetry(async (): Promise<SessionFlowData> => {
       if (!userProfile) {
         return {
           upcomingSessions: [],
@@ -106,43 +111,45 @@ export const useSessionFlow = () => {
           upcomingCount
         }
       };
-    },
+    }, {
+      maxRetries: 3,
+      onRetry: (attempt) => console.log(`Retrying session flow fetch (attempt ${attempt})`)
+    }),
     enabled: !!userProfile,
-    refetchInterval: 60000 // Refresh every minute
+    refetchInterval: 60000, // Refresh every minute
+    staleTime: 30000 // 30 seconds
   });
 };
 
 export const useCreateSessionProposal = () => {
   const queryClient = useQueryClient();
   const { userProfile } = useAuth();
+  const { executeOperation } = useOfflineSupport();
 
   return useMutation({
-    mutationFn: async ({
-      assignmentId,
-      title,
-      description,
-      proposedTimes
-    }: {
+    mutationFn: async (params: {
       assignmentId: string;
       title: string;
       description?: string;
       proposedTimes: string[];
     }) => {
-      const { data, error } = await supabase
-        .from('session_proposals')
-        .insert({
-          assignment_id: assignmentId,
-          title,
-          description,
-          proposed_times: proposedTimes,
-          proposed_by: userProfile?.id,
-          status: 'pending'
-        })
-        .select()
-        .single();
+      return executeOperation(async () => {
+        const { data, error } = await supabase
+          .from('session_proposals')
+          .insert({
+            assignment_id: params.assignmentId,
+            title: params.title,
+            description: params.description,
+            proposed_times: params.proposedTimes,
+            proposed_by: userProfile?.id,
+            status: 'pending'
+          })
+          .select()
+          .single();
 
-      if (error) throw error;
-      return data;
+        if (error) throw error;
+        return data;
+      }, 'Create session proposal');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['session-flow'] });

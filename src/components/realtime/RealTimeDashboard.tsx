@@ -3,102 +3,41 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Wifi, WifiOff, Activity } from 'lucide-react';
-import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
-import { useRealTimeSubscription } from '@/hooks/useRealTimeSubscription';
+import { RefreshCw, Wifi, WifiOff, Activity, TrendingUp, Users, Calendar } from 'lucide-react';
+import { useOptimizedDashboardData } from '@/hooks/useOptimizedDashboardData';
+import { useOfflineSupport } from '@/hooks/useOfflineSupport';
+import { useRealTimeJourneyUpdates } from '@/hooks/useRealTimeJourneyUpdates';
 import { EnhancedLoadingState } from '@/components/ui/enhanced-loading';
 import { toast } from 'sonner';
 
-interface ConnectionStatus {
-  isConnected: boolean;
-  lastUpdate: Date | null;
-  reconnectAttempts: number;
-}
-
 export const RealTimeDashboard: React.FC = () => {
-  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>({
-    isConnected: true,
-    lastUpdate: new Date(),
-    reconnectAttempts: 0
-  });
-  
   const {
-    data: rawMetricsData,
+    data: dashboardData,
     isLoading,
     error,
-    refetch,
-    refreshMetrics,
-    metrics
-  } = useDashboardMetrics();
+    refetch
+  } = useOptimizedDashboardData();
+  
+  const { isOnline, queuedOperationsCount } = useOfflineSupport();
+  const { isConnected } = useRealTimeJourneyUpdates();
+  const [lastRefresh, setLastRefresh] = useState(new Date());
 
-  // Subscribe to real-time updates for all relevant tables
-  const tablesWithRealtime = [
-    'sessions',
-    'advisor_founder_assignments', 
-    'base_applications',
-    'notifications'
-  ];
-
-  tablesWithRealtime.forEach(table => {
-    useRealTimeSubscription({
-      table,
-      queryKey: ['dashboard-metrics'],
-      event: '*'
-    });
-  });
-
-  // Monitor connection status
+  // Auto-refresh every minute when online
   useEffect(() => {
-    const handleOnline = () => {
-      setConnectionStatus(prev => ({
-        ...prev,
-        isConnected: true,
-        reconnectAttempts: 0
-      }));
-      toast.success('Connection restored');
-      refetch();
-    };
-
-    const handleOffline = () => {
-      setConnectionStatus(prev => ({
-        ...prev,
-        isConnected: false
-      }));
-      toast.error('Connection lost');
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, [refetch]);
-
-  // Auto-refresh metrics every 30 seconds
-  useEffect(() => {
+    if (!isOnline) return;
+    
     const interval = setInterval(() => {
-      if (connectionStatus.isConnected) {
-        refreshMetrics();
-        setConnectionStatus(prev => ({
-          ...prev,
-          lastUpdate: new Date()
-        }));
-      }
-    }, 30000);
+      refetch();
+      setLastRefresh(new Date());
+    }, 60000);
 
     return () => clearInterval(interval);
-  }, [connectionStatus.isConnected, refreshMetrics]);
+  }, [isOnline, refetch]);
 
   const handleManualRefresh = async () => {
     try {
       await refetch();
-      await refreshMetrics();
-      setConnectionStatus(prev => ({
-        ...prev,
-        lastUpdate: new Date()
-      }));
+      setLastRefresh(new Date());
       toast.success('Dashboard refreshed');
     } catch (error) {
       toast.error('Failed to refresh dashboard');
@@ -125,30 +64,39 @@ export const RealTimeDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Connection Status Bar */}
+      {/* Enhanced Connection Status Bar */}
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {connectionStatus.isConnected ? (
-                <Wifi className="w-4 h-4 text-green-500" />
-              ) : (
-                <WifiOff className="w-4 h-4 text-red-500" />
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                {isOnline ? (
+                  <Wifi className="w-4 h-4 text-green-500" />
+                ) : (
+                  <WifiOff className="w-4 h-4 text-red-500" />
+                )}
+                <span className="text-sm font-medium">
+                  {isOnline ? 'Online' : 'Offline'}
+                </span>
+                
+                {isConnected && isOnline && (
+                  <Badge variant="default" className="bg-green-100 text-green-800">
+                    Real-time
+                  </Badge>
+                )}
+              </div>
+              
+              {queuedOperationsCount > 0 && (
+                <Badge variant="secondary">
+                  {queuedOperationsCount} pending sync
+                </Badge>
               )}
-              <span className="text-sm font-medium">
-                {connectionStatus.isConnected ? 'Connected' : 'Disconnected'}
-              </span>
-              <Badge variant={connectionStatus.isConnected ? 'default' : 'destructive'}>
-                Real-time
-              </Badge>
             </div>
             
             <div className="flex items-center gap-4">
-              {connectionStatus.lastUpdate && (
-                <span className="text-xs text-muted-foreground">
-                  Last update: {connectionStatus.lastUpdate.toLocaleTimeString()}
-                </span>
-              )}
+              <span className="text-xs text-muted-foreground">
+                Last update: {lastRefresh.toLocaleTimeString()}
+              </span>
               <Button 
                 onClick={handleManualRefresh} 
                 variant="outline" 
@@ -163,40 +111,72 @@ export const RealTimeDashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Metrics Grid */}
+      {/* Enhanced Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
-          title="Active Sessions"
-          value={metrics.activeSessions}
-          icon={<Activity className="w-4 h-4" />}
-          trend="+12%"
-          isPositive={true}
-        />
-        
-        <MetricCard
-          title="Pending Applications"
-          value={metrics.pendingApplications}
-          icon={<Activity className="w-4 h-4" />}
-          trend="-5%"
-          isPositive={true}
-        />
-        
-        <MetricCard
-          title="Total Users"
-          value={metrics.totalUsers}
-          icon={<Activity className="w-4 h-4" />}
-          trend="+8%"
-          isPositive={true}
+          title="Total Sessions"
+          value={dashboardData.metrics.totalSessions}
+          icon={<Calendar className="w-4 h-4" />}
+          description="All time sessions"
+          color="blue"
         />
         
         <MetricCard
           title="Completed Sessions"
-          value={metrics.completedSessions}
+          value={dashboardData.metrics.completedSessions}
           icon={<Activity className="w-4 h-4" />}
-          trend="0%"
-          isPositive={null}
+          description="Successfully completed"
+          color="green"
+        />
+        
+        <MetricCard
+          title="Upcoming Sessions"
+          value={dashboardData.metrics.upcomingSessions}
+          icon={<Clock className="w-4 h-4" />}
+          description="Scheduled ahead"
+          color="orange"
+        />
+        
+        <MetricCard
+          title="Average Rating"
+          value={dashboardData.metrics.averageRating}
+          icon={<TrendingUp className="w-4 h-4" />}
+          description="Session quality"
+          color="purple"
+          isDecimal
         />
       </div>
+
+      {/* Recent Activity */}
+      {dashboardData.recentActivity.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {dashboardData.recentActivity.slice(0, 5).map((activity, index) => (
+                <div key={`${activity.type}-${index}`} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    {activity.type === 'session' ? (
+                      <Calendar className="w-4 h-4 text-blue-600" />
+                    ) : (
+                      <Activity className="w-4 h-4 text-green-600" />
+                    )}
+                    <div>
+                      <p className="font-medium">{activity.title}</p>
+                      <p className="text-sm text-muted-foreground capitalize">{activity.status}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(activity.date).toLocaleDateString()}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
@@ -205,35 +185,41 @@ interface MetricCardProps {
   title: string;
   value: number;
   icon: React.ReactNode;
-  trend?: string;
-  isPositive?: boolean | null;
+  description?: string;
+  color?: 'blue' | 'green' | 'orange' | 'purple';
+  isDecimal?: boolean;
 }
 
 const MetricCard: React.FC<MetricCardProps> = ({
   title,
   value,
   icon,
-  trend,
-  isPositive
+  description,
+  color = 'blue',
+  isDecimal = false
 }) => {
+  const colorClasses = {
+    blue: 'text-blue-600 bg-blue-100',
+    green: 'text-green-600 bg-green-100', 
+    orange: 'text-orange-600 bg-orange-100',
+    purple: 'text-purple-600 bg-purple-100'
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        {icon}
+        <div className={`p-2 rounded-full ${colorClasses[color]}`}>
+          {icon}
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{value.toLocaleString()}</div>
-        {trend && (
-          <p className="text-xs text-muted-foreground">
-            <span className={
-              isPositive === true ? 'text-green-600' : 
-              isPositive === false ? 'text-red-600' : 
-              'text-gray-600'
-            }>
-              {trend}
-            </span>
-            {' from last month'}
+        <div className="text-2xl font-bold">
+          {isDecimal ? value.toFixed(1) : value.toLocaleString()}
+        </div>
+        {description && (
+          <p className="text-xs text-muted-foreground mt-1">
+            {description}
           </p>
         )}
       </CardContent>
