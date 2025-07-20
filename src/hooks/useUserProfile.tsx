@@ -25,7 +25,13 @@ export const useUserProfile = () => {
         return null;
       }
 
-      return data;
+      if (!data) return null;
+
+      // Cast the profile_type to the correct union type
+      return {
+        ...data,
+        profile_type: data.profile_type as 'founder' | 'advisor'
+      } as UserProfileData;
     },
     enabled: !!user,
   });
