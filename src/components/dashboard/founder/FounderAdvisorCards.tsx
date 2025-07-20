@@ -26,12 +26,12 @@ export const FounderAdvisorCards: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {founderData?.assignments?.map((assignment, index) => {
           const advisorSessions = sessions?.filter(s => 
-            s.assignment?.advisor?.id === assignment.advisor?.id
+            s.assignment?.advisor_id === assignment.advisor_id
           ) || [];
           
           const advisorCompletedSessions = advisorSessions.filter(s => s.status === 'completed');
           const nextSession = upcomingSessions.find(s => 
-            s.assignment?.advisor?.id === assignment.advisor?.id
+            s.assignment?.advisor_id === assignment.advisor_id
           );
           
           const avgRating = advisorCompletedSessions.length > 0 
