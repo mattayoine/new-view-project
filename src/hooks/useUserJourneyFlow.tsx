@@ -53,7 +53,7 @@ export const useUserJourneyFlow = () => {
         .from('base_applications')
         .select('*')
         .eq('email', user.email)
-        .single();
+        .maybeSingle();
 
       const applicationStep: JourneyStep = {
         id: 'application',
@@ -91,7 +91,7 @@ export const useUserJourneyFlow = () => {
         };
       }
 
-      // Step 4: Profile Setup - using the correct property name
+      // Step 4: Profile Setup - using consistent property name
       const profileStep: JourneyStep = {
         id: 'profile',
         name: 'Profile Setup',
@@ -106,14 +106,14 @@ export const useUserJourneyFlow = () => {
         return { currentStep, progress: 75, steps, canProceedToNext: false };
       }
 
-      // Step 5: Assignment (for non-admin users) - using the correct property name
+      // Step 5: Assignment (for non-admin users)
       if (userProfile.role !== 'admin') {
         const { data: assignment } = await supabase
           .from('advisor_founder_assignments')
           .select('*')
           .or(`advisor_id.eq.${userProfile.id},founder_id.eq.${userProfile.id}`)
           .eq('status', 'active')
-          .single();
+          .maybeSingle();
 
         const assignmentStep: JourneyStep = {
           id: 'assignment',

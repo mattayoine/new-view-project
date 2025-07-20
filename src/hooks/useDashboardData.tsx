@@ -49,7 +49,7 @@ export const useDashboardData = () => {
         };
       }
 
-      // Get user's assignments using the correct property name
+      // Get user's assignments using consistent property name
       const { data: assignments } = await supabase
         .from('advisor_founder_assignments')
         .select(`
@@ -70,14 +70,14 @@ export const useDashboardData = () => {
         .order('scheduled_at', { ascending: false })
         .limit(50);
 
-      // Get goals using the correct property name
+      // Get goals using consistent property name
       const { data: goals } = await supabase
         .from('goals')
         .select('*')
         .eq('founder_id', userProfile.id)
         .order('created_at', { ascending: false });
 
-      // Get notifications using the correct property name
+      // Get notifications using consistent property name
       const { data: notifications } = await supabase
         .from('notifications')
         .select('*')
@@ -85,7 +85,7 @@ export const useDashboardData = () => {
         .order('created_at', { ascending: false })
         .limit(20);
 
-      // Get accessible resources using the correct property name
+      // Get accessible resources using consistent property name
       const { data: resources } = await supabase
         .from('resources')
         .select('*')
@@ -129,27 +129,27 @@ export const useDashboardData = () => {
 
       // Get recent activity
       const recentActivity = [
-        ...sessions?.slice(0, 5).map(s => ({
+        ...(sessions?.slice(0, 5).map(s => ({
           type: 'session',
           title: s.title,
           status: s.status,
           date: s.scheduled_at,
           data: s
-        })) || [],
-        ...goals?.slice(0, 3).map(g => ({
+        })) || []),
+        ...(goals?.slice(0, 3).map(g => ({
           type: 'goal',
           title: g.title,
           status: g.status,
           date: g.updated_at,
           data: g
-        })) || [],
-        ...notifications?.slice(0, 5).map(n => ({
+        })) || []),
+        ...(notifications?.slice(0, 5).map(n => ({
           type: 'notification',
           title: n.title,
           status: n.is_read ? 'read' : 'unread',
           date: n.created_at,
           data: n
-        })) || []
+        })) || [])
       ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10);
 
       return {

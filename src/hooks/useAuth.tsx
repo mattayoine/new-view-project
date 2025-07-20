@@ -1,19 +1,8 @@
-
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User, Session } from '@supabase/supabase-js';
 import { toast } from 'sonner';
-
-interface UserProfile {
-  id: string;
-  auth_id: string;
-  email: string;
-  role: string;
-  status: string;
-  profile_completed: boolean;
-  created_at: string;
-  updated_at: string;
-}
+import { UserProfile } from '@/types/profile';
 
 interface AuthState {
   user: User | null;
@@ -218,10 +207,86 @@ export const useAuth = () => {
 
   return {
     ...authState,
-    signIn,
-    signUp,
-    signOut,
-    resendVerification,
+    signIn: async (email: string, password: string) => {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) throw error;
+
+        toast.success('Signed in successfully');
+        return { success: true, user: data.user };
+      } catch (error: any) {
+        console.error('Sign in error:', error);
+        toast.error(error.message || 'Failed to sign in');
+        return { success: false, error: error.message };
+      }
+    },
+    signUp: async (email: string, password: string, userData?: any) => {
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: userData || {},
+            emailRedirectTo: `${window.location.origin}/`
+          }
+        });
+
+        if (error) throw error;
+
+        toast.success('Account created successfully. Please check your email for verification.');
+        return { success: true, user: data.user };
+      } catch (error: any) {
+        console.error('Sign up error:', error);
+        toast.error(error.message || 'Failed to create account');
+        return { success: false, error: error.message };
+      }
+    },
+    signOut: async () => {
+      try {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+
+        setAuthState({
+          user: null,
+          session: null,
+          userProfile: null,
+          loading: false,
+          isAuthenticated: false,
+        });
+
+        toast.success('Signed out successfully');
+        window.location.href = '/';
+      } catch (error: any) {
+        console.error('Sign out error:', error);
+        toast.error('Failed to sign out');
+      }
+    },
+    resendVerification: async () => {
+      try {
+        if (!authState.user?.email) {
+          throw new Error('No user email found');
+        }
+
+        const { error } = await supabase.auth.resend({
+          type: 'signup',
+          email: authState.user.email,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`
+          }
+        });
+
+        if (error) throw error;
+
+        return { success: true };
+      } catch (error: any) {
+        console.error('Resend verification error:', error);
+        return { success: false, error: error.message };
+      }
+    },
     refreshProfile: async () => {
       if (authState.user) {
         const profile = await fetchUserProfile(authState.user);

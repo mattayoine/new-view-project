@@ -27,24 +27,30 @@ export const useUserProfile = () => {
 
       if (!data) return null;
 
-      // Cast both profile_type and profile_data to the correct types
+      // Safely transform the data with proper type casting
       return {
-        ...data,
+        id: data.id,
+        user_id: data.user_id,
+        auth_id: data.auth_id,
         profile_type: data.profile_type as 'founder' | 'advisor',
-        profile_data: data.profile_data as unknown as ProfileData
-      } as UserProfileData;
+        profile_data: data.profile_data as unknown as ProfileData,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        deleted_at: data.deleted_at,
+        is_profile_complete: data.is_profile_complete || false
+      };
     },
     enabled: !!user,
   });
 
   const updateProfile = useMutation({
-    mutationFn: async (updates: Partial<UserProfileData>) => {
+    mutationFn: async (updates: { profile_completed: boolean }) => {
       if (!user) throw new Error('No user logged in');
 
       const { data, error } = await supabase
         .from('users')
         .update({
-          profile_completed: updates.is_profile_complete || false,
+          profile_completed: updates.profile_completed,
           updated_at: new Date().toISOString()
         })
         .eq('auth_id', user.id)
@@ -68,7 +74,7 @@ export const useUserProfile = () => {
     mutationFn: async (updates: Partial<Omit<UserProfileData, 'id' | 'created_at' | 'updated_at'>>) => {
       if (!user) throw new Error('No user logged in');
 
-      const profileDataToInsert = {
+      const profileDataToUpsert = {
         auth_id: user.id,
         user_id: userProfile?.id || '',
         profile_type: updates.profile_type || 'founder',
@@ -79,13 +85,13 @@ export const useUserProfile = () => {
 
       const { data, error } = await supabase
         .from('user_profiles')
-        .upsert(profileDataToInsert)
+        .upsert(profileDataToUpsert)
         .select()
         .single();
 
       if (error) throw error;
       
-      // Also update the main users table
+      // Also update the main users table with consistent property name
       await supabase
         .from('users')
         .update({ profile_completed: updates.is_profile_complete || false })
@@ -106,6 +112,7 @@ export const useUserProfile = () => {
   // Check if profile is complete based on profile_data
   const isProfileComplete = profileData?.profile_data && 
     Object.keys(profileData.profile_data).length > 0 &&
+    'name' in profileData.profile_data &&
     profileData.profile_data.name;
 
   return {
