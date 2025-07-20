@@ -73,8 +73,8 @@ export const useEndToEndTesting = () => {
     return {
       userId: user.id,
       userEmail: user.email,
-      profileType: userProfile.profile_type,
-      profileComplete: userProfile.is_profile_complete
+      userRole: userProfile.role,
+      profileComplete: userProfile.profile_completed
     };
   };
 
@@ -151,7 +151,7 @@ export const useEndToEndTesting = () => {
   const testRoleBasedAccess = async () => {
     if (!userProfile) throw new Error('User profile not available');
     
-    const role = userProfile.profile_type;
+    const role = userProfile.role;
     
     // Test role-specific data access
     if (role === 'admin') {

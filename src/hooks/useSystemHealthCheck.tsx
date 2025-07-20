@@ -21,7 +21,12 @@ interface SystemHealthStatus {
   recommendations: string[];
 }
 
-export const useSystemHealthCheck = () => {
+interface SystemHealthCheckResult {
+  healthCheck: SystemHealthStatus;
+  isRunning: boolean;
+}
+
+export const useSystemHealthCheck = (): SystemHealthCheckResult => {
   const { user, userProfile, isAuthenticated } = useAuth();
   const { data: journeyFlow, error: journeyError } = useEnhancedJourneyFlow();
   const { data: dashboardData, error: dashboardError } = useOptimizedDashboardData();
@@ -43,7 +48,11 @@ export const useSystemHealthCheck = () => {
     recommendations: []
   });
 
+  const [isRunning, setIsRunning] = useState(false);
+
   useEffect(() => {
+    setIsRunning(true);
+    
     const issues: string[] = [];
     const recommendations: string[] = [];
 
@@ -127,11 +136,13 @@ export const useSystemHealthCheck = () => {
       issues,
       recommendations
     });
+
+    setIsRunning(false);
   }, [
     isAuthenticated, user, userProfile, journeyFlow, journeyError, 
     dashboardData, dashboardError, isOnline, isConnected, 
     queuedOperationsCount, insights
   ]);
 
-  return healthStatus;
+  return { healthCheck: healthStatus, isRunning };
 };

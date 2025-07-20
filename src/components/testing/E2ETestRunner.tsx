@@ -52,8 +52,8 @@ export const E2ETestRunner: React.FC = () => {
         timestamp: new Date().toISOString(),
         userInfo: {
           id: userProfile?.id,
-          role: userProfile?.profile_type,
-          email: userProfile?.profile_data?.email
+          role: userProfile?.role,
+          email: userProfile?.email
         },
         summary: testSuite.summary,
         results: testSuite.results,
@@ -88,7 +88,7 @@ export const E2ETestRunner: React.FC = () => {
     : 0;
 
   // Don't show for non-admin users in production
-  if (userProfile?.profile_type !== 'admin' && process.env.NODE_ENV === 'production') {
+  if (userProfile?.role !== 'admin' && process.env.NODE_ENV === 'production') {
     return null;
   }
 

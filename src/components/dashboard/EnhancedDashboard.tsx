@@ -18,7 +18,7 @@ export const EnhancedDashboard: React.FC = () => {
   const { healthCheck, isRunning } = useSystemHealthCheck();
 
   const isDevelopment = process.env.NODE_ENV === 'development';
-  const isAdmin = userProfile?.profile_type === 'admin';
+  const isAdmin = userProfile?.role === 'admin';
 
   return (
     <PageTransition>
