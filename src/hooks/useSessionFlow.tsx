@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -38,7 +37,7 @@ export const useSessionFlow = () => {
         };
       }
 
-      // Get active assignments for this user
+      // Get active assignments for this user using the correct property name
       const { data: assignments } = await supabase
         .from('advisor_founder_assignments')
         .select(`
@@ -46,7 +45,7 @@ export const useSessionFlow = () => {
           advisor:users!advisor_id(id, email),
           founder:users!founder_id(id, email)
         `)
-        .or(`advisor_id.eq.${userProfile.user_id},founder_id.eq.${userProfile.user_id}`)
+        .or(`advisor_id.eq.${userProfile.id},founder_id.eq.${userProfile.id}`)
         .eq('status', 'active');
 
       const assignmentIds = assignments?.map(a => a.id) || [];
@@ -136,7 +135,7 @@ export const useCreateSessionProposal = () => {
           title,
           description,
           proposed_times: proposedTimes,
-          proposed_by: userProfile?.user_id,
+          proposed_by: userProfile?.id,
           status: 'pending'
         })
         .select()

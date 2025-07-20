@@ -91,27 +91,27 @@ export const useUserJourneyFlow = () => {
         };
       }
 
-      // Step 4: Profile Setup
+      // Step 4: Profile Setup - using the correct property name
       const profileStep: JourneyStep = {
         id: 'profile',
         name: 'Profile Setup',
-        status: userProfile?.is_profile_complete ? 'completed' : 'pending',
+        status: userProfile?.profile_completed ? 'completed' : 'pending',
         data: userProfile,
         completedAt: userProfile?.updated_at
       };
       steps.push(profileStep);
 
-      if (!userProfile?.is_profile_complete) {
+      if (!userProfile?.profile_completed) {
         currentStep = 'profile';
         return { currentStep, progress: 75, steps, canProceedToNext: false };
       }
 
-      // Step 5: Assignment (for non-admin users)
-      if (userProfile.profile_type !== 'admin') {
+      // Step 5: Assignment (for non-admin users) - using the correct property name
+      if (userProfile.role !== 'admin') {
         const { data: assignment } = await supabase
           .from('advisor_founder_assignments')
           .select('*')
-          .or(`advisor_id.eq.${userProfile.user_id},founder_id.eq.${userProfile.user_id}`)
+          .or(`advisor_id.eq.${userProfile.id},founder_id.eq.${userProfile.id}`)
           .eq('status', 'active')
           .single();
 

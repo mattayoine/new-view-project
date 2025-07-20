@@ -49,7 +49,7 @@ export const useDashboardData = () => {
         };
       }
 
-      // Get user's assignments
+      // Get user's assignments using the correct property name
       const { data: assignments } = await supabase
         .from('advisor_founder_assignments')
         .select(`
@@ -57,7 +57,7 @@ export const useDashboardData = () => {
           advisor:users!advisor_id(id, email),
           founder:users!founder_id(id, email)
         `)
-        .or(`advisor_id.eq.${userProfile.user_id},founder_id.eq.${userProfile.user_id}`)
+        .or(`advisor_id.eq.${userProfile.id},founder_id.eq.${userProfile.id}`)
         .eq('status', 'active');
 
       const assignmentIds = assignments?.map(a => a.id) || [];
@@ -70,26 +70,26 @@ export const useDashboardData = () => {
         .order('scheduled_at', { ascending: false })
         .limit(50);
 
-      // Get goals
+      // Get goals using the correct property name
       const { data: goals } = await supabase
         .from('goals')
         .select('*')
-        .eq('founder_id', userProfile.user_id)
+        .eq('founder_id', userProfile.id)
         .order('created_at', { ascending: false });
 
-      // Get notifications
+      // Get notifications using the correct property name
       const { data: notifications } = await supabase
         .from('notifications')
         .select('*')
-        .eq('user_id', userProfile.user_id)
+        .eq('user_id', userProfile.id) 
         .order('created_at', { ascending: false })
         .limit(20);
 
-      // Get accessible resources
+      // Get accessible resources using the correct property name
       const { data: resources } = await supabase
         .from('resources')
         .select('*')
-        .or('access_level.eq.public,shared_by.eq.' + userProfile.user_id)
+        .or('access_level.eq.public,shared_by.eq.' + userProfile.id)
         .order('created_at', { ascending: false })
         .limit(10);
 

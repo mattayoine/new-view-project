@@ -3,28 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
-
-interface UserProfileData {
-  id: string;
-  user_id: string;
-  auth_id: string;
-  profile_type: string;
-  profile_data: any;
-  created_at: string;
-  updated_at: string;
-  deleted_at?: string;
-}
-
-interface UserProfile {
-  id: string;
-  auth_id: string;
-  email: string;
-  role: string;
-  status: string;
-  profile_completed: boolean;
-  created_at: string;
-  updated_at: string;
-}
+import { UserProfileData } from '@/types/profile';
 
 export const useUserProfile = () => {
   const { user, userProfile } = useAuth();
@@ -52,12 +31,15 @@ export const useUserProfile = () => {
   });
 
   const updateProfile = useMutation({
-    mutationFn: async (updates: Partial<UserProfile>) => {
+    mutationFn: async (updates: Partial<UserProfileData>) => {
       if (!user) throw new Error('No user logged in');
 
       const { data, error } = await supabase
         .from('users')
-        .update(updates)
+        .update({
+          profile_completed: updates.is_profile_complete || false,
+          updated_at: new Date().toISOString()
+        })
         .eq('auth_id', user.id)
         .select()
         .single();
@@ -84,6 +66,7 @@ export const useUserProfile = () => {
         user_id: userProfile?.id || '',
         profile_type: updates.profile_type || 'founder',
         profile_data: updates.profile_data || {},
+        is_profile_complete: updates.is_profile_complete || false,
         ...updates,
       };
 
@@ -94,6 +77,13 @@ export const useUserProfile = () => {
         .single();
 
       if (error) throw error;
+      
+      // Also update the main users table
+      await supabase
+        .from('users')
+        .update({ profile_completed: updates.is_profile_complete || false })
+        .eq('auth_id', user.id);
+
       return data;
     },
     onSuccess: () => {

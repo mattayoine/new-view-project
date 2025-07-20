@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -67,8 +66,8 @@ export const JourneyValidation: React.FC = () => {
           });
         }
 
-        // Check user profile completeness
-        if (!userProfile.is_profile_complete) {
+        // Check user profile completeness using the correct property name
+        if (!userProfile.profile_completed) {
           results.push({
             step: 'profile',
             status: 'warning',
@@ -84,12 +83,12 @@ export const JourneyValidation: React.FC = () => {
           });
         }
 
-        // Check assignments (for non-admin users)
-        if (userProfile.profile_type !== 'admin') {
+        // Check assignments (for non-admin users) using the correct property name
+        if (userProfile.role !== 'admin') {
           const { data: assignments } = await supabase
             .from('advisor_founder_assignments')
             .select('*')
-            .or(`advisor_id.eq.${userProfile.user_id},founder_id.eq.${userProfile.user_id}`)
+            .or(`advisor_id.eq.${userProfile.id},founder_id.eq.${userProfile.id}`)
             .eq('status', 'active');
 
           if (!assignments || assignments.length === 0) {
@@ -169,10 +168,10 @@ export const JourneyValidation: React.FC = () => {
       
       switch (step) {
         case 'profile':
-          // Attempt to fix profile completeness
+          // Attempt to fix profile completeness using the correct property name
           const { error } = await supabase
-            .from('user_profiles')
-            .update({ is_profile_complete: true })
+            .from('users')
+            .update({ profile_completed: true })
             .eq('auth_id', user?.id);
           
           if (error) throw error;
