@@ -8,9 +8,10 @@ import { Calendar, MessageSquare, Star, User } from 'lucide-react';
 import { useOptimizedDashboardData } from '@/hooks/useOptimizedDashboardData';
 
 export const FounderAdvisorCards: React.FC = () => {
-  const { assignments, loading } = useOptimizedDashboardData();
+  const { data, isLoading } = useOptimizedDashboardData();
+  const assignments = data?.assignments || [];
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {[...Array(3)].map((_, i) => (
