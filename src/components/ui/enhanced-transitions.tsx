@@ -1,9 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 interface StepTransitionProps {
-  children: react.ReactNode;
+  children: React.ReactNode;
   isActive: boolean;
   isCompleted: boolean;
   delay?: number;
@@ -15,22 +15,25 @@ export const StepTransition: React.FC<StepTransitionProps> = ({
   isActive,
   isCompleted,
   delay = 0,
-  className
+  className = ''
 }) => {
-  const [isVisible, setIsVisible] = useState(false);
+  const [shouldShow, setShouldShow] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), delay);
+    const timer = setTimeout(() => {
+      setShouldShow(true);
+    }, delay);
+
     return () => clearTimeout(timer);
   }, [delay]);
 
   return (
     <div
       className={cn(
-        'transition-all duration-500 ease-out',
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4',
-        isCompleted && 'scale-105 shadow-lg',
-        isActive && 'ring-2 ring-primary ring-opacity-50',
+        'transition-all duration-500 ease-in-out',
+        shouldShow ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4',
+        isActive && 'ring-2 ring-blue-500/20 bg-blue-50/50',
+        isCompleted && 'bg-green-50/30',
         className
       )}
     >
@@ -40,106 +43,84 @@ export const StepTransition: React.FC<StepTransitionProps> = ({
 };
 
 interface ProgressiveLoaderProps {
-  stages: string[];
-  currentStage: number;
-  className?: string;
+  isLoading: boolean;
+  children: React.ReactNode;
+  fallback?: React.ReactNode;
 }
 
 export const ProgressiveLoader: React.FC<ProgressiveLoaderProps> = ({
-  stages,
-  currentStage,
-  className
+  isLoading,
+  children,
+  fallback
 }) => {
-  return (
-    <div className={cn('space-y-3', className)}>
-      <div className="flex justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-      
-      <div className="space-y-1">
-        {stages.map((stage, index) => (
-          <div
-            key={index}
-            className={cn(
-              'text-sm transition-all duration-300',
-              index < currentStage 
-                ? 'text-green-600 opacity-100' 
-                : index === currentStage 
-                ? 'text-primary opacity-100 font-medium animate-pulse' 
-                : 'text-muted-foreground opacity-60'
-            )}
-          >
-            {index < currentStage && '✓ '}
-            {index === currentStage && '⟳ '}
-            {stage}
+  if (isLoading) {
+    return (
+      <div className="animate-pulse">
+        {fallback || (
+          <div className="space-y-4">
+            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+            <div className="h-4 bg-gray-200 rounded w-5/6"></div>
           </div>
-        ))}
+        )}
       </div>
+    );
+  }
+
+  return (
+    <div className="animate-in fade-in-50 duration-300">
+      {children}
     </div>
   );
 };
 
 interface StatusIndicatorProps {
-  status: 'success' | 'error' | 'warning' | 'info' | 'loading';
-  message: string;
-  animated?: boolean;
-  className?: string;
+  status: 'loading' | 'success' | 'error' | 'warning';
+  message?: string;
+  size?: 'sm' | 'md' | 'lg';
 }
 
 export const StatusIndicator: React.FC<StatusIndicatorProps> = ({
   status,
   message,
-  animated = true,
-  className
+  size = 'md'
 }) => {
-  const getStatusStyles = () => {
-    switch (status) {
-      case 'success':
-        return 'bg-green-50 text-green-800 border-green-200';
-      case 'error':
-        return 'bg-red-50 text-red-800 border-red-200';
-      case 'warning':
-        return 'bg-yellow-50 text-yellow-800 border-yellow-200';
-      case 'info':
-        return 'bg-blue-50 text-blue-800 border-blue-200';
-      case 'loading':
-        return 'bg-muted text-muted-foreground border-border';
-      default:
-        return 'bg-muted text-muted-foreground border-border';
-    }
+  const sizeClasses = {
+    sm: 'w-4 h-4',
+    md: 'w-6 h-6',
+    lg: 'w-8 h-8'
   };
 
-  const getIcon = () => {
-    switch (status) {
-      case 'success':
-        return '✓';
-      case 'error':
-        return '✕';
-      case 'warning':
-        return '⚠';
-      case 'info':
-        return 'ℹ';
-      case 'loading':
-        return '⟳';
-      default:
-        return '';
-    }
+  const statusColors = {
+    loading: 'text-blue-500',
+    success: 'text-green-500',
+    error: 'text-red-500',
+    warning: 'text-yellow-500'
   };
 
   return (
-    <div
-      className={cn(
-        'px-3 py-2 rounded-md border text-sm font-medium flex items-center gap-2',
-        getStatusStyles(),
-        animated && status === 'loading' && 'animate-pulse',
-        animated && status === 'success' && 'success-pulse',
-        className
+    <div className="flex items-center gap-2">
+      <div
+        className={cn(
+          'rounded-full flex items-center justify-center',
+          sizeClasses[size],
+          statusColors[status],
+          status === 'loading' && 'animate-spin'
+        )}
+      >
+        {status === 'loading' && '⟳'}
+        {status === 'success' && '✓'}
+        {status === 'error' && '✗'}
+        {status === 'warning' && '⚠'}
+      </div>
+      {message && (
+        <span className={cn(
+          'text-sm',
+          statusColors[status]
+        )}>
+          {message}
+        </span>
       )}
-    >
-      <span className={animated && status === 'loading' ? 'animate-spin' : ''}>
-        {getIcon()}
-      </span>
-      {message}
     </div>
   );
 };
