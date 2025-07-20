@@ -36,10 +36,12 @@ export const useRealTimeJourneyUpdates = () => {
           console.log('Application status updated:', payload);
           invalidateJourneyQueries();
           
-          if (payload.new.status === 'approved') {
-            toast.success('Your application has been approved! Welcome to the platform.');
-          } else if (payload.new.status === 'rejected') {
-            toast.error('Your application has been reviewed. Please check your email for details.');
+          if (payload.new && typeof payload.new === 'object' && 'status' in payload.new) {
+            if (payload.new.status === 'approved') {
+              toast.success('Your application has been approved! Welcome to the platform.');
+            } else if (payload.new.status === 'rejected') {
+              toast.error('Your application has been reviewed. Please check your email for details.');
+            }
           }
         }
       )
@@ -87,7 +89,7 @@ export const useRealTimeJourneyUpdates = () => {
           
           if (payload.eventType === 'INSERT') {
             toast.info('New session scheduled!');
-          } else if (payload.new?.status === 'completed') {
+          } else if (payload.new && typeof payload.new === 'object' && 'status' in payload.new && payload.new.status === 'completed') {
             toast.success('Session completed successfully!');
           }
         }
@@ -111,11 +113,13 @@ export const useRealTimeJourneyUpdates = () => {
           console.log('New notification:', payload);
           const notification = payload.new;
           
-          if (notification.priority === 'high' || notification.priority === 'urgent') {
-            toast(notification.title, {
-              description: notification.message,
-              duration: 5000
-            });
+          if (notification && typeof notification === 'object' && 'priority' in notification && 'title' in notification && 'message' in notification) {
+            if (notification.priority === 'high' || notification.priority === 'urgent') {
+              toast(notification.title as string, {
+                description: notification.message as string,
+                duration: 5000
+              });
+            }
           }
           
           invalidateJourneyQueries();

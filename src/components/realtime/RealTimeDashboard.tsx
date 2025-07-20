@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Wifi, WifiOff, Activity, TrendingUp, Users, Calendar } from 'lucide-react';
+import { RefreshCw, Wifi, WifiOff, Activity, TrendingUp, Users, Calendar, Clock } from 'lucide-react';
 import { useOptimizedDashboardData } from '@/hooks/useOptimizedDashboardData';
 import { useOfflineSupport } from '@/hooks/useOfflineSupport';
 import { useRealTimeJourneyUpdates } from '@/hooks/useRealTimeJourneyUpdates';

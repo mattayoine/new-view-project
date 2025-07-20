@@ -132,7 +132,7 @@ export const useOptimizedDashboardData = () => {
     }),
     enabled: !!user && !!userProfile,
     staleTime: 30000, // 30 seconds
-    cacheTime: 300000, // 5 minutes
+    gcTime: 300000, // 5 minutes (renamed from cacheTime)
     refetchInterval: 60000, // 1 minute
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
