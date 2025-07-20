@@ -9,9 +9,12 @@ import { RealTimeNotifications } from '@/components/notifications/RealTimeNotifi
 import { JourneyStatusIndicator } from '@/components/journey/JourneyStatusIndicator';
 import { ComprehensiveJourneyDashboard } from '@/components/journey/ComprehensiveJourneyDashboard';
 import { E2ETestRunner } from '@/components/testing/E2ETestRunner';
+import { SystemMonitor } from '@/components/monitoring/SystemMonitor';
+import { DeploymentChecker } from '@/components/deployment/DeploymentChecker';
 import EnhancedSessionTracker from '@/components/admin/EnhancedSessionTracker';
 import { useAuth } from '@/hooks/useAuth';
 import { useSystemHealthCheck } from '@/hooks/useSystemHealthCheck';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export const EnhancedDashboard: React.FC = () => {
   const { userProfile } = useAuth();
@@ -31,13 +34,39 @@ export const EnhancedDashboard: React.FC = () => {
         {/* Status Indicator */}
         <JourneyStatusIndicator />
 
-        {/* Development/Admin Testing Tools */}
+        {/* Admin Controls */}
         {(isDevelopment || isAdmin) && (
-          <EnhancedErrorBoundary enableReporting showDetails>
-            <Suspense fallback={<EnhancedLoadingState type="cards" count={1} />}>
-              <E2ETestRunner />
-            </Suspense>
-          </EnhancedErrorBoundary>
+          <Tabs defaultValue="testing" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="testing">Testing</TabsTrigger>
+              <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
+              <TabsTrigger value="deployment">Deployment</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="testing">
+              <EnhancedErrorBoundary enableReporting showDetails>
+                <Suspense fallback={<EnhancedLoadingState type="cards" count={1} />}>
+                  <E2ETestRunner />
+                </Suspense>
+              </EnhancedErrorBoundary>
+            </TabsContent>
+            
+            <TabsContent value="monitoring">
+              <EnhancedErrorBoundary enableReporting showDetails>
+                <Suspense fallback={<EnhancedLoadingState type="cards" count={2} />}>
+                  <SystemMonitor />
+                </Suspense>
+              </EnhancedErrorBoundary>
+            </TabsContent>
+            
+            <TabsContent value="deployment">
+              <EnhancedErrorBoundary enableReporting showDetails>
+                <Suspense fallback={<EnhancedLoadingState type="cards" count={1} />}>
+                  <DeploymentChecker />
+                </Suspense>
+              </EnhancedErrorBoundary>
+            </TabsContent>
+          </Tabs>
         )}
 
         {/* Main Dashboard Content */}
