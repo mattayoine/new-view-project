@@ -70,11 +70,11 @@ export const JourneyStatusCard: React.FC = () => {
         <CardTitle className="flex items-center justify-between">
           <span>Your Journey Progress</span>
           <Badge variant="outline" className="text-sm">
-            {Math.round(journey.progress)}% Complete
+            {Math.round(journey.overallProgress)}% Complete
           </Badge>
         </CardTitle>
         <Progress 
-          value={journey.progress} 
+          value={journey.overallProgress} 
           className="w-full h-2"
         />
       </CardHeader>
