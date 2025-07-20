@@ -4,6 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/components/auth/AuthProvider";
+import { SecurityProvider } from "@/hooks/useSecurityContext";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 
@@ -22,24 +24,28 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            
-            {/* Enhanced Dashboards */}
-            <Route path="/founder-dashboard" element={<EnhancedFounderDashboard />} />
-            <Route path="/advisor-dashboard" element={<EnhancedAdvisorDashboard />} />
-            
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/admin-dashboard" element={<AdminDashboard />} />
-            <Route path="/founder-session-hub" element={<FounderSessionHub />} />
-            <Route path="/advisor-session-hub" element={<AdvisorSessionHub />} />
-          </Routes>
-        </BrowserRouter>
+        <AuthProvider>
+          <SecurityProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                
+                {/* Enhanced Dashboards */}
+                <Route path="/founder-dashboard" element={<EnhancedFounderDashboard />} />
+                <Route path="/advisor-dashboard" element={<EnhancedAdvisorDashboard />} />
+                
+                <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/admin-dashboard" element={<AdminDashboard />} />
+                <Route path="/founder-session-hub" element={<FounderSessionHub />} />
+                <Route path="/advisor-session-hub" element={<AdvisorSessionHub />} />
+              </Routes>
+            </BrowserRouter>
+          </SecurityProvider>
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
