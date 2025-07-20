@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
-import { UserProfileData } from '@/types/profile';
+import { UserProfileData, ProfileData } from '@/types/profile';
 
 export const useUserProfile = () => {
   const { user, userProfile } = useAuth();
@@ -27,10 +27,11 @@ export const useUserProfile = () => {
 
       if (!data) return null;
 
-      // Cast the profile_type to the correct union type
+      // Cast both profile_type and profile_data to the correct types
       return {
         ...data,
-        profile_type: data.profile_type as 'founder' | 'advisor'
+        profile_type: data.profile_type as 'founder' | 'advisor',
+        profile_data: data.profile_data as ProfileData
       } as UserProfileData;
     },
     enabled: !!user,
