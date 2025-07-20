@@ -1,76 +1,76 @@
-
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { navItems } from "./nav-items";
+import { AuthProvider } from "./contexts/AuthContext";
 import Index from "./pages/Index";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
-import FounderDashboard from "./pages/FounderDashboard";
-import AdvisorDashboard from "./pages/AdvisorDashboard";
-import AdminDashboard from "./pages/AdminDashboard";
-import FounderApplication from "./pages/FounderApplication";
-import AdvisorApplication from "./pages/AdvisorApplication";
+
+// Import enhanced dashboards
+import EnhancedFounderDashboard from "./pages/EnhancedFounderDashboard";
+import EnhancedAdvisorDashboard from "./pages/EnhancedAdvisorDashboard";
+import ApplyAdvisor from "./pages/ApplyAdvisor";
+import ApplyFounder from "./pages/ApplyFounder";
 import Onboarding from "./pages/Onboarding";
-import PendingVerification from "./pages/PendingVerification";
-import PendingApproval from "./pages/PendingApproval";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
-import NotFound from "./pages/NotFound";
-import AdvisorSessionHub from "./pages/AdvisorSessionHub";
+import Login from "./pages/Login";
+import AdminDashboard from "./pages/AdminDashboard";
 import FounderSessionHub from "./pages/FounderSessionHub";
-import ResourceCenter from "./pages/ResourceCenter";
-import ErrorBoundary from "./components/ErrorBoundary";
-import { AuthProvider } from "./components/auth/AuthProvider";
-import { SecurityProvider } from "./hooks/useSecurityContext";
+import AdvisorSessionHub from "./pages/AdvisorSessionHub";
+import Resources from "./pages/Resources";
+import SessionDetails from "./pages/SessionDetails";
+import AdminSessionTracker from "./pages/AdminSessionTracker";
+import AdminUserManagement from "./pages/AdminUserManagement";
+import AdminResourceManagement from "./pages/AdminResourceManagement";
+import AdminNotifications from "./pages/AdminNotifications";
+import AdminSystemMonitor from "./pages/AdminSystemMonitor";
+import AdminE2ETesting from "./pages/AdminE2ETesting";
+import AdminDeploymentChecker from "./pages/AdminDeploymentChecker";
+import AdminJourneyManagement from "./pages/AdminJourneyManagement";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
-const App = () => {
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <SecurityProvider>
-            <ErrorBoundary>
-              <Toaster />
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<Signup />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/founder-dashboard" element={<FounderDashboard />} />
-                  <Route path="/advisor-dashboard" element={<AdvisorDashboard />} />
-                  <Route path="/admin-dashboard" element={<AdminDashboard />} />
-                  <Route path="/apply-founder" element={<FounderApplication />} />
-                  <Route path="/apply-advisor" element={<AdvisorApplication />} />
-                  <Route path="/onboarding" element={<Onboarding />} />
-                  <Route path="/pending-verification" element={<PendingVerification />} />
-                  <Route path="/pending-approval" element={<PendingApproval />} />
-                  <Route path="/forgot-password" element={<ForgotPassword />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/advisor-session-hub" element={<AdvisorSessionHub />} />
-                  <Route path="/founder-session-hub" element={<FounderSessionHub />} />
-                  <Route path="/resource-center" element={<ResourceCenter />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
-            </ErrorBoundary>
-          </SecurityProvider>
-        </AuthProvider>
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              
+              {/* Enhanced Dashboards */}
+              <Route path="/founder-dashboard" element={<EnhancedFounderDashboard />} />
+              <Route path="/advisor-dashboard" element={<EnhancedAdvisorDashboard />} />
+              
+              <Route path="/apply-advisor" element={<ApplyAdvisor />} />
+              <Route path="/apply-founder" element={<ApplyFounder />} />
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/admin-dashboard" element={<AdminDashboard />} />
+              <Route path="/founder-session-hub" element={<FounderSessionHub />} />
+              <Route path="/advisor-session-hub" element={<AdvisorSessionHub />} />
+              <Route path="/resources" element={<Resources />} />
+              <Route path="/session/:sessionId" element={<SessionDetails />} />
+
+              {/* Admin Routes */}
+              <Route path="/admin-session-tracker" element={<AdminSessionTracker />} />
+              <Route path="/admin-user-management" element={<AdminUserManagement />} />
+              <Route path="/admin-resource-management" element={<AdminResourceManagement />} />
+              <Route path="/admin-notifications" element={<AdminNotifications />} />
+              <Route path="/admin-system-monitor" element={<AdminSystemMonitor />} />
+              <Route path="/admin-e2e-testing" element={<AdminE2ETesting />} />
+              <Route path="/admin-deployment-checker" element={<AdminDeploymentChecker />} />
+              <Route path="/admin-journey-management" element={<AdminJourneyManagement />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
-};
+}
 
 export default App;
