@@ -1,8 +1,7 @@
 
-import { calculateMatchScore, rankAdvisorsByMatch, MatchCandidate } from '@/utils/matchingAlgorithm';
-import { UnifiedProfileService, UnifiedProfile } from './unifiedProfileService';
 import { supabase } from '@/integrations/supabase/client';
-import { FounderProfileData, AdvisorProfileData } from '@/types/profile';
+import { MatchCandidate } from '@/utils/matchingAlgorithm';
+import { UnifiedProfileService, UnifiedProfile } from './unifiedProfileService';
 
 export interface StoredMatchResult {
   id: string;
@@ -21,20 +20,15 @@ export interface StoredMatchResult {
 
 export class MatchingEngine {
   private static readonly ALGORITHM_VERSION = '2.0';
-  private static readonly MATCH_THRESHOLD = 60; // Minimum score for viable match
+  private static readonly MATCH_THRESHOLD = 60;
   private static readonly CACHE_DURATION_HOURS = 24;
 
-  // Calculate matches for a specific founder
+  // Calculate matches for a specific founder using edge function
   static async calculateFounderMatches(founderId: string, forceRecalculate = false): Promise<MatchCandidate[]> {
     try {
-      // Get founder profile
-      const founderProfile = await UnifiedProfileService.getUnifiedProfile(founderId);
-      if (!founderProfile || !UnifiedProfileService.isProfileReadyForMatching(founderProfile)) {
-        console.log('Founder profile not ready for matching:', founderId);
-        return [];
-      }
+      console.log(`Calculating matches for founder ${founderId}, force: ${forceRecalculate}`);
 
-      // Check for cached results (unless forcing recalculation)
+      // Check for cached results first (unless forcing recalculation)
       if (!forceRecalculate) {
         const cachedResults = await this.getCachedMatches(founderId);
         if (cachedResults.length > 0) {
@@ -43,25 +37,30 @@ export class MatchingEngine {
         }
       }
 
-      // Get all advisor profiles
-      const advisorProfiles = await UnifiedProfileService.getAllProfilesByRole('advisor');
-      console.log(`Calculating matches for founder ${founderId} against ${advisorProfiles.length} advisors`);
+      // Call edge function to calculate matches
+      const { data, error } = await supabase.functions.invoke('calculate-matches', {
+        body: { founderId }
+      });
 
-      // Use the existing sophisticated algorithm
-      const founderData = founderProfile.profile_data as FounderProfileData;
-      const advisorCandidates = advisorProfiles.map(advisor => ({
-        id: advisor.id,
-        user_profiles: [{
-          profile_data: advisor.profile_data
-        }],
-        email: advisor.email
-      }));
+      if (error) {
+        console.error('Error calling calculate-matches function:', error);
+        return [];
+      }
 
-      const matchCandidates = rankAdvisorsByMatch(founderData, advisorCandidates);
+      if (!data.success) {
+        console.error('Calculate-matches function returned error:', data.error);
+        return [];
+      }
 
-      // Store results in database (simplified for now)
-      console.log(`Generated ${matchCandidates.length} match candidates for founder ${founderId}`);
-      return matchCandidates;
+      console.log(`Generated ${data.matches?.length || 0} matches for founder ${founderId}`);
+      
+      // Convert to MatchCandidate format
+      return data.matches?.map((match: any) => ({
+        advisorId: match.advisor_id,
+        advisor: match.advisor,
+        founderData: {}, // This would be populated from the founder's profile
+        matchScore: match.matchScore
+      })) || [];
 
     } catch (error) {
       console.error('Error calculating founder matches:', error);
@@ -69,46 +68,96 @@ export class MatchingEngine {
     }
   }
 
-  // Calculate matches for all founders (batch operation)
+  // Batch calculate all matches using edge function
   static async calculateAllMatches(progressCallback?: (current: number, total: number) => void): Promise<void> {
     try {
-      const founderProfiles = await UnifiedProfileService.getAllProfilesByRole('founder');
-      console.log(`Starting batch match calculation for ${founderProfiles.length} founders`);
+      console.log('Starting batch match calculation...');
 
-      for (let i = 0; i < founderProfiles.length; i++) {
-        const founder = founderProfiles[i];
-        
-        if (UnifiedProfileService.isProfileReadyForMatching(founder)) {
-          await this.calculateFounderMatches(founder.id, true);
-        }
+      const { data, error } = await supabase.functions.invoke('calculate-matches', {
+        body: { batchMode: true }
+      });
 
-        if (progressCallback) {
-          progressCallback(i + 1, founderProfiles.length);
-        }
-
-        // Small delay to prevent overwhelming the system
-        await new Promise(resolve => setTimeout(resolve, 100));
+      if (error) {
+        console.error('Error in batch calculation:', error);
+        throw new Error(`Batch calculation failed: ${error.message}`);
       }
 
-      console.log('Batch match calculation completed');
+      if (!data.success) {
+        throw new Error(`Batch calculation failed: ${data.error}`);
+      }
+
+      console.log('Batch match calculation completed:', data);
+      
+      // Call progress callback with final results
+      if (progressCallback) {
+        progressCallback(data.totalFounders, data.totalFounders);
+      }
+
     } catch (error) {
       console.error('Error in batch match calculation:', error);
+      throw error;
     }
   }
 
-  // Get top matches for a founder
+  // Get top matches for a founder with caching
   static async getTopMatches(founderId: string, limit = 10): Promise<MatchCandidate[]> {
-    const matches = await this.calculateFounderMatches(founderId);
-    return matches
-      .filter(match => match.matchScore.overall >= this.MATCH_THRESHOLD)
-      .slice(0, limit);
+    try {
+      // First try to get from cache
+      const cachedMatches = await this.getCachedMatches(founderId);
+      
+      if (cachedMatches.length > 0) {
+        const candidates = this.convertStoredMatchesToCandidates(cachedMatches);
+        return candidates
+          .filter(match => match.matchScore.overall >= this.MATCH_THRESHOLD)
+          .slice(0, limit);
+      }
+
+      // If no cache, calculate fresh matches
+      const matches = await this.calculateFounderMatches(founderId);
+      return matches
+        .filter(match => match.matchScore.overall >= this.MATCH_THRESHOLD)
+        .slice(0, limit);
+
+    } catch (error) {
+      console.error('Error getting top matches:', error);
+      return [];
+    }
   }
 
-  // Get cached match results (simplified for now)
+  // Get cached match results from database
   private static async getCachedMatches(founderId: string): Promise<StoredMatchResult[]> {
     try {
-      // For now, return empty array - this would be implemented with proper caching
-      return [];
+      const cacheExpiry = new Date();
+      cacheExpiry.setHours(cacheExpiry.getHours() - this.CACHE_DURATION_HOURS);
+
+      const { data, error } = await supabase
+        .from('matching_criteria_scores')
+        .select('*')
+        .eq('founder_id', founderId)
+        .eq('algorithm_version', this.ALGORITHM_VERSION)
+        .gte('calculated_at', cacheExpiry.toISOString())
+        .order('overall_score', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching cached matches:', error);
+        return [];
+      }
+
+      return data?.map(match => ({
+        id: match.id,
+        founder_id: match.founder_id,
+        advisor_id: match.advisor_id,
+        overall_score: match.overall_score,
+        sector_score: match.sector_score,
+        timezone_score: match.timezone_score,
+        stage_score: match.stage_score,
+        availability_score: match.availability_score,
+        experience_score: match.experience_score,
+        reasoning: match.reasoning || [],
+        calculated_at: match.calculated_at,
+        algorithm_version: match.algorithm_version
+      })) || [];
+
     } catch (error) {
       console.error('Error fetching cached matches:', error);
       return [];
@@ -116,71 +165,143 @@ export class MatchingEngine {
   }
 
   // Convert stored matches back to candidates
-  private static convertStoredMatchesToCandidates(storedMatches: StoredMatchResult[]): MatchCandidate[] {
-    return storedMatches.map(stored => ({
-      advisorId: stored.advisor_id,
-      advisor: {
-        id: stored.advisor_id,
-        email: '', // Would need to join with users table
-        user_profiles: [{ profile_data: {} }] // Would need to fetch actual data
-      },
-      founderData: {} as FounderProfileData, // Would need to fetch
-      matchScore: {
-        overall: stored.overall_score,
-        sectorMatch: stored.sector_score,
-        timezoneMatch: stored.timezone_score,
-        stageMatch: stored.stage_score,
-        availabilityMatch: stored.availability_score,
-        experienceMatch: stored.experience_score,
-        breakdown: {
-          sector: 'Cached result',
-          timezone: 'Cached result',
-          stage: 'Cached result',
-          availability: 'Cached result',
-          experience: 'Cached result'
-        }
+  private static async convertStoredMatchesToCandidates(storedMatches: StoredMatchResult[]): Promise<MatchCandidate[]> {
+    const candidates: MatchCandidate[] = [];
+
+    for (const stored of storedMatches) {
+      try {
+        // Get advisor profile for the match
+        const advisorProfile = await UnifiedProfileService.getUnifiedProfile(stored.advisor_id);
+        const founderProfile = await UnifiedProfileService.getUnifiedProfile(stored.founder_id);
+
+        if (!advisorProfile || !founderProfile) continue;
+
+        candidates.push({
+          advisorId: stored.advisor_id,
+          advisor: {
+            id: stored.advisor_id,
+            email: advisorProfile.email,
+            user_profiles: [{ profile_data: advisorProfile.profile_data }]
+          },
+          founderData: founderProfile.profile_data as any,
+          matchScore: {
+            overall: stored.overall_score,
+            sectorMatch: stored.sector_score,
+            timezoneMatch: stored.timezone_score,
+            stageMatch: stored.stage_score,
+            availabilityMatch: stored.availability_score,
+            experienceMatch: stored.experience_score,
+            breakdown: {
+              sector: stored.reasoning[0] || 'Cached result',
+              timezone: stored.reasoning[1] || 'Cached result',
+              stage: stored.reasoning[2] || 'Cached result',
+              availability: stored.reasoning[3] || 'Cached result',
+              experience: stored.reasoning[4] || 'Cached result'
+            }
+          }
+        });
+      } catch (error) {
+        console.error('Error converting stored match to candidate:', error);
       }
-    }));
+    }
+
+    return candidates;
   }
 
-  // Real-time match updates when profiles change
+  // Handle profile updates and trigger re-matching
   static async handleProfileUpdate(userId: string, profileType: 'founder' | 'advisor'): Promise<void> {
     console.log(`Profile updated for ${profileType}: ${userId}`);
 
-    if (profileType === 'founder') {
-      // Recalculate matches for this founder
-      await this.calculateFounderMatches(userId, true);
-    } else {
-      // Recalculate matches for all founders (advisor affects all)
-      // In production, we'd be smarter about this
-      const founderProfiles = await UnifiedProfileService.getAllProfilesByRole('founder');
-      
-      for (const founder of founderProfiles.slice(0, 10)) { // Limit to avoid overwhelming
-        await this.calculateFounderMatches(founder.id, true);
+    try {
+      if (profileType === 'founder') {
+        // Clear cache for this founder and recalculate
+        await this.clearMatchCache(userId);
+        await this.calculateFounderMatches(userId, true);
+      } else {
+        // For advisor updates, we need to recalculate all founder matches
+        // In a production system, we'd be smarter about this and only recalculate affected matches
+        console.log('Advisor profile updated, triggering selective re-matching...');
+        
+        // Clear all cached matches since advisor data affects all calculations
+        await this.clearAllMatchCache();
+        
+        // Optionally trigger a background job for full recalculation
+        // For now, we'll let matches be recalculated on-demand
       }
+    } catch (error) {
+      console.error('Error handling profile update:', error);
     }
   }
 
-  // Get match statistics
+  // Clear match cache for a specific founder
+  private static async clearMatchCache(founderId: string): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('matching_criteria_scores')
+        .delete()
+        .eq('founder_id', founderId);
+
+      if (error) {
+        console.error('Error clearing match cache:', error);
+      }
+    } catch (error) {
+      console.error('Error clearing match cache:', error);
+    }
+  }
+
+  // Clear all match cache
+  private static async clearAllMatchCache(): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('matching_criteria_scores')
+        .delete()
+        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all records
+
+      if (error) {
+        console.error('Error clearing all match cache:', error);
+      }
+    } catch (error) {
+      console.error('Error clearing all match cache:', error);
+    }
+  }
+
+  // Get matching statistics
   static async getMatchingStats(): Promise<{
     totalFounders: number;
     foundersWithMatches: number;
     totalAdvisors: number;
     averageMatchScore: number;
     matchesAboveThreshold: number;
+    lastCalculationTime: string | null;
   }> {
     try {
-      const [founders, advisors] = await Promise.all([
-        UnifiedProfileService.getAllProfilesByRole('founder'),
-        UnifiedProfileService.getAllProfilesByRole('advisor')
+      const [foundersData, advisorsData, matchStatsData] = await Promise.all([
+        supabase.from('users').select('id', { count: 'exact' }).eq('role', 'founder').eq('status', 'active'),
+        supabase.from('users').select('id', { count: 'exact' }).eq('role', 'advisor').eq('status', 'active'),
+        supabase.from('matching_criteria_scores').select('overall_score, calculated_at').eq('algorithm_version', this.ALGORITHM_VERSION)
       ]);
 
+      const totalFounders = foundersData.count || 0;
+      const totalAdvisors = advisorsData.count || 0;
+      const matches = matchStatsData.data || [];
+
+      const foundersWithMatches = new Set(matches.map(m => m.founder_id)).size;
+      const averageMatchScore = matches.length > 0 
+        ? matches.reduce((sum, m) => sum + m.overall_score, 0) / matches.length 
+        : 0;
+      const matchesAboveThreshold = matches.filter(m => m.overall_score >= this.MATCH_THRESHOLD).length;
+      
+      const lastCalculationTime = matches.length > 0 
+        ? Math.max(...matches.map(m => new Date(m.calculated_at).getTime()))
+        : null;
+
       return {
-        totalFounders: founders.length,
-        foundersWithMatches: founders.filter(f => UnifiedProfileService.isProfileReadyForMatching(f)).length,
-        totalAdvisors: advisors.length,
-        averageMatchScore: 75, // Placeholder
-        matchesAboveThreshold: founders.length * advisors.length // Placeholder
+        totalFounders,
+        foundersWithMatches,
+        totalAdvisors,
+        averageMatchScore: Math.round(averageMatchScore),
+        matchesAboveThreshold,
+        lastCalculationTime: lastCalculationTime ? new Date(lastCalculationTime).toISOString() : null
       };
 
     } catch (error) {
@@ -190,8 +311,34 @@ export class MatchingEngine {
         foundersWithMatches: 0,
         totalAdvisors: 0,
         averageMatchScore: 0,
-        matchesAboveThreshold: 0
+        matchesAboveThreshold: 0,
+        lastCalculationTime: null
       };
+    }
+  }
+
+  // Force recalculation of a specific match
+  static async recalculateMatch(founderId: string, advisorId: string): Promise<MatchCandidate | null> {
+    try {
+      const { data, error } = await supabase.functions.invoke('calculate-matches', {
+        body: { founderId, advisorId }
+      });
+
+      if (error || !data.success) {
+        console.error('Error recalculating match:', error || data.error);
+        return null;
+      }
+
+      return {
+        advisorId,
+        advisor: data.advisor,
+        founderData: data.founder,
+        matchScore: data.matchScore
+      };
+
+    } catch (error) {
+      console.error('Error recalculating match:', error);
+      return null;
     }
   }
 }
