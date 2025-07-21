@@ -30,14 +30,18 @@ export class UnifiedProfileService {
       const { data: userProfile } = await supabase
         .from('user_profiles')
         .select('profile_data, updated_at')
-        .eq('id', userId)
+        .eq('user_id', userId)
         .single();
 
       // Fallback to legacy profile tables if user_profiles doesn't exist
-      let profileData = userProfile?.profile_data as FounderProfileData | AdvisorProfileData;
+      let profileData: FounderProfileData | AdvisorProfileData | null = null;
       let isComplete = user.profile_completed || false;
 
-      if (!profileData) {
+      if (userProfile?.profile_data) {
+        // Safely cast from Json to our profile types
+        profileData = userProfile.profile_data as unknown as FounderProfileData | AdvisorProfileData;
+      } else {
+        // Fallback to legacy tables
         if (user.role === 'founder') {
           const { data: founderProfile } = await supabase
             .from('founder_profiles')
@@ -79,12 +83,16 @@ export class UnifiedProfileService {
         }
       }
 
+      if (!profileData) {
+        return null;
+      }
+
       return {
         id: user.id,
         auth_id: user.auth_id,
         email: user.email,
         role: user.role as 'founder' | 'advisor',
-        profile_data: profileData || {} as FounderProfileData | AdvisorProfileData,
+        profile_data: profileData,
         profile_complete: isComplete,
         last_updated: userProfile?.updated_at || new Date().toISOString()
       };
@@ -144,14 +152,17 @@ export class UnifiedProfileService {
       const profile = await this.getUnifiedProfile(userId);
       if (!profile || !profile.profile_data) return false;
 
-      // Upsert to user_profiles table with proper Json casting
+      // Safely cast profile data to Json for database storage
+      const profileDataAsJson = profile.profile_data as unknown as any;
+
+      // Upsert to user_profiles table
       const { error } = await supabase
         .from('user_profiles')
         .upsert({
-          id: userId,
+          user_id: userId,
           auth_id: profile.auth_id,
           profile_type: profile.role,
-          profile_data: profile.profile_data as any, // Cast to Json type
+          profile_data: profileDataAsJson,
           updated_at: new Date().toISOString()
         });
 
