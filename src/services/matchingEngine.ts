@@ -8,11 +8,11 @@ export interface StoredMatchResult {
   founder_id: string;
   advisor_id: string;
   overall_score: number;
-  sector_score: number;
-  timezone_score: number;
-  stage_score: number;
-  availability_score: number;
-  experience_score: number;
+  sector_match_score: number;
+  timezone_match_score: number;
+  stage_match_score: number;
+  availability_match_score: number;
+  experience_match_score: number;
   reasoning: string[];
   calculated_at: string;
   algorithm_version: string;
@@ -33,7 +33,7 @@ export class MatchingEngine {
         const cachedResults = await this.getCachedMatches(founderId);
         if (cachedResults.length > 0) {
           console.log('Using cached match results for founder:', founderId);
-          return this.convertStoredMatchesToCandidates(cachedResults);
+          return await this.convertStoredMatchesToCandidates(cachedResults);
         }
       }
 
@@ -106,7 +106,7 @@ export class MatchingEngine {
       const cachedMatches = await this.getCachedMatches(founderId);
       
       if (cachedMatches.length > 0) {
-        const candidates = this.convertStoredMatchesToCandidates(cachedMatches);
+        const candidates = await this.convertStoredMatchesToCandidates(cachedMatches);
         return candidates
           .filter(match => match.matchScore.overall >= this.MATCH_THRESHOLD)
           .slice(0, limit);
@@ -145,15 +145,15 @@ export class MatchingEngine {
 
       return data?.map(match => ({
         id: match.id,
-        founder_id: match.founder_id,
-        advisor_id: match.advisor_id,
+        founder_id: founderId,
+        advisor_id: match.advisor_id || '',
         overall_score: match.overall_score,
-        sector_score: match.sector_score,
-        timezone_score: match.timezone_score,
-        stage_score: match.stage_score,
-        availability_score: match.availability_score,
-        experience_score: match.experience_score,
-        reasoning: match.reasoning || [],
+        sector_match_score: match.sector_match_score,
+        timezone_match_score: match.timezone_match_score,
+        stage_match_score: match.challenge_match_score, // Map to stage
+        availability_match_score: match.availability_match_score,
+        experience_match_score: match.experience_match_score,
+        reasoning: ['Cached result'],
         calculated_at: match.calculated_at,
         algorithm_version: match.algorithm_version
       })) || [];
@@ -186,11 +186,11 @@ export class MatchingEngine {
           founderData: founderProfile.profile_data as any,
           matchScore: {
             overall: stored.overall_score,
-            sectorMatch: stored.sector_score,
-            timezoneMatch: stored.timezone_score,
-            stageMatch: stored.stage_score,
-            availabilityMatch: stored.availability_score,
-            experienceMatch: stored.experience_score,
+            sectorMatch: stored.sector_match_score,
+            timezoneMatch: stored.timezone_match_score,
+            stageMatch: stored.stage_match_score,
+            availabilityMatch: stored.availability_match_score,
+            experienceMatch: stored.experience_match_score,
             breakdown: {
               sector: stored.reasoning[0] || 'Cached result',
               timezone: stored.reasoning[1] || 'Cached result',
@@ -278,7 +278,7 @@ export class MatchingEngine {
       const [foundersData, advisorsData, matchStatsData] = await Promise.all([
         supabase.from('users').select('id', { count: 'exact' }).eq('role', 'founder').eq('status', 'active'),
         supabase.from('users').select('id', { count: 'exact' }).eq('role', 'advisor').eq('status', 'active'),
-        supabase.from('matching_criteria_scores').select('overall_score, calculated_at').eq('algorithm_version', this.ALGORITHM_VERSION)
+        supabase.from('matching_criteria_scores').select('overall_score, calculated_at, founder_id').eq('algorithm_version', this.ALGORITHM_VERSION)
       ]);
 
       const totalFounders = foundersData.count || 0;
