@@ -6,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Users, Target, Clock, Award } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Search, Users, Target, Clock, Award, Zap, RefreshCw } from 'lucide-react';
 import { useFoundersDirectory, useAdvisorsDirectory } from '@/hooks/useAdminData';
-import { calculateMatchScore, rankAdvisorsByMatch } from '@/utils/matchingAlgorithm';
+import { useFounderMatches, useBatchMatching, useMatchingStats } from '@/hooks/useUnifiedMatching';
 import MatchSuggestions from './MatchSuggestions';
 import ManualAssignment from './ManualAssignment';
 import AssignmentsList from './AssignmentsList';
@@ -17,6 +18,7 @@ import BulkAssignmentTool from './BulkAssignmentTool';
 const MatchingDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFounder, setSelectedFounder] = useState<string | null>(null);
+  const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, isRunning: false });
   const [filters, setFilters] = useState({
     sector: '',
     stage: '',
@@ -25,11 +27,14 @@ const MatchingDashboard = () => {
 
   const { data: founders = [], isLoading: foundersLoading } = useFoundersDirectory();
   const { data: advisors = [], isLoading: advisorsLoading } = useAdvisorsDirectory();
+  const { data: matchingStats, isLoading: statsLoading } = useMatchingStats();
+  const { data: matchSuggestions = [], isLoading: matchesLoading } = useFounderMatches(selectedFounder);
+  
+  const batchMatching = useBatchMatching();
 
-  console.log('MatchingDashboard data:', { founders, advisors });
+  console.log('MatchingDashboard data:', { founders, advisors, matchingStats });
 
   const filteredFounders = founders.filter(founder => {
-    // Access the user_profiles directly since that's what the new data structure provides
     const profile = founder.user_profiles?.[0]?.profile_data;
     
     if (!profile) {
@@ -52,15 +57,19 @@ const MatchingDashboard = () => {
 
   const selectedFounderData = selectedFounder ? 
     founders.find(f => f.id === selectedFounder) : null;
-
-  // Access the user_profiles directly
   const selectedFounderProfile = selectedFounderData?.user_profiles?.[0]?.profile_data;
 
-  // Get match suggestions for selected founder
-  const matchSuggestions = selectedFounderProfile ? 
-    rankAdvisorsByMatch(selectedFounderProfile, advisors).slice(0, 10) : [];
-
-  console.log('Match suggestions generated:', matchSuggestions.length);
+  const handleBatchMatching = async () => {
+    setBatchProgress({ current: 0, total: 0, isRunning: true });
+    
+    try {
+      await batchMatching.mutateAsync((current, total) => {
+        setBatchProgress({ current, total, isRunning: true });
+      });
+    } finally {
+      setBatchProgress({ current: 0, total: 0, isRunning: false });
+    }
+  };
 
   if (foundersLoading || advisorsLoading) {
     return (
@@ -76,12 +85,106 @@ const MatchingDashboard = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Matching & Assignment Dashboard</h2>
+        <h2 className="text-2xl font-bold">Unified Matching & Assignment Dashboard</h2>
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <Users className="w-4 h-4" />
           <span>{founders.length} Founders • {advisors.length} Advisors</span>
         </div>
       </div>
+
+      {/* Matching Statistics */}
+      {matchingStats && !statsLoading && (
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-blue-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Ready Founders</p>
+                  <p className="text-2xl font-bold">{matchingStats.foundersWithMatches}/{matchingStats.totalFounders}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-green-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Avg Match Score</p>
+                  <p className="text-2xl font-bold">{matchingStats.averageMatchScore}%</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <Award className="w-4 h-4 text-yellow-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Quality Matches</p>
+                  <p className="text-2xl font-bold">{matchingStats.matchesAboveThreshold}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-purple-600" />
+                <div>
+                  <p className="text-sm text-gray-600">Active Advisors</p>
+                  <p className="text-2xl font-bold">{matchingStats.totalAdvisors}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <Button
+                onClick={handleBatchMatching}
+                disabled={batchMatching.isPending || batchProgress.isRunning}
+                className="w-full h-full flex flex-col items-center justify-center gap-2"
+                variant="outline"
+              >
+                {batchProgress.isRunning ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span className="text-xs">Processing {batchProgress.current}/{batchProgress.total}</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-4 h-4" />
+                    <span className="text-xs">Recalculate All</span>
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Batch Progress */}
+      {batchProgress.isRunning && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span>Batch Matching Progress</span>
+                <span>{batchProgress.current}/{batchProgress.total}</span>
+              </div>
+              <Progress 
+                value={batchProgress.total > 0 ? (batchProgress.current / batchProgress.total) * 100 : 0} 
+                className="h-2" 
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs defaultValue="suggestions" className="space-y-6">
         <TabsList>
@@ -142,7 +245,6 @@ const MatchingDashboard = () => {
 
                 <div className="max-h-64 overflow-y-auto space-y-2">
                   {filteredFounders.map((founder) => {
-                    // Access the user_profiles directly
                     const profile = founder.user_profiles?.[0]?.profile_data;
                     if (!profile) return null;
 
@@ -186,7 +288,7 @@ const MatchingDashboard = () => {
                   <CardContent className="flex items-center justify-center h-64">
                     <div className="text-center text-gray-500">
                       <Target className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                      <p>Select a founder to see match suggestions</p>
+                      <p>Select a founder to see AI-powered match suggestions</p>
                     </div>
                   </CardContent>
                 </Card>
