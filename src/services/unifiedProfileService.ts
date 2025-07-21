@@ -29,13 +29,13 @@ export class UnifiedProfileService {
       // Get profile data from user_profiles table (new unified approach)
       const { data: userProfile } = await supabase
         .from('user_profiles')
-        .select('profile_data, updated_at, is_profile_complete')
-        .eq('user_id', userId)
+        .select('profile_data, updated_at')
+        .eq('id', userId)
         .single();
 
       // Fallback to legacy profile tables if user_profiles doesn't exist
-      let profileData = userProfile?.profile_data;
-      let isComplete = userProfile?.is_profile_complete || false;
+      let profileData = userProfile?.profile_data as FounderProfileData | AdvisorProfileData;
+      let isComplete = user.profile_completed || false;
 
       if (!profileData) {
         if (user.role === 'founder') {
@@ -56,7 +56,7 @@ export class UnifiedProfileService {
               challenge: founderProfile.current_challenge,
               win_definition: founderProfile.win_definition,
               video_link: founderProfile.video_pitch_url
-            };
+            } as FounderProfileData;
           }
         } else if (user.role === 'advisor') {
           const { data: advisorProfile } = await supabase
@@ -74,7 +74,7 @@ export class UnifiedProfileService {
               experience_level: advisorProfile.experience_level || 'mid',
               timezone: advisorProfile.timezone_availability || 'UTC',
               challenge_preference: advisorProfile.challenge_preference
-            };
+            } as AdvisorProfileData;
           }
         }
       }
@@ -84,7 +84,7 @@ export class UnifiedProfileService {
         auth_id: user.auth_id,
         email: user.email,
         role: user.role as 'founder' | 'advisor',
-        profile_data: profileData || {},
+        profile_data: profileData || {} as FounderProfileData | AdvisorProfileData,
         profile_complete: isComplete,
         last_updated: userProfile?.updated_at || new Date().toISOString()
       };
@@ -144,15 +144,14 @@ export class UnifiedProfileService {
       const profile = await this.getUnifiedProfile(userId);
       if (!profile || !profile.profile_data) return false;
 
-      // Upsert to user_profiles table
+      // Upsert to user_profiles table with proper Json casting
       const { error } = await supabase
         .from('user_profiles')
         .upsert({
-          user_id: userId,
+          id: userId,
           auth_id: profile.auth_id,
           profile_type: profile.role,
-          profile_data: profile.profile_data,
-          is_profile_complete: profile.profile_complete,
+          profile_data: profile.profile_data as any, // Cast to Json type
           updated_at: new Date().toISOString()
         });
 
