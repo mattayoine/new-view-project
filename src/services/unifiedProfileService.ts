@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface UnifiedProfile {
@@ -37,7 +38,10 @@ export class UnifiedProfileService {
         return null;
       }
 
-      const profile = user.user_profiles?.[0];
+      // Type guard to ensure user_profiles is an array
+      const userProfiles = Array.isArray(user.user_profiles) ? user.user_profiles : [];
+      const profile = userProfiles[0];
+      
       if (!profile) {
         console.error('No profile found for user:', userId);
         return null;
@@ -205,10 +209,19 @@ export class UnifiedProfileService {
         return [];
       }
 
+      if (!users) return [];
+
       return users
-        .filter(user => user.user_profiles?.[0])
+        .filter(user => {
+          // Type guard to ensure user_profiles is an array and has data
+          const userProfiles = Array.isArray(user.user_profiles) ? user.user_profiles : [];
+          return userProfiles.length > 0;
+        })
         .map(user => {
-          const profile = user.user_profiles[0];
+          // Type guard and safe access
+          const userProfiles = Array.isArray(user.user_profiles) ? user.user_profiles : [];
+          const profile = userProfiles[0];
+          
           return {
             id: user.id,
             auth_id: user.auth_id,
