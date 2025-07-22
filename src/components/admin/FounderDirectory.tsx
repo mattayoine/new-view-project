@@ -135,7 +135,7 @@ const FounderDirectory = () => {
                       <div className="space-y-1">
                         {founder.advisor_founder_assignments?.filter(a => a.status === 'active').map((assignment, idx) => (
                           <Badge key={idx} variant="outline" className="text-xs">
-                            {assignment.advisor?.email?.split('@')[0] || 'Advisor'}
+                            Advisor {assignment.advisor_id?.slice(0, 8) || 'Unknown'}
                           </Badge>
                         )) || (
                           <Badge variant="outline" className="text-xs text-gray-400">

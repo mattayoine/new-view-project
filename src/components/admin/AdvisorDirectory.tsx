@@ -181,11 +181,11 @@ const AdvisorDirectory = () => {
                       <div className="space-y-1">
                         {advisor.advisor_founder_assignments?.slice(0, 2).map((assignment, idx) => (
                           <Badge key={idx} variant="outline" className="text-xs">
-                            {assignment.founder?.email?.split('@')[0] || 'Founder'}
+                            Founder {assignment.founder_id?.slice(0, 8) || 'Unknown'}
                           </Badge>
                         )) || (
                           <Badge variant="outline" className="text-xs text-gray-400">
-                            No assignments
+                            No advisor_founder_assignments
                           </Badge>
                         )}
                       </div>
