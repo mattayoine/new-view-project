@@ -1,7 +1,8 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { calculateMatchScore, rankAdvisorsByMatch, MatchCandidate } from '@/utils/matchingAlgorithm';
+import { MatchingEngine } from '@/services/matchingEngine';
+import { rankAdvisorsByMatch, MatchCandidate } from '@/utils/matchingAlgorithm';
 import { toast } from 'sonner';
 
 export const useCalculateMatches = (founderId?: string) => {
@@ -10,39 +11,59 @@ export const useCalculateMatches = (founderId?: string) => {
     queryFn: async () => {
       if (!founderId) return [];
 
-      // Get founder profile
-      const { data: founder, error: founderError } = await supabase
-        .from('users')
-        .select(`
-          *,
-          founder_profiles:user_profiles!inner(profile_data)
-        `)
-        .eq('id', founderId)
-        .eq('user_profiles.profile_type', 'founder')
-        .single();
+      console.log('Calculating matches for founder:', founderId);
+      
+      try {
+        // Use the MatchingEngine for consistent results
+        const matches = await MatchingEngine.getTopMatches(founderId, 20);
+        console.log('Retrieved matches:', matches.length);
+        return matches;
+      } catch (error) {
+        console.error('Error calculating matches:', error);
+        
+        // Fallback to direct calculation if MatchingEngine fails
+        const { data: founder, error: founderError } = await supabase
+          .from('users')
+          .select(`
+            *,
+            user_profiles!inner(profile_data)
+          `)
+          .eq('id', founderId)
+          .eq('user_profiles.profile_type', 'founder')
+          .single();
 
-      if (founderError) throw founderError;
+        if (founderError) {
+          console.error('Founder not found:', founderError);
+          return [];
+        }
 
-      // Get all advisors
-      const { data: advisors, error: advisorsError } = await supabase
-        .from('users')
-        .select(`
-          *,
-          advisor_profiles:user_profiles!inner(profile_data)
-        `)
-        .eq('role', 'advisor')
-        .eq('status', 'active')
-        .is('deleted_at', null);
+        const { data: advisors, error: advisorsError } = await supabase
+          .from('users')
+          .select(`
+            *,
+            user_profiles!inner(profile_data)
+          `)
+          .eq('role', 'advisor')
+          .eq('status', 'active')
+          .is('deleted_at', null);
 
-      if (advisorsError) throw advisorsError;
+        if (advisorsError) {
+          console.error('Error fetching advisors:', advisorsError);
+          return [];
+        }
 
-      const founderProfile = founder.founder_profiles[0]?.profile_data;
-      if (!founderProfile) return [];
+        const founderProfile = founder.user_profiles[0]?.profile_data;
+        if (!founderProfile) {
+          console.error('No founder profile data found');
+          return [];
+        }
 
-      // Calculate matches using the algorithm
-      return rankAdvisorsByMatch(founderProfile, advisors);
+        return rankAdvisorsByMatch(founderProfile, advisors);
+      }
     },
-    enabled: !!founderId
+    enabled: !!founderId,
+    staleTime: 1000 * 60 * 10, // 10 minutes
+    retry: 2
   });
 };
 
@@ -70,7 +91,7 @@ export const useBulkAssignments = () => {
         match_score: assignment.matchScore || 0,
         assigned_by: currentUser.id,
         notes: assignment.notes || `Bulk assignment - ${assignment.matchScore || 0}% match`,
-        status: 'pending'
+        status: 'active'
       }));
 
       const { data, error } = await supabase
@@ -85,6 +106,7 @@ export const useBulkAssignments = () => {
       queryClient.invalidateQueries({ queryKey: ['assignments'] });
       queryClient.invalidateQueries({ queryKey: ['founders-directory'] });
       queryClient.invalidateQueries({ queryKey: ['advisors-directory'] });
+      queryClient.invalidateQueries({ queryKey: ['matches'] });
       toast.success(`${data.length} assignments created successfully!`);
     },
     onError: (error: any) => {
@@ -134,10 +156,31 @@ export const useTerminateAssignment = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assignments'] });
+      queryClient.invalidateQueries({ queryKey: ['matches'] });
       toast.success('Assignment terminated successfully');
     },
     onError: (error: any) => {
       toast.error(`Failed to terminate assignment: ${error.message}`);
+    }
+  });
+};
+
+// Hook for forcing recalculation of matches
+export const useRecalculateMatches = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (founderId: string) => {
+      console.log('Force recalculating matches for founder:', founderId);
+      return await MatchingEngine.calculateFounderMatches(founderId, true);
+    },
+    onSuccess: (data, founderId) => {
+      queryClient.invalidateQueries({ queryKey: ['matches', founderId] });
+      queryClient.invalidateQueries({ queryKey: ['matching-stats'] });
+      toast.success('Matches recalculated successfully!');
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to recalculate matches: ${error.message}`);
     }
   });
 };
