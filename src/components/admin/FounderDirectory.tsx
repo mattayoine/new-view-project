@@ -133,7 +133,7 @@ const FounderDirectory = () => {
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
-                        {founder.assignments?.filter(a => a.status === 'active').map((assignment, idx) => (
+                        {founder.advisor_founder_assignments?.filter(a => a.status === 'active').map((assignment, idx) => (
                           <Badge key={idx} variant="outline" className="text-xs">
                             {assignment.advisor?.email?.split('@')[0] || 'Advisor'}
                           </Badge>
@@ -155,7 +155,7 @@ const FounderDirectory = () => {
                           <span className="text-xs">Goals</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          {founder.assignments?.some(a => a.total_sessions > 0) ? (
+                          {founder.advisor_founder_assignments?.some(a => a.total_sessions > 0) ? (
                             <Check className="w-4 h-4 text-green-600" />
                           ) : (
                             <X className="w-4 h-4 text-gray-400" />

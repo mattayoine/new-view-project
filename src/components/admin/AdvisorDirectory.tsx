@@ -57,11 +57,11 @@ const AdvisorDirectory = () => {
     );
   }
 
-  const totalSessions = advisors?.reduce((sum, a) => sum + (a.assignments?.reduce((total, assignment) => total + (assignment.total_sessions || 0), 0) || 0), 0) || 0;
-  const totalFounders = advisors?.reduce((sum, a) => sum + (a.assignments?.length || 0), 0) || 0;
+  const totalSessions = advisors?.reduce((sum, a) => sum + (a.advisor_founder_assignments?.reduce((total, assignment) => total + (assignment.total_sessions || 0), 0) || 0), 0) || 0;
+  const totalFounders = advisors?.reduce((sum, a) => sum + (a.advisor_founder_assignments?.length || 0), 0) || 0;
   const avgRating = advisors?.reduce((sum, a) => {
-    const advisorAvg = a.assignments?.reduce((total, assignment) => total + (assignment.avg_rating || 0), 0) || 0;
-    return sum + (advisorAvg / (a.assignments?.length || 1));
+    const advisorAvg = a.advisor_founder_assignments?.reduce((total, assignment) => total + (assignment.avg_rating || 0), 0) || 0;
+    return sum + (advisorAvg / (a.advisor_founder_assignments?.length || 1));
   }, 0) / (advisors?.length || 1) || 0;
 
   return (
@@ -125,8 +125,8 @@ const AdvisorDirectory = () => {
             <TableBody>
               {filteredAdvisors.map((advisor, index) => {
                 const profile = advisor.user_profiles?.[0]?.profile_data;
-                const totalAdvisorSessions = advisor.assignments?.reduce((sum, assignment) => sum + (assignment.total_sessions || 0), 0) || 0;
-                const advisorAvgRating = advisor.assignments?.reduce((sum, assignment) => sum + (assignment.avg_rating || 0), 0) / (advisor.assignments?.length || 1) || 0;
+                const totalAdvisorSessions = advisor.advisor_founder_assignments?.reduce((sum, assignment) => sum + (assignment.total_sessions || 0), 0) || 0;
+                const advisorAvgRating = advisor.advisor_founder_assignments?.reduce((sum, assignment) => sum + (assignment.avg_rating || 0), 0) / (advisor.advisor_founder_assignments?.length || 1) || 0;
                 const badgeLevel = totalAdvisorSessions > 50 ? "diamond" : totalAdvisorSessions > 25 ? "platinum" : totalAdvisorSessions > 10 ? "gold" : "silver";
                 
                 return (
@@ -168,7 +168,7 @@ const AdvisorDirectory = () => {
                           {totalAdvisorSessions} sessions
                         </div>
                         <div className="text-xs text-gray-600">
-                          {advisor.assignments?.length || 0} founders mentored
+                          {advisor.advisor_founder_assignments?.length || 0} founders mentored
                         </div>
                       </div>
                     </TableCell>
@@ -179,7 +179,7 @@ const AdvisorDirectory = () => {
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1">
-                        {advisor.assignments?.slice(0, 2).map((assignment, idx) => (
+                        {advisor.advisor_founder_assignments?.slice(0, 2).map((assignment, idx) => (
                           <Badge key={idx} variant="outline" className="text-xs">
                             {assignment.founder?.email?.split('@')[0] || 'Founder'}
                           </Badge>
@@ -232,7 +232,7 @@ const AdvisorDirectory = () => {
           <CardContent className="p-4">
             <div className="text-2xl font-bold">
               {advisors?.filter(a => {
-                const sessions = a.assignments?.reduce((sum, assignment) => sum + (assignment.total_sessions || 0), 0) || 0;
+                const sessions = a.advisor_founder_assignments?.reduce((sum, assignment) => sum + (assignment.total_sessions || 0), 0) || 0;
                 return sessions > 25;
               }).length || 0}
             </div>

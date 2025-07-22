@@ -80,7 +80,7 @@ const BulkAssignmentTool = () => {
 
   const unassignedFounders = founders.filter(founder => {
     // Check if founder already has an active assignment
-    return !founder.assignments?.some((assignment: any) => 
+    return !founder.advisor_founder_assignments?.some((assignment: any) => 
       assignment.status === 'active' || assignment.status === 'pending'
     );
   });
