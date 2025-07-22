@@ -16,6 +16,11 @@ export interface MatchingStats {
 export class MatchingEngineCore {
   private static readonly ALGORITHM_VERSION = '2.0';
   private static readonly MATCH_THRESHOLD = 60;
+  
+  // Add supabase instance
+  static get supabase() {
+    return supabase;
+  }
 
   // Calculate matches for a specific founder
   static async calculateFounderMatches(founderId: string): Promise<MatchCandidate[]> {

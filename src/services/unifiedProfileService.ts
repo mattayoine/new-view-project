@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface UnifiedProfile {
@@ -48,7 +47,7 @@ export class UnifiedProfileService {
         id: user.id,
         auth_id: user.auth_id,
         email: user.email,
-        role: user.role,
+        role: user.role as 'founder' | 'advisor',
         profile_data: profile.profile_data,
         is_complete: profile.is_profile_complete || false,
         created_at: profile.created_at,
@@ -214,7 +213,7 @@ export class UnifiedProfileService {
             id: user.id,
             auth_id: user.auth_id,
             email: user.email,
-            role: user.role,
+            role: user.role as 'founder' | 'advisor',
             profile_data: profile.profile_data,
             is_complete: profile.is_profile_complete || false,
             created_at: profile.created_at,

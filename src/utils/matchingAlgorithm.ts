@@ -9,7 +9,8 @@ export interface MatchCandidate {
   matchScore: MatchScore;
 }
 
-export { MatchScore };
+// Use export type for type re-exports
+export type { MatchScore };
 
 export const rankAdvisorsByMatch = (
   founderData: FounderProfileData,
