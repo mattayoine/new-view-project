@@ -5,8 +5,7 @@ import { UnifiedProfileService, UnifiedProfile } from './unifiedProfileService';
 
 export interface StoredMatchResult {
   id: string;
-  founder_id: string;
-  advisor_id: string;
+  assignment_id: string;
   overall_score: number;
   sector_match_score: number;
   timezone_match_score: number;
@@ -124,16 +123,33 @@ export class MatchingEngine {
     }
   }
 
-  // Get cached match results from database
+  // Get cached match results from database - Updated to use assignment_id instead of founder_id/advisor_id
   private static async getCachedMatches(founderId: string): Promise<StoredMatchResult[]> {
     try {
       const cacheExpiry = new Date();
       cacheExpiry.setHours(cacheExpiry.getHours() - this.CACHE_DURATION_HOURS);
 
+      // Get assignments for this founder first
+      const { data: assignments, error: assignmentsError } = await supabase
+        .from('advisor_founder_assignments')
+        .select('id')
+        .eq('founder_id', founderId);
+
+      if (assignmentsError) {
+        console.error('Error fetching assignments:', assignmentsError);
+        return [];
+      }
+
+      if (!assignments || assignments.length === 0) {
+        return [];
+      }
+
+      const assignmentIds = assignments.map(a => a.id);
+
       const { data, error } = await supabase
         .from('matching_criteria_scores')
         .select('*')
-        .eq('founder_id', founderId)
+        .in('assignment_id', assignmentIds)
         .eq('algorithm_version', this.ALGORITHM_VERSION)
         .gte('calculated_at', cacheExpiry.toISOString())
         .order('overall_score', { ascending: false });
@@ -145,8 +161,7 @@ export class MatchingEngine {
 
       return data?.map(match => ({
         id: match.id,
-        founder_id: founderId,
-        advisor_id: match.advisor_id || '',
+        assignment_id: match.assignment_id,
         overall_score: match.overall_score,
         sector_match_score: match.sector_match_score,
         timezone_match_score: match.timezone_match_score,
@@ -170,16 +185,32 @@ export class MatchingEngine {
 
     for (const stored of storedMatches) {
       try {
-        // Get advisor profile for the match
-        const advisorProfile = await UnifiedProfileService.getUnifiedProfile(stored.advisor_id);
-        const founderProfile = await UnifiedProfileService.getUnifiedProfile(stored.founder_id);
+        // Get the assignment details to find advisor and founder
+        const { data: assignment, error } = await supabase
+          .from('advisor_founder_assignments')
+          .select(`
+            advisor_id,
+            founder_id,
+            users!advisor_founder_assignments_advisor_id_fkey (
+              id,
+              email,
+              user_profiles (profile_data)
+            )
+          `)
+          .eq('id', stored.assignment_id)
+          .single();
+
+        if (error || !assignment) continue;
+
+        const advisorProfile = await UnifiedProfileService.getUnifiedProfile(assignment.advisor_id);
+        const founderProfile = await UnifiedProfileService.getUnifiedProfile(assignment.founder_id);
 
         if (!advisorProfile || !founderProfile) continue;
 
         candidates.push({
-          advisorId: stored.advisor_id,
+          advisorId: assignment.advisor_id,
           advisor: {
-            id: stored.advisor_id,
+            id: assignment.advisor_id,
             email: advisorProfile.email,
             user_profiles: [{ profile_data: advisorProfile.profile_data }]
           },
@@ -236,13 +267,23 @@ export class MatchingEngine {
   // Clear match cache for a specific founder
   private static async clearMatchCache(founderId: string): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('matching_criteria_scores')
-        .delete()
+      // Get assignments for this founder
+      const { data: assignments } = await supabase
+        .from('advisor_founder_assignments')
+        .select('id')
         .eq('founder_id', founderId);
 
-      if (error) {
-        console.error('Error clearing match cache:', error);
+      if (assignments && assignments.length > 0) {
+        const assignmentIds = assignments.map(a => a.id);
+        
+        const { error } = await supabase
+          .from('matching_criteria_scores')
+          .delete()
+          .in('assignment_id', assignmentIds);
+
+        if (error) {
+          console.error('Error clearing match cache:', error);
+        }
       }
     } catch (error) {
       console.error('Error clearing match cache:', error);
@@ -278,14 +319,17 @@ export class MatchingEngine {
       const [foundersData, advisorsData, matchStatsData] = await Promise.all([
         supabase.from('users').select('id', { count: 'exact' }).eq('role', 'founder').eq('status', 'active'),
         supabase.from('users').select('id', { count: 'exact' }).eq('role', 'advisor').eq('status', 'active'),
-        supabase.from('matching_criteria_scores').select('overall_score, calculated_at, founder_id').eq('algorithm_version', this.ALGORITHM_VERSION)
+        supabase.from('matching_criteria_scores').select('overall_score, calculated_at, assignment_id').eq('algorithm_version', this.ALGORITHM_VERSION)
       ]);
 
       const totalFounders = foundersData.count || 0;
       const totalAdvisors = advisorsData.count || 0;
       const matches = matchStatsData.data || [];
 
-      const foundersWithMatches = new Set(matches.map(m => m.founder_id)).size;
+      // Get unique assignments to count founders with matches
+      const uniqueAssignments = new Set(matches.map(m => m.assignment_id)).size;
+      const foundersWithMatches = uniqueAssignments;
+      
       const averageMatchScore = matches.length > 0 
         ? matches.reduce((sum, m) => sum + m.overall_score, 0) / matches.length 
         : 0;
