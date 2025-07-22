@@ -1,204 +1,310 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Search, Users, Building2, Award, Star } from "lucide-react";
-import { useAdvisorsDirectory } from "@/hooks/useAdminData";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+import { useAdvisorsDirectory } from '@/hooks/useAdminData';
+import { 
+  Users, 
+  Star, 
+  Calendar, 
+  Activity,
+  Filter,
+  Search,
+  MoreVertical,
+  Mail,
+  Clock
+} from 'lucide-react';
 
-const AdvisorDirectory = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const { data: advisors, isLoading } = useAdvisorsDirectory();
-
-  const filteredAdvisors = advisors?.filter(advisor =>
-    advisor.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    advisor.user_profiles?.[0]?.profile_data?.expertise?.some((exp: string) => 
-      exp.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  ) || [];
-
-  const getStatusColor = (status: string) => {
-    return status === "active" 
-      ? "bg-blue-100 text-blue-800" 
-      : "bg-green-100 text-green-800";
-  };
-
-  const getBadgeColor = (level: string) => {
-    const colors = {
-      bronze: "bg-amber-100 text-amber-800",
-      silver: "bg-gray-100 text-gray-800", 
-      gold: "bg-yellow-100 text-yellow-800",
-      platinum: "bg-purple-100 text-purple-800",
-      diamond: "bg-blue-100 text-blue-800"
-    };
-    return colors[level as keyof typeof colors] || colors.bronze;
-  };
-
-  const getBadgeIcon = (level: string) => {
-    if (level === "diamond") return <Award className="w-3 h-3" />;
-    if (level === "platinum" || level === "gold") return <Star className="w-3 h-3" />;
-    return null;
-  };
+const AdvisorDirectory: React.FC = () => {
+  const { data: advisors, isLoading, error } = useAdvisorsDirectory();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [experienceFilter, setExperienceFilter] = useState<string>('all');
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="animate-pulse">
-              <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  const totalSessions = advisors?.reduce((sum, a) => sum + (a.advisor_founder_assignments?.reduce((total, assignment) => total + (assignment.total_sessions || 0), 0) || 0), 0) || 0;
-  const totalFounders = advisors?.reduce((sum, a) => sum + (a.advisor_founder_assignments?.length || 0), 0) || 0;
-  const avgRating = advisors?.reduce((sum, a) => {
-    const advisorAvg = a.advisor_founder_assignments?.reduce((total, assignment) => total + (assignment.avg_rating || 0), 0) || 0;
-    return sum + (advisorAvg / (a.advisor_founder_assignments?.length || 1));
-  }, 0) / (advisors?.length || 1) || 0;
+  if (error) {
+    return (
+      <div className="text-center text-red-600 p-4">
+        Error loading advisors: {error.message}
+      </div>
+    );
+  }
+
+  if (!advisors || advisors.length === 0) {
+    return (
+      <div className="text-center p-8">
+        <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No Advisors Found</h3>
+        <p className="text-gray-500">No advisor profiles are currently available.</p>
+      </div>
+    );
+  }
+
+  // Filter advisors based on search and filters
+  const filteredAdvisors = advisors.filter(advisor => {
+    const profile = advisor.user_profiles?.[0]?.profile_data as any;
+    const matchesSearch = !searchTerm || 
+      advisor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      profile?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || advisor.status === statusFilter;
+    const matchesExperience = experienceFilter === 'all' || 
+      profile?.experience_level === experienceFilter;
+
+    return matchesSearch && matchesStatus && matchesExperience;
+  });
+
+  // Calculate summary statistics
+  const stats = {
+    total: advisors.length,
+    active: advisors.filter(a => a.status === 'active').length,
+    withAssignments: advisors.filter(a => a.advisor_founder_assignments?.length > 0).length,
+    avgRating: advisors.reduce((sum, a) => {
+      const assignments = a.advisor_founder_assignments || [];
+      const totalRating = assignments.reduce((acc, assignment) => acc + (assignment.avg_rating || 0), 0);
+      return sum + (assignments.length > 0 ? totalRating / assignments.length : 0);
+    }, 0) / Math.max(advisors.length, 1)
+  };
 
   return (
     <div className="space-y-6">
-      {/* Header with Search */}
+      {/* Header & Stats */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Advisor Directory</h2>
+          <p className="text-muted-foreground">
+            Manage and monitor advisor performance and assignments
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm">
+            <Filter className="w-4 h-4 mr-2" />
+            Export
+          </Button>
+          <Button size="sm">
+            <Users className="w-4 h-4 mr-2" />
+            Add Advisor
+          </Button>
+        </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Advisors</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.total}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.active} active
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">With Assignments</CardTitle>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.withAssignments}</div>
+            <p className="text-xs text-muted-foreground">
+              {Math.round((stats.withAssignments / Math.max(stats.total, 1)) * 100)}% utilization
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Rating</CardTitle>
+            <Star className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.avgRating.toFixed(1)}</div>
+            <p className="text-xs text-muted-foreground">
+              Across all sessions
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">This Month</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">142</div>
+            <p className="text-xs text-muted-foreground">
+              Sessions conducted
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Advisor Directory
-              </CardTitle>
-              <p className="text-sm text-gray-600 mt-1">
-                Manage your pool of Diaspora experts and their assignments
-              </p>
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <input
+                  placeholder="Search advisors..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Badge variant="outline" className="bg-purple-50">
-                {advisors?.length || 0} Active Advisors
-              </Badge>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4 mb-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search advisors..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Button variant="outline" size="sm">
-              Add New Advisor
-            </Button>
-            <Button variant="outline" size="sm">
-              <Building2 className="w-4 h-4 mr-2" />
-              Manage Organizations
-            </Button>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <select
+              value={experienceFilter}
+              onChange={(e) => setExperienceFilter(e.target.value)}
+              className="px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="all">All Experience</option>
+              <option value="junior">Junior</option>
+              <option value="mid">Mid-level</option>
+              <option value="senior">Senior</option>
+              <option value="executive">Executive</option>
+            </select>
           </div>
         </CardContent>
       </Card>
 
-      {/* Enhanced Advisors Table */}
+      {/* Advisors Table */}
       <Card>
-        <CardContent className="p-0">
+        <CardHeader>
+          <CardTitle>Advisors ({filteredAdvisors.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Advisor</TableHead>
-                <TableHead>Expertise Areas</TableHead>
-                <TableHead>Performance</TableHead>
+                <TableHead>Experience</TableHead>
+                <TableHead>Active Assignments</TableHead>
+                <TableHead>Sessions</TableHead>
+                <TableHead>Rating</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Assigned Founders</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAdvisors.map((advisor, index) => {
-                const profile = advisor.user_profiles?.[0]?.profile_data;
-                const totalAdvisorSessions = advisor.advisor_founder_assignments?.reduce((sum, assignment) => sum + (assignment.total_sessions || 0), 0) || 0;
-                const advisorAvgRating = advisor.advisor_founder_assignments?.reduce((sum, assignment) => sum + (assignment.avg_rating || 0), 0) / (advisor.advisor_founder_assignments?.length || 1) || 0;
-                const badgeLevel = totalAdvisorSessions > 50 ? "diamond" : totalAdvisorSessions > 25 ? "platinum" : totalAdvisorSessions > 10 ? "gold" : "silver";
-                
+              {filteredAdvisors.map((advisor) => {
+                const profile = advisor.user_profiles?.[0]?.profile_data as any;
+                const assignments = advisor.advisor_founder_assignments || [];
+                const activeAssignments = assignments.filter(a => a.status === 'active');
+                const totalSessions = assignments.reduce((sum, a) => sum + (a.total_sessions || 0), 0);
+                const avgRating = assignments.length > 0 
+                  ? assignments.reduce((sum, a) => sum + (a.avg_rating || 0), 0) / assignments.length 
+                  : 0;
+
                 return (
                   <TableRow key={advisor.id}>
                     <TableCell>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{advisor.email?.split('@')[0] || 'Advisor'}</span>
-                          <Badge className={`${getBadgeColor(badgeLevel)} text-xs flex items-center gap-1`}>
-                            {getBadgeIcon(badgeLevel)}
-                            {badgeLevel}
-                          </Badge>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                          <span className="text-sm font-medium text-primary">
+                            {profile?.name?.charAt(0) || advisor.email.charAt(0).toUpperCase()}
+                          </span>
                         </div>
-                        <div className="text-sm text-blue-600 hover:underline cursor-pointer mt-1">
-                          {advisor.email}
+                        <div>
+                          <div className="font-medium">
+                            {profile?.name || 'Name not set'}
+                          </div>
+                          <div className="text-sm text-muted-foreground flex items-center">
+                            <Mail className="w-3 h-3 mr-1" />
+                            {advisor.email}
+                          </div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
+                      <Badge variant="secondary">
+                        {profile?.experience_level || 'Not set'}
+                      </Badge>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {profile?.expertise?.slice(0, 2).join(', ') || 'No expertise listed'}
+                      </div>
+                    </TableCell>
+                    <TableCell>
                       <div className="space-y-1">
-                        {profile?.expertise?.slice(0, 3).map((skill: string, idx: number) => (
-                          <Badge key={idx} variant="secondary" className="text-xs mr-1">
-                            {skill}
+                        {activeAssignments.slice(0, 2).map((assignment, idx) => {
+                          const founder = assignment.users;
+                          const founderProfile = founder?.user_profiles?.[0]?.profile_data as any;
+                          return (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                              {founderProfile?.name || founder?.email?.split('@')[0] || 'Unknown Founder'}
+                            </Badge>
+                          );
+                        })}
+                        {activeAssignments.length === 0 && (
+                          <Badge variant="outline" className="text-xs text-gray-400">
+                            No active assignments
                           </Badge>
-                        )) || (
-                          <Badge variant="secondary" className="text-xs">
-                            General Business
-                          </Badge>
+                        )}
+                        {activeAssignments.length > 2 && (
+                          <div className="text-xs text-muted-foreground">
+                            +{activeAssignments.length - 2} more
+                          </div>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-1 text-sm">
-                          <Star className="w-3 h-3 text-yellow-500" />
-                          <span className="font-medium">{advisorAvgRating ? advisorAvgRating.toFixed(1) : '4.5'}</span>
-                        </div>
-                        <div className="text-xs text-gray-600">
-                          {totalAdvisorSessions} sessions
-                        </div>
-                        <div className="text-xs text-gray-600">
-                          {advisor.advisor_founder_assignments?.length || 0} founders mentored
-                        </div>
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-medium">{totalSessions}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {assignments.reduce((sum, a) => sum + (a.completed_sessions || 0), 0)} completed
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge className={getStatusColor(advisor.status || 'active')}>
-                        {advisor.status === 'active' ? 'Active' : 'Ready to be matched'}
+                      <div className="flex items-center space-x-1">
+                        <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                        <span className="font-medium">
+                          {avgRating > 0 ? avgRating.toFixed(1) : 'N/A'}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge 
+                        variant={advisor.status === 'active' ? 'default' : 'secondary'}
+                      >
+                        {advisor.status}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="space-y-1">
-                        {advisor.advisor_founder_assignments?.slice(0, 2).map((assignment, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            Founder {assignment.founder_id?.slice(0, 8) || 'Unknown'}
-                          </Badge>
-                        )) || (
-                          <Badge variant="outline" className="text-xs text-gray-400">
-                            No advisor_founder_assignments
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <Button variant="outline" size="sm">
-                          Edit Profile
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-xs">
-                          View Analytics
-                        </Button>
-                      </div>
+                      <Button variant="ghost" size="sm">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 );
@@ -207,39 +313,6 @@ const AdvisorDirectory = () => {
           </Table>
         </CardContent>
       </Card>
-
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold">{totalSessions}</div>
-            <p className="text-sm text-gray-600">Total Sessions Completed</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold">{avgRating.toFixed(1)}</div>
-            <p className="text-sm text-gray-600">Average Rating</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold">{totalFounders}</div>
-            <p className="text-sm text-gray-600">Total Founders Mentored</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold">
-              {advisors?.filter(a => {
-                const sessions = a.advisor_founder_assignments?.reduce((sum, assignment) => sum + (assignment.total_sessions || 0), 0) || 0;
-                return sessions > 25;
-              }).length || 0}
-            </div>
-            <p className="text-sm text-gray-600">Elite Advisors (25+ Sessions)</p>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 };

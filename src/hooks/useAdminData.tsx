@@ -17,6 +17,23 @@ export const useAdminData = () => {
             created_at,
             user_profiles (
               profile_data
+            ),
+            advisor_founder_assignments!advisor_founder_assignments_founder_id_fkey (
+              id,
+              status,
+              advisor_id,
+              total_sessions,
+              users!advisor_founder_assignments_advisor_id_fkey (
+                id,
+                email,
+                user_profiles (
+                  profile_data
+                )
+              )
+            ),
+            goals (
+              id,
+              status
             )
           `)
           .eq('role', 'founder')
@@ -32,6 +49,21 @@ export const useAdminData = () => {
             created_at,
             user_profiles (
               profile_data
+            ),
+            advisor_founder_assignments!advisor_founder_assignments_advisor_id_fkey (
+              id,
+              status,
+              founder_id,
+              total_sessions,
+              completed_sessions,
+              avg_rating,
+              users!advisor_founder_assignments_founder_id_fkey (
+                id,
+                email,
+                user_profiles (
+                  profile_data
+                )
+              )
             )
           `)
           .eq('role', 'advisor')
@@ -58,13 +90,12 @@ export const useAdminData = () => {
   });
 };
 
-// Add the missing exports that components are expecting
 export const useAdminStats = () => {
+  const { data: adminData } = useAdminData();
+  
   return useQuery({
-    queryKey: ['admin-stats'],
+    queryKey: ['admin-stats', adminData],
     queryFn: async () => {
-      const { data: adminData } = useAdminData();
-      
       return {
         activeFounders: adminData?.founders?.length || 0,
         activeAdvisors: adminData?.advisors?.length || 0,
@@ -72,6 +103,7 @@ export const useAdminStats = () => {
         caseStudiesReady: 8, // Mock data for now
       };
     },
+    enabled: !!adminData,
     staleTime: 1000 * 60 * 5,
   });
 };
@@ -95,7 +127,14 @@ export const useFoundersDirectory = () => {
             id,
             status,
             advisor_id,
-            total_sessions
+            total_sessions,
+            users!advisor_founder_assignments_advisor_id_fkey (
+              id,
+              email,
+              user_profiles (
+                profile_data
+              )
+            )
           ),
           goals (
             id,
@@ -133,7 +172,14 @@ export const useAdvisorsDirectory = () => {
             founder_id,
             total_sessions,
             completed_sessions,
-            avg_rating
+            avg_rating,
+            users!advisor_founder_assignments_founder_id_fkey (
+              id,
+              email,
+              user_profiles (
+                profile_data
+              )
+            )
           )
         `)
         .eq('role', 'advisor')
