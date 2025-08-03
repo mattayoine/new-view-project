@@ -74,7 +74,7 @@ const Dashboard = () => {
       {/* Welcome Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Welcome back{userProfile?.profile_data?.name ? `, ${userProfile.profile_data.name}` : ''}!
+          Welcome back{userProfile?.email ? `, ${userProfile.email.split('@')[0]}` : ''}!
         </h1>
         <p className="text-gray-600">
           Here's what's happening with your {userProfile?.role === 'founder' ? 'startup journey' : 'advisory activities'} today.

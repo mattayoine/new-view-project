@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Bell, Calendar, Target, TrendingUp, Users, Star } from 'lucide-react';
+import { Bell, Calendar, Target, TrendingUp, Users, Star, Clock } from 'lucide-react';
 import { useActualDashboardMetrics } from '@/hooks/useActualDashboardMetrics';
 import { useRealTimeDashboard } from '@/hooks/useRealTimeDashboard';
 import { useRealTimeNotifications } from '@/hooks/useRealTimeNotifications';
