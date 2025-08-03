@@ -1,8 +1,8 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
+import { useEmailNotifications } from './useEmailNotifications';
 
 export interface MessageThread {
   id: string;
@@ -56,6 +56,10 @@ export const useMessages = (threadId?: string, assignmentId?: string) => {
   return useQuery({
     queryKey: ['messages', threadId, assignmentId],
     queryFn: async () => {
+      if (!threadId && !assignmentId) {
+        throw new Error('Either threadId or assignmentId must be provided');
+      }
+
       let query = supabase
         .from('messages')
         .select(`
@@ -72,10 +76,15 @@ export const useMessages = (threadId?: string, assignmentId?: string) => {
       }
 
       const { data, error } = await query;
-      if (error) throw error;
+      if (error) {
+        console.error('Messages query error:', error);
+        throw error;
+      }
       return data as Message[];
     },
-    enabled: !!(threadId || assignmentId)
+    enabled: !!(threadId || assignmentId),
+    retry: 3,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000)
   });
 };
 
@@ -101,16 +110,26 @@ export const useCreateMessageThread = () => {
 
 export const useSendMessage = () => {
   const queryClient = useQueryClient();
+  const { sendEmailNotification } = useEmailNotifications();
 
   return useMutation({
     mutationFn: async (message: Omit<Message, 'id' | 'is_read' | 'created_at'>) => {
+      console.log('Sending message:', message);
+
       const { data, error } = await supabase
         .from('messages')
         .insert(message)
-        .select()
+        .select(`
+          *,
+          from_user:users!from_user_id(id, email),
+          to_user:users!to_user_id(id, email)
+        `)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Send message error:', error);
+        throw error;
+      }
 
       // Create notification for recipient
       await supabase
@@ -132,15 +151,18 @@ export const useSendMessage = () => {
 
       // Send email notification if it's an escalation or high priority
       if (message.message_type === 'escalation' || message.priority === 'urgent') {
-        await supabase.functions.invoke('send-escalation-notification', {
-          body: {
-            messageId: data.id,
-            recipientId: message.to_user_id,
-            senderId: message.from_user_id,
-            content: message.content,
+        try {
+          await sendEmailNotification({
+            userId: message.to_user_id,
+            title: message.message_type === 'escalation' ? 'URGENT: Issue Escalation' : 'High Priority Message',
+            message: message.content,
+            type: message.message_type || 'message',
             priority: message.priority || 'high'
-          }
-        });
+          });
+        } catch (emailError) {
+          console.error('Failed to send email notification:', emailError);
+          // Don't fail the whole operation if email fails
+        }
       }
 
       return data;
@@ -149,7 +171,11 @@ export const useSendMessage = () => {
       queryClient.invalidateQueries({ queryKey: ['messages'] });
       queryClient.invalidateQueries({ queryKey: ['message-threads'] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      toast.success('Message sent');
+      toast.success('Message sent successfully');
+    },
+    onError: (error: any) => {
+      console.error('Send message error:', error);
+      toast.error(`Failed to send message: ${error.message}`);
     }
   });
 };
@@ -180,6 +206,7 @@ export const useMarkMessageAsRead = () => {
 
 export const useEscalateIssue = () => {
   const queryClient = useQueryClient();
+  const { sendEscalationNotification } = useEmailNotifications();
 
   return useMutation({
     mutationFn: async ({ 
@@ -195,6 +222,8 @@ export const useEscalateIssue = () => {
       issue: string;
       severity: 'low' | 'medium' | 'high' | 'critical';
     }) => {
+      console.log('Escalating issue:', { assignmentId, toUserId, fromUserId, issue, severity });
+
       // Create escalation message
       const { data: message, error: messageError } = await supabase
         .from('messages')
@@ -209,7 +238,10 @@ export const useEscalateIssue = () => {
         .select()
         .single();
 
-      if (messageError) throw messageError;
+      if (messageError) {
+        console.error('Escalation message error:', messageError);
+        throw messageError;
+      }
 
       // Create high-priority notification
       await supabase
@@ -229,16 +261,12 @@ export const useEscalateIssue = () => {
         });
 
       // Send email notification for escalations
-      await supabase.functions.invoke('send-escalation-notification', {
-        body: {
-          messageId: message.id,
-          recipientId: toUserId,
-          senderId: fromUserId,
-          content: issue,
-          severity,
-          assignmentId
-        }
-      });
+      try {
+        await sendEscalationNotification(toUserId, issue, fromUserId);
+      } catch (emailError) {
+        console.error('Failed to send escalation email:', emailError);
+        // Don't fail the escalation if email fails
+      }
 
       return message;
     },
@@ -246,6 +274,10 @@ export const useEscalateIssue = () => {
       queryClient.invalidateQueries({ queryKey: ['messages'] });
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Issue escalated successfully');
+    },
+    onError: (error: any) => {
+      console.error('Escalation error:', error);
+      toast.error(`Failed to escalate issue: ${error.message}`);
     }
   });
 };
