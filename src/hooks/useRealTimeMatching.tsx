@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useProfileUpdateMatching } from './useUnifiedMatching';
+import { toast } from 'sonner';
 
 export const useRealTimeMatching = () => {
   const queryClient = useQueryClient();
@@ -21,17 +22,25 @@ export const useRealTimeMatching = () => {
           schema: 'public',
           table: 'user_profiles'
         },
-        (payload) => {
+        async (payload) => {
           console.log('Profile change detected:', payload);
           
           if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
             const profileData = payload.new;
             if (profileData?.user_id && profileData?.profile_type) {
-              // Trigger background match recalculation
-              profileUpdateMatching.mutate({
-                userId: profileData.user_id,
-                profileType: profileData.profile_type
-              });
+              try {
+                // Trigger background match recalculation
+                await profileUpdateMatching.mutateAsync({
+                  userId: profileData.user_id,
+                  profileType: profileData.profile_type
+                });
+                
+                // Show user feedback
+                toast.success('Profile updated - matches are being recalculated');
+              } catch (error) {
+                console.error('Error updating matches:', error);
+                toast.error('Failed to update matches');
+              }
             }
           }
         }
@@ -52,6 +61,28 @@ export const useRealTimeMatching = () => {
           console.log('Assignment change detected:', payload);
           queryClient.invalidateQueries({ queryKey: ['founder-matches'] });
           queryClient.invalidateQueries({ queryKey: ['matching-stats'] });
+          queryClient.invalidateQueries({ queryKey: ['dashboard-data'] });
+          queryClient.invalidateQueries({ queryKey: ['assignments'] });
+        }
+      )
+      .subscribe();
+
+    // Listen for session changes to update metrics
+    const sessionChannel = supabase
+      .channel('session-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'sessions'
+        },
+        (payload) => {
+          console.log('Session change detected:', payload);
+          queryClient.invalidateQueries({ queryKey: ['sessions'] });
+          queryClient.invalidateQueries({ queryKey: ['session-flow'] });
+          queryClient.invalidateQueries({ queryKey: ['dashboard-data'] });
+          queryClient.invalidateQueries({ queryKey: ['session-analytics'] });
         }
       )
       .subscribe();
@@ -60,11 +91,11 @@ export const useRealTimeMatching = () => {
       console.log('Cleaning up real-time matching subscriptions');
       supabase.removeChannel(profileChannel);
       supabase.removeChannel(assignmentChannel);
+      supabase.removeChannel(sessionChannel);
     };
   }, [profileUpdateMatching, queryClient]);
 
   return {
-    // Expose methods for manual triggering if needed
     triggerProfileUpdate: profileUpdateMatching.mutate,
     isUpdating: profileUpdateMatching.isPending
   };
