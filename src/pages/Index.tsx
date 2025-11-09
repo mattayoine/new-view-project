@@ -10,8 +10,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useSecurity } from "@/hooks/useSecurityContext";
 import FounderForm from "@/components/onboarding/FounderForm";
 import AdvisorForm from "@/components/onboarding/AdvisorForm";
-import tseerLogoTransparent from "@/assets/tseer-logo-transparent.png";
-import tseerLogoWhiteBg from "@/assets/tseer-logo-white-bg.png";
+import tseerLogoTransparent from "@/assets/tseer-logo-vertical-transparent.png";
+import tseerLogoWhiteBg from "@/assets/tseer-logo-vertical-white.png";
 const Index = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -287,13 +287,14 @@ const Index = () => {
       <section className="py-16 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">Download Tseer Logo</h2>
+          <p className="text-center text-gray-600 mb-8">High-quality 1024x1024px logo for all your branding needs</p>
           <div className="grid md:grid-cols-2 gap-8">
             <Card className="border-2 border-gray-200">
               <CardHeader>
                 <CardTitle className="text-xl text-center">Transparent Background</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center space-y-4">
-                <div className="w-[400px] h-[400px] bg-gray-100 rounded-lg flex items-center justify-center p-8">
+                <div className="w-full max-w-[400px] aspect-square bg-gray-100 rounded-lg flex items-center justify-center p-12">
                   <img 
                     src={tseerLogoTransparent} 
                     alt="Tseer Logo - Transparent Background" 
@@ -307,7 +308,7 @@ const Index = () => {
                 >
                   <Button className="w-full" variant="outline">
                     <Download className="mr-2 h-4 w-4" />
-                    Download PNG (1024x1024)
+                    Download HD PNG
                   </Button>
                 </a>
               </CardContent>
@@ -318,7 +319,7 @@ const Index = () => {
                 <CardTitle className="text-xl text-center">White Background</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center space-y-4">
-                <div className="w-[400px] h-[400px] bg-white border border-gray-200 rounded-lg flex items-center justify-center p-8">
+                <div className="w-full max-w-[400px] aspect-square bg-white border border-gray-200 rounded-lg flex items-center justify-center p-12">
                   <img 
                     src={tseerLogoWhiteBg} 
                     alt="Tseer Logo - White Background" 
@@ -332,7 +333,7 @@ const Index = () => {
                 >
                   <Button className="w-full" variant="outline">
                     <Download className="mr-2 h-4 w-4" />
-                    Download PNG (1024x1024)
+                    Download HD PNG
                   </Button>
                 </a>
               </CardContent>
