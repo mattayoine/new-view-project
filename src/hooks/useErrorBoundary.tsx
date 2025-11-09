@@ -46,7 +46,7 @@ export const useAsyncError = () => {
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const executeAsync = useCallback(async <T>(
+  const executeAsync = useCallback(async <T,>(
     asyncFunction: () => Promise<T>,
     errorMessage = 'Operation failed'
   ): Promise<T | null> => {

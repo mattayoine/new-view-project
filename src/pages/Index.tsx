@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import { CheckCircle, Clock, Users, Target, Shield, Calendar } from "lucide-react";
+import { CheckCircle, Clock, Users, Target, Shield, Calendar, Download } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSecurity } from "@/hooks/useSecurityContext";
 import FounderForm from "@/components/onboarding/FounderForm";
 import AdvisorForm from "@/components/onboarding/AdvisorForm";
+import tseerLogoTransparent from "@/assets/tseer-logo-transparent.png";
+import tseerLogoWhiteBg from "@/assets/tseer-logo-white-bg.png";
 const Index = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -277,6 +279,64 @@ const Index = () => {
             <blockquote className="text-xl italic text-gray-700">
               "Diaspora wisdom, applied surgically, can unlock stuck African ventures."
             </blockquote>
+          </div>
+        </div>
+      </section>
+
+      {/* Logo Downloads */}
+      <section className="py-16 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">Download Tseer Logo</h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            <Card className="border-2 border-gray-200">
+              <CardHeader>
+                <CardTitle className="text-xl text-center">Transparent Background</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center space-y-4">
+                <div className="w-[400px] h-[400px] bg-gray-100 rounded-lg flex items-center justify-center p-8">
+                  <img 
+                    src={tseerLogoTransparent} 
+                    alt="Tseer Logo - Transparent Background" 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <a 
+                  href={tseerLogoTransparent} 
+                  download="tseer-logo-transparent.png"
+                  className="w-full"
+                >
+                  <Button className="w-full" variant="outline">
+                    <Download className="mr-2 h-4 w-4" />
+                    Download PNG (1024x1024)
+                  </Button>
+                </a>
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-gray-200">
+              <CardHeader>
+                <CardTitle className="text-xl text-center">White Background</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col items-center space-y-4">
+                <div className="w-[400px] h-[400px] bg-white border border-gray-200 rounded-lg flex items-center justify-center p-8">
+                  <img 
+                    src={tseerLogoWhiteBg} 
+                    alt="Tseer Logo - White Background" 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <a 
+                  href={tseerLogoWhiteBg} 
+                  download="tseer-logo-white-bg.png"
+                  className="w-full"
+                >
+                  <Button className="w-full" variant="outline">
+                    <Download className="mr-2 h-4 w-4" />
+                    Download PNG (1024x1024)
+                  </Button>
+                </a>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>

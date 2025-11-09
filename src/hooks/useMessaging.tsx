@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from 'sonner';
-import { useEmailNotifications } from './useEmailNotifications';
+import { useAutomatedEmailWorkflows, useSendEmailNotification } from './useEmailNotifications';
 
 export interface MessageThread {
   id: string;
@@ -110,7 +110,7 @@ export const useCreateMessageThread = () => {
 
 export const useSendMessage = () => {
   const queryClient = useQueryClient();
-  const { sendEmailNotification } = useEmailNotifications();
+  const sendEmailMutation = useSendEmailNotification();
 
   return useMutation({
     mutationFn: async (message: Omit<Message, 'id' | 'is_read' | 'created_at'>) => {
@@ -152,7 +152,7 @@ export const useSendMessage = () => {
       // Send email notification if it's an escalation or high priority
       if (message.message_type === 'escalation' || message.priority === 'urgent') {
         try {
-          await sendEmailNotification({
+          await sendEmailMutation.mutateAsync({
             userId: message.to_user_id,
             title: message.message_type === 'escalation' ? 'URGENT: Issue Escalation' : 'High Priority Message',
             message: message.content,
@@ -206,7 +206,7 @@ export const useMarkMessageAsRead = () => {
 
 export const useEscalateIssue = () => {
   const queryClient = useQueryClient();
-  const { sendEscalationNotification } = useEmailNotifications();
+  const { sendEscalationNotification } = useAutomatedEmailWorkflows();
 
   return useMutation({
     mutationFn: async ({ 
